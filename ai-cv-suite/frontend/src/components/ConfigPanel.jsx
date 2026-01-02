@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
 import { RangeSlider } from './ui/RangeSlider';
@@ -251,12 +251,61 @@ export default function ConfigPanel() {
                     <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">AI Models</p>
                 </div>
 
-                {/* LLM Model Select */}
+                {/* LLM Model Select - Enhanced with Search, Filter, Sort */}
                 <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                         <Cpu className="w-4 h-4 text-purple-400" />
                         Text Model (LLM)
                     </Label>
+
+                    {/* Search and Filters */}
+                    <div className="space-y-2">
+                        {/* Search Input */}
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                                type="text"
+                                placeholder="Search models..."
+                                value={config.llmSearch || ''}
+                                onChange={(e) => setConfig('llmSearch', e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+
+                        {/* Filter Row */}
+                        <div className="flex gap-2">
+                            {/* Provider Filter */}
+                            <Select
+                                value={config.llmProvider || 'all'}
+                                onValueChange={(value) => setConfig('llmProvider', value)}
+                            >
+                                <SelectTrigger className="flex-1 h-8 text-xs">
+                                    <Filter className="w-3 h-3 mr-1" />
+                                    <SelectValue placeholder="Provider" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Providers</SelectItem>
+                                    {[...new Set(llmModels.map(m => m.provider))].sort().map(provider => (
+                                        <SelectItem key={provider} value={provider}>{provider}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Free Only Toggle */}
+                            <button
+                                onClick={() => setConfig('llmFreeOnly', !config.llmFreeOnly)}
+                                className={`px-3 h-8 text-xs rounded-md border transition-colors flex items-center gap-1 ${config.llmFreeOnly
+                                        ? 'bg-green-500/20 border-green-500 text-green-400'
+                                        : 'border-input text-muted-foreground hover:bg-accent'
+                                    }`}
+                            >
+                                <DollarSign className="w-3 h-3" />
+                                Free
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Model List */}
                     <Select
                         value={config.llm_model || ''}
                         onValueChange={(value) => setConfig('llm_model', value)}
@@ -265,23 +314,55 @@ export default function ConfigPanel() {
                             <SelectValue placeholder="Select LLM model" />
                         </SelectTrigger>
                         <SelectContent className="max-h-80">
-                            {llmModels.map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                    <div className="flex flex-col py-1">
-                                        <span className="font-medium">{model.name}</span>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <span>{model.provider}</span>
-                                            <span>•</span>
-                                            <span>{model.cost}</span>
+                            {llmModels
+                                .filter(model => {
+                                    const search = (config.llmSearch || '').toLowerCase();
+                                    const matchesSearch = !search ||
+                                        model.name.toLowerCase().includes(search) ||
+                                        model.id.toLowerCase().includes(search) ||
+                                        model.provider?.toLowerCase().includes(search);
+                                    const matchesProvider = !config.llmProvider || config.llmProvider === 'all' ||
+                                        model.provider === config.llmProvider;
+                                    const matchesFree = !config.llmFreeOnly ||
+                                        model.cost?.toLowerCase().includes('free') ||
+                                        model.cost === '$0.00/1M';
+                                    return matchesSearch && matchesProvider && matchesFree;
+                                })
+                                .sort((a, b) => {
+                                    // Sort by cost (free first, then by price)
+                                    const aFree = a.cost?.toLowerCase().includes('free') || a.cost === '$0.00/1M';
+                                    const bFree = b.cost?.toLowerCase().includes('free') || b.cost === '$0.00/1M';
+                                    if (aFree && !bFree) return -1;
+                                    if (!aFree && bFree) return 1;
+                                    // Then alphabetically
+                                    return a.name.localeCompare(b.name);
+                                })
+                                .map((model) => (
+                                    <SelectItem key={model.id} value={model.id}>
+                                        <div className="flex flex-col py-1">
+                                            <span className="font-medium">{model.name}</span>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <span className="text-blue-400">{model.provider}</span>
+                                                <span>•</span>
+                                                <span className={model.cost?.toLowerCase().includes('free') ? 'text-green-400' : ''}>{model.cost}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </SelectItem>
-                            ))}
+                                    </SelectItem>
+                                ))}
                         </SelectContent>
                     </Select>
                     {selectedLlmModel && (
                         <p className="text-xs text-muted-foreground">{selectedLlmModel.description}</p>
                     )}
+                    <p className="text-xs text-muted-foreground">
+                        {llmModels.filter(m => {
+                            const search = (config.llmSearch || '').toLowerCase();
+                            const matchesSearch = !search || m.name.toLowerCase().includes(search) || m.id.toLowerCase().includes(search);
+                            const matchesProvider = !config.llmProvider || config.llmProvider === 'all' || m.provider === config.llmProvider;
+                            const matchesFree = !config.llmFreeOnly || m.cost?.toLowerCase().includes('free') || m.cost === '$0.00/1M';
+                            return matchesSearch && matchesProvider && matchesFree;
+                        }).length} models available
+                    </p>
                 </div>
 
                 {/* Image Model Select */}

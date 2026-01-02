@@ -16,11 +16,17 @@ TEMPLATES_DIR = BACKEND_DIR / "templates"
 # Ensure output directory exists
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-async def render_cv_html(data_dict: dict, image_path: str | None, filename: str) -> str:
+async def render_cv_html(data_dict: dict, image_path: str | None, filename: str, output_dir: Path = None) -> str:
     """
     Render CV as HTML using Jinja2 template.
     Returns path to the generated HTML file.
+    
+    Args:
+        output_dir: Directory to save HTML file (defaults to OUTPUT_DIR)
     """
+    if output_dir is None:
+        output_dir = OUTPUT_DIR
+        
     try:
         # Load template
         env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
@@ -41,9 +47,9 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str)
         # Render HTML
         html_content = template.render(**context)
         
-        # Save HTML file
+        # Save HTML file to specified directory
         output_filename = filename.replace('.pdf', '.html') # Ensure extension
-        output_path = OUTPUT_DIR / output_filename
+        output_path = Path(output_dir) / output_filename
         
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_content)

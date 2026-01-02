@@ -24,9 +24,19 @@ BACKEND_DIR = Path(__file__).parent.parent.parent
 OUTPUT_DIR = BACKEND_DIR / "output"
 ASSETS_DIR = BACKEND_DIR / "assets"
 
-# Ensure directories exist
+# Organized output subdirectories
+PROMPTS_DIR = OUTPUT_DIR / "prompts"
+HTML_DIR = OUTPUT_DIR / "html"
+PDFS_DIR = OUTPUT_DIR / "pdfs"
+AVATARS_DIR = OUTPUT_DIR / "avatars"
+
+# Ensure all directories exist
 OUTPUT_DIR.mkdir(exist_ok=True)
 ASSETS_DIR.mkdir(exist_ok=True)
+PROMPTS_DIR.mkdir(exist_ok=True)
+HTML_DIR.mkdir(exist_ok=True)
+PDFS_DIR.mkdir(exist_ok=True)
+AVATARS_DIR.mkdir(exist_ok=True)
 
 router = APIRouter(prefix="/api", tags=["generation"])
 
@@ -116,9 +126,9 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
                 age_range=task.age_range
             )
             
-            # Save Artifacts
-            p_cv_path = OUTPUT_DIR / f"prompt_cv_{task.id}.txt"
-            p_img_path = OUTPUT_DIR / f"prompt_image_{task.id}.txt"
+            # Save prompts to organized prompts/ folder
+            p_cv_path = PROMPTS_DIR / f"cv_prompt_{task.id}.txt"
+            p_img_path = PROMPTS_DIR / f"image_prompt_{task.id}.txt"
             
             with open(p_cv_path, "w", encoding="utf-8") as f:
                 f.write(cv_prompt)
@@ -194,10 +204,10 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         
         safe_expertise = task.expertise
         
-        # Format: Name_Role_Expertise_ID5.html
+        # Format: Name_Role_Expertise_ID5.html -> save to html/ folder
         filename = f"{safe_name}_{safe_role}_{safe_expertise}_{task.id[:5]}.html"
         
-        html_path = await render_cv_html(cv_data, image_path, filename)
+        html_path = await render_cv_html(cv_data, image_path, filename, HTML_DIR)
         task.html_path = html_path
         
         task.subtasks[3].status = TaskStatus.COMPLETE
