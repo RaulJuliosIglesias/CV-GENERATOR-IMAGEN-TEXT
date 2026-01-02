@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from ..core.task_manager import task_manager, Task, TaskStatus
-from ..core.pdf_engine import render_cv_html
+from ..core.pdf_engine import render_cv_pdf
 from ..services.llm_service import generate_cv_content_v2, generate_profile_data, get_available_models as get_llm_models, create_user_prompt
 from ..services.krea_service import generate_avatar, get_available_models as get_image_models, get_avatar_prompt
 
@@ -270,9 +270,22 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             
             filename = f"{task.id[:8]}_{safe_name}_{safe_role}.html"
             
-            html_path = await render_cv_html(task.cv_data, task.image_path, filename, HTML_DIR)
-            task.html_path = html_path
-            task.pdf_path = html_path
+            # Generate PDF (and HTML)
+            pdf_path_str = await render_cv_pdf(task.cv_data, task.image_path, filename)
+            
+            task.pdf_path = pdf_path_str
+            
+            # Derive HTML path safely
+            # We know safe pattern is swapping /pdf/ for /html/ and extenson
+            # Handle both separators for Windows safety
+            p_str = str(pdf_path_str)
+            if "\\pdf\\" in p_str:
+                task.html_path = p_str.replace("\\pdf\\", "\\html\\").replace(".pdf", ".html")
+            elif "/pdf/" in p_str:
+                task.html_path = p_str.replace("/pdf/", "/html/").replace(".pdf", ".html")
+            else:
+                 # Fallback for flat structure or unknown
+                 task.html_path = p_str.replace(".pdf", ".html")
             
             task.subtasks[3].status = TaskStatus.COMPLETE
             task.subtasks[3].progress = 100

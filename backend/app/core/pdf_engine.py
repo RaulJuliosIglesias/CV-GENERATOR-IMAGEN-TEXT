@@ -15,6 +15,8 @@ TEMPLATES_DIR = BACKEND_DIR / "templates"
 
 # Ensure output directory exists
 OUTPUT_DIR.mkdir(exist_ok=True)
+(OUTPUT_DIR / "pdf").mkdir(exist_ok=True)
+(OUTPUT_DIR / "html").mkdir(exist_ok=True)
 
 async def render_cv_html(data_dict: dict, image_path: str | None, filename: str, output_dir: Path = None) -> str:
     """
@@ -65,10 +67,64 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
 
 async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str) -> str:
     """
-    Legacy/Fallback wrapper. 
-    In this new architecture, we generate HTML. 
-    The 'pdf_path' in Task will point to this HTML for now, 
-    or we can generate a dummy PDF if strictly required.
-    For now, return the HTML path as the PDF path (client handles export).
+    Generate PDF from HTML using Playwright (Headless Browser).
+    This ensures exact rendering, selectable text, and proper pagination.
     """
-    return await render_cv_html(data_dict, image_path, filename)
+    # 1. First generate the HTML (source) in html/ subfolder
+    html_output_dir = OUTPUT_DIR / "html"
+    html_output_dir.mkdir(exist_ok=True)
+    
+    html_path = await render_cv_html(data_dict, image_path, filename, html_output_dir)
+    
+    # 2. Define PDF Output Path in pdf/ subfolder
+    pdf_output_dir = OUTPUT_DIR / "pdf"
+    pdf_output_dir.mkdir(exist_ok=True)
+    
+    pdf_filename = filename.replace('.html', '.pdf')
+    if not pdf_filename.endswith('.pdf'):
+        pdf_filename += '.pdf'
+        
+    pdf_path = pdf_output_dir / pdf_filename
+    
+    print(f"DEBUG: Generating PDF using Playwright at {pdf_path}")
+    
+    # 3. Use Playwright to render PDF
+    from playwright.async_api import async_playwright
+    
+    try:
+        async with async_playwright() as p:
+            # Launch browser (chromium is standard)
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            
+            # Load the HTML file
+            # Need absolute file URI
+            file_uri = Path(html_path).absolute().as_uri()
+            await page.goto(file_uri, wait_until="networkidle")
+            
+            # Inject CSS to force A4 and print styles calculation if needed
+            # (Already handled by @media print in template, but good to be safe)
+            
+            # Generate PDF
+            await page.pdf(
+                path=str(pdf_path),
+                format="A4",
+                print_background=True,
+                margin={
+                    "top": "0mm",    # Margins handled by CSS
+                    "bottom": "0mm", 
+                    "left": "0mm",
+                    "right": "0mm"
+                }
+            )
+            
+            await browser.close()
+            
+        print(f"SUCCESS: CV PDF generated: {pdf_path.name}")
+        return str(pdf_path)
+        
+    except Exception as e:
+        print(f"ERROR: Playwright PDF generation failed: {e}")
+        # Fallback: Return HTML path so user can at least print it
+        print("FALLBACK: Returning HTML path.")
+        return html_path

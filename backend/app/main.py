@@ -104,6 +104,7 @@ app.add_middleware(
 # Mount static directories - main and subdirectories
 app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
 app.mount("/html", StaticFiles(directory=str(OUTPUT_DIR / "html")), name="html")
+app.mount("/pdf", StaticFiles(directory=str(OUTPUT_DIR / "pdf")), name="pdf") # New mount
 app.mount("/prompts", StaticFiles(directory=str(OUTPUT_DIR / "prompts")), name="prompts")
 app.mount("/avatars", StaticFiles(directory=str(OUTPUT_DIR / "avatars")), name="avatars")
 app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")

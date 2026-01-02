@@ -685,6 +685,10 @@
                             <div class="skills_box">
                                 <span class="skills_progress" style="width: {{ skill.level }}%;"></span>
                             </div>
+                            <span
+                                style="font-size: 0.75rem; color: var(--text-color-light); width: 30px; text-align: right;">
+                                {{ (skill.level / 10)|round|int }}/10
+                            </span>
                         </div>
                         {% endfor %}
                     </div>
@@ -787,16 +791,20 @@
                 </section>
                 {% endif %}
 
-                <!-- INTERESTS -->
+                <!-- INTERESTS (UPDATED LAYOUT) -->
                 <section class="interests section" id="interests">
                     <h2 class="section-title">Interests</h2>
-                    <div class="interests_container bd-grid">
-                        {% for interest in interests %}
-                        <div class="interests_content">
-                            <i class="fa-solid fa-lightbulb interests_icon"></i>
-                            <span class="interests_name">{{ interest }}</span>
-                        </div>
-                        {% endfor %}
+                    <div class="interests_container">
+                        <ul style="list-style: none; padding-left: 1rem;">
+                            {% for interest in interests %}
+                            <li
+                                style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-color);">
+                                <i class="fa-solid fa-circle-dot"
+                                    style="font-size: 0.5rem; color: var(--title-color);"></i>
+                                {{ interest }}
+                            </li>
+                            {% endfor %}
+                        </ul>
                     </div>
                 </section>
             </div>

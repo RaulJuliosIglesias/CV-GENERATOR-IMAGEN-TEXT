@@ -56,8 +56,19 @@ export const healthCheck = async () => {
 };
 
 // Get PDF/HTML URL for viewing - files are now in /html/ subdirectory
+// Get PDF/HTML URL for viewing
 export const getPdfUrl = (filename) => {
-    return `http://localhost:8000/html/${filename}`;
+    // Filename usually ends in .html or .pdf in the task object
+    // but the backend stores them in separate folders /html/ and /pdf/
+
+    // Safety check: ensure we ask for .pdf extension from /pdf endpoint
+    const base = filename.replace(/\.(html|pdf)$/, '');
+    return `http://localhost:8000/pdf/${base}.pdf`;
+};
+
+export const getHtmlUrl = (filename) => {
+    const base = filename.replace(/\.(html|pdf)$/, '');
+    return `http://localhost:8000/html/${base}.html`;
 };
 
 export default api;

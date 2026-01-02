@@ -3,7 +3,7 @@ import { CheckCircle2, AlertCircle, Loader2, FileText, Image, Brain, Clock, Eye,
 import { Progress } from './ui/Progress';
 import { Button } from './ui/Button';
 import useGenerationStore from '../stores/useGenerationStore';
-import { getPdfUrl } from '../lib/api';
+import { getPdfUrl, getHtmlUrl } from '../lib/api';
 
 const STATUS_CONFIG = {
     pending: {
@@ -67,19 +67,21 @@ function TaskCard({ task }) {
     const Icon = statusConfig.icon;
 
     const handleOpenCv = () => {
-        // Prefer HTML path, fallback to PDF path (which points to HTML in new backend logic)
         const path = task.html_path || task.pdf_path;
         if (path) {
             const filename = path.split(/[\\/]/).pop();
-            // Open in new tab
-            window.open(getPdfUrl(filename), '_blank');
+            // Open HTML in new tab
+            window.open(getHtmlUrl(filename), '_blank');
         }
     };
 
     const handleDownloadPdf = () => {
-        // Trigger PDF download by opening the HTML and using browser print
-        handleOpenCv();
-        // Note: The HTML template has a built-in PDF export button
+        const path = task.pdf_path || task.html_path;
+        if (path) {
+            const filename = path.split(/[\\/]/).pop();
+            // Open PDF directly (browser will handle download/preview)
+            window.open(getPdfUrl(filename), '_blank');
+        }
     };
 
     return (
