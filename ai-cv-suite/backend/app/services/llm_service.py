@@ -214,7 +214,8 @@ STRICT JSON STRUCTURE (Return ONLY this, no markdown):
     {"name": "Spanish", "level_num": 4}
   ]
 }
-"""
+}
+""" + "\nIMPORTANT: Return ONLY the JSON object. Do not include any markdown formatting, explanations, or code blocks. Start closely with { and end with }."
 
 
 def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool) -> str:
@@ -310,14 +311,14 @@ async def generate_cv_content(
     
     user_prompt = create_user_prompt(role, expertise, age, gender, ethnicity, origin, remote)
     
-    # Adjust max_tokens based on expertise level
+    # Adjust max_tokens based on expertise level - INCREASED to prevent JSON truncation
     max_tokens = {
-        'junior': 2000,
-        'mid': 3000,
-        'senior': 4000,
-        'expert': 4000,
-        'any': 2500
-    }.get(expertise, 2500)
+        'junior': 5000,
+        'mid': 6000,
+        'senior': 8000,
+        'expert': 8000,
+        'any': 6000
+    }.get(expertise, 6000)
     
     try:
         # Build request payload
@@ -362,12 +363,16 @@ async def generate_cv_content(
                 json=request_payload
             )
             
-            # LOG RESPONSE
-            print("="*60)
-            print(f"DEBUG RESPONSE - Status: {response.status_code}")
-            print(f"DEBUG RESPONSE - Headers: {dict(response.headers)}")
-            print(f"DEBUG RESPONSE - Body: {response.text[:1000]}")
-            print("="*60)
+            # LOG RESPONSE (Safe print for Windows consoles)
+            try:
+                print("="*60)
+                print(f"DEBUG RESPONSE - Status: {response.status_code}")
+                # Sanitize headers and body for printing
+                safe_body = response.text[:1000].encode('ascii', 'replace').decode('ascii')
+                print(f"DEBUG RESPONSE - Body: {safe_body}")
+                print("="*60)
+            except Exception:
+                print("DEBUG RESPONSE - (Content could not be printed due to encoding)")
             
             if response.status_code == 200:
                 result = response.json()
@@ -387,6 +392,15 @@ async def generate_cv_content(
                     if content.startswith("json"):
                         content = content[4:].strip()
                     
+                    # Robust JSON extraction: Find first { and last }
+                    try:
+                        start_idx = content.find('{')
+                        end_idx = content.rfind('}')
+                        if start_idx != -1 and end_idx != -1:
+                            content = content[start_idx:end_idx+1]
+                    except Exception:
+                        pass
+                    
                     try:
                         cv_data = json.loads(content)
                         # Ensure data structure safety
@@ -394,17 +408,35 @@ async def generate_cv_content(
                         print(f"SUCCESS: CV content generated with {model_id}")
                         return cv_data
                     except json.JSONDecodeError as e:
-                        print(f"WARNING: JSON parse error: {e}")
-                        print(f"Raw content: {content[:500]}")
+                        print(f"JSON Parse Error: {e}")
+                        # Safe print for raw content
+                        try:
+                            print(f"Raw content sample: {content[:200].encode('ascii', 'replace').decode('ascii')}")
+                        except:
+                            pass
+                        # Fallback: raise error but with safe logging
+                        raise RuntimeError(f"JSON Decode Error: {e}")
             
-            # Log full response for debugging
-            response_text = response.text[:500] if response.text else "No response body"
-            error_msg = f"OpenRouter API returned status {response.status_code}: {response_text}"
+            # Log full response for debugging (Safe print)
+            error_details = "Unknown error"
+            try:
+                if response.text:
+                    error_details = response.text[:200].encode('ascii', 'replace').decode('ascii')
+            except:
+                pass
+                
+            error_msg = f"OpenRouter API returned status {response.status_code}: {error_details}"
             print(f"ERROR: {error_msg}")
             raise RuntimeError(error_msg)
             
     except Exception as e:
-        error_msg = f"OpenRouter API exception: {e}"
+        # Safe exception printing
+        try:
+            safe_e = str(e).encode('ascii', 'replace').decode('ascii')
+        except:
+            safe_e = "Encoding error in exception message"
+            
+        error_msg = f"OpenRouter API exception: {safe_e}"
         print(f"ERROR: {error_msg}")
         raise RuntimeError(error_msg)
 

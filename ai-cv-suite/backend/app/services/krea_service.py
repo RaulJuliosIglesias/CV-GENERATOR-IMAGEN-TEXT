@@ -17,8 +17,11 @@ ENV_PATH = BACKEND_DIR / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 print(f"DEBUG KREA: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})")
 
-ASSETS_DIR = BACKEND_DIR / "assets"
-ASSETS_DIR.mkdir(exist_ok=True)
+# Output directory for avatars
+OUTPUT_DIR = BACKEND_DIR / "output"
+AVATARS_DIR = OUTPUT_DIR / "avatars"
+AVATARS_DIR.mkdir(parents=True, exist_ok=True)
+ASSETS_DIR = AVATARS_DIR # Backward compatibility wrapper
 
 # Krea API Configuration - Per official docs (Jan 2026)
 KREA_API_BASE = "https://api.krea.ai"
@@ -275,7 +278,8 @@ async def generate_avatar(
     ethnicity: str = "any",
     age_range: str = "25-45",
     origin: str = "any",
-    model: Optional[str] = None
+    model: Optional[str] = None,
+    filename: Optional[str] = None
 ) -> str:
     """
     Generate an avatar image using Krea API.
@@ -400,8 +404,11 @@ async def generate_avatar(
                             # Download and save the image
                             img_response = await client.get(image_url)
                             if img_response.status_code == 200:
-                                filename = f"avatar_{uuid.uuid4().hex[:8]}.jpg"
-                                filepath = ASSETS_DIR / filename
+                                # Use provided filename or generate one
+                                if not filename:
+                                    filename = f"avatar_{uuid.uuid4().hex[:8]}.jpg"
+                                    
+                                filepath = AVATARS_DIR / filename
                                 
                                 with open(filepath, 'wb') as f:
                                     f.write(img_response.content)

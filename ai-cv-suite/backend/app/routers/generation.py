@@ -127,8 +127,9 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
             )
             
             # Save prompts to organized prompts/ folder
-            p_cv_path = PROMPTS_DIR / f"cv_prompt_{task.id}.txt"
-            p_img_path = PROMPTS_DIR / f"image_prompt_{task.id}.txt"
+            # Save prompts to organized prompts/ folder with ID-first naming
+            p_cv_path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
+            p_img_path = PROMPTS_DIR / f"{task.id}_image_prompt.txt"
             
             with open(p_cv_path, "w", encoding="utf-8") as f:
                 f.write(cv_prompt)
@@ -181,7 +182,8 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
             ethnicity=task.ethnicity,
             age_range=task.age_range,
             origin=task.origin,
-            model=image_model
+            model=image_model,
+            filename=f"{task.id}_avatar.jpg"
         )
         task.image_path = image_path
         
@@ -204,8 +206,8 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         
         safe_expertise = task.expertise
         
-        # Format: Name_Role_Expertise_ID5.html -> save to html/ folder
-        filename = f"{safe_name}_{safe_role}_{safe_expertise}_{task.id[:5]}.html"
+        # Format: ID_Name_Role.html -> ID first for sorting
+        filename = f"{task.id[:8]}_{safe_name}_{safe_role}_{safe_expertise}.html"
         
         html_path = await render_cv_html(cv_data, image_path, filename, HTML_DIR)
         task.html_path = html_path

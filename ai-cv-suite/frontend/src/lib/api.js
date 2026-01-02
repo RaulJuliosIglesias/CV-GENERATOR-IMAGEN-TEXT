@@ -55,9 +55,9 @@ export const healthCheck = async () => {
     return response.data;
 };
 
-// Get PDF URL for viewing
+// Get PDF/HTML URL for viewing - files are now in /html/ subdirectory
 export const getPdfUrl = (filename) => {
-    return `http://localhost:8000/output/${filename}`;
+    return `http://localhost:8000/html/${filename}`;
 };
 
 export default api;
