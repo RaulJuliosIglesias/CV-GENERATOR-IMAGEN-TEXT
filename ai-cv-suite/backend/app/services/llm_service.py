@@ -398,7 +398,7 @@ def _generate_mock_cv(role: str, origin: str, gender: str, expertise: str = "mid
         skills_pool = skill_pools["default"]
     
     selected_skills = random.sample(skills_pool, min(5, len(skills_pool)))
-    skills = [{"name": s, "level": random.randint(70, 95)} for s in selected_skills]
+    skills_list = [{"name": s, "level": random.randint(70, 95)} for s in selected_skills]
     
     email_name = name.lower().replace(" ", ".").replace("'", "")
     
@@ -408,7 +408,9 @@ def _generate_mock_cv(role: str, origin: str, gender: str, expertise: str = "mid
         "email": f"{email_name}@gmail.com",
         "phone": f"+1 {random.randint(200,999)}-{random.randint(100,999)}-{random.randint(1000,9999)}",
         "profile_summary": f"Experienced {role} with a passion for delivering high-quality work and proven track record in fast-paced environments.",
-        "skills": skills,
+        "skills": {
+            "technical": skills_list
+        },
         "languages": [
             {"name": "English", "level": 5},
             {"name": random.choice(["Spanish", "French", "German"]), "level": random.randint(2, 4)}
@@ -437,13 +439,9 @@ def _generate_mock_cv(role: str, origin: str, gender: str, expertise: str = "mid
         "certificates": [
             {"year": "2023", "title": "AWS Solutions Architect", "honors": "Professional"}
         ],
-        "interests": [
-            {"name": "Technology", "icon": "fa-laptop-code"},
-            {"name": "Travel", "icon": "fa-plane"},
-            {"name": "Reading", "icon": "fa-book"}
-        ],
-        "social": [
-            {"platform": "GitHub", "username": f"@{email_name.split('.')[0]}", "url": f"https://github.com/{email_name.split('.')[0]}", "icon": "fa-github"},
-            {"platform": "LinkedIn", "username": email_name.replace(".", ""), "url": f"https://linkedin.com/in/{email_name.replace('.', '')}", "icon": "fa-linkedin"}
-        ]
+        "interests": ["Technology", "Travel", "Reading", "Photography"],
+        "social": {
+            "github": f"https://github.com/{email_name.split('.')[0]}",
+            "linkedin": f"https://linkedin.com/in/{email_name.replace('.', '')}"
+        }
     }
