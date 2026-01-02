@@ -7,7 +7,7 @@ import asyncio
 import os
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 import httpx
 from dotenv import load_dotenv
 
@@ -254,33 +254,25 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
     ethnicity_term = ethnicity if ethnicity != "any" else "mixed heritage"
     age_val = age_range.split('-')[0] if '-' in age_range else age_range
     
-    # Try to load from template file
-    try:
-        template_path = BACKEND_DIR / "prompts" / "image_prompt_template.txt"
-        if template_path.exists():
-            print(f"DEBUG: Loading external Image template from {template_path}")
-            with open(template_path, "r", encoding="utf-8") as f:
-                template = f.read()
-                
-            # Replace placeholders
-            prompt = template.replace("{{gender_term}}", gender_term)
-            prompt = prompt.replace("{{age}}", str(age_val))
-            prompt = prompt.replace("{{ethnicity}}", ethnicity_term)
-            prompt = prompt.replace("{{role_context}}", "Corporate professional") # Placeholder for now
-            prompt = prompt.replace("{{style_modifiers}}", "high quality, 8k")
-            return prompt
-    except Exception as e:
-        print(f"WARNING: Could not load image prompt template: {e}")
+    # Load from template file - CRITICAL: FAIL FAST
+    template_path = BACKEND_DIR / "prompts" / "image_prompt_template.txt"
+    
+    if not template_path.exists():
+        error_msg = f"CRITICAL ERROR: Image details template not found at {template_path}"
+        print(error_msg)
+        raise FileNotFoundError(error_msg)
 
-    # Fallback to hardcoded
-    return (
-        f"Professional corporate headshot portrait of a {gender_term}, "
-        f"{age_val} years old, {ethnicity_term}, "
-        f"business attire, neutral gray studio background, high quality photography, "
-        f"LinkedIn profile photo style, soft studio lighting, sharp focus, "
-        f"confident friendly expression, looking at camera, "
-        f"4k, highly detailed, photorealistic"
-    )
+    print(f"DEBUG: Loading external Image template from {template_path}")
+    with open(template_path, "r", encoding="utf-8") as f:
+        template = f.read()
+        
+    # Replace placeholders
+    prompt = template.replace("{{gender_term}}", gender_term)
+    prompt = prompt.replace("{{age}}", str(age_val))
+    prompt = prompt.replace("{{ethnicity}}", ethnicity_term)
+    prompt = prompt.replace("{{role_context}}", "Corporate professional") # Placeholder for now
+    prompt = prompt.replace("{{style_modifiers}}", "high quality, 8k")
+    return prompt
 
 
 def get_available_models() -> list[dict]:
@@ -298,12 +290,11 @@ async def generate_avatar(
     gender: str = "any",
     ethnicity: str = "any",
     age_range: str = "25-45",
-    origin: str = "any",
+    origin: str = "United States",
     model: Optional[str] = None,
     filename: Optional[str] = None
-) -> str:
-    """
-    Generate an avatar image using Krea API.
+) -> Tuple[str, str]:
+    """Generate profile avatar using Krea API.
     
     Args:
         gender: "male", "female", or "any"
@@ -435,7 +426,7 @@ async def generate_avatar(
                                     f.write(img_response.content)
                                 
                                 print(f"SUCCESS: Avatar generated with {model_id}: {filename}")
-                                return str(filepath)
+                                return str(filepath), prompt
                     else:
                         error_msg = f"Krea job failed: {status}"
                         print(f"ERROR: {error_msg}")

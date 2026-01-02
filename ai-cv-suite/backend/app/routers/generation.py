@@ -97,51 +97,17 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # --- SUBTASK 1: Drafting Prompts ---
+        # --- SUBTASK 1: Initialization ---
         task.current_subtask_index = 0
         task.subtasks[0].status = TaskStatus.RUNNING
-        task.subtasks[0].message = "Generating and saving prompt artifacts..."
+        task.subtasks[0].message = "Initializing AI pipeline..."
         await task_manager._save_batches()
         
-        # Safe age extraction (moved up for prompt gen)
+        # Safe age extraction
         try:
             age = int(task.age_range.split('-')[0]) if '-' in task.age_range else int(task.age_range)
         except:
             age = 30
-
-        try:
-            # Generate Real Prompts
-            cv_prompt = create_user_prompt(
-                role=task.role,
-                expertise=task.expertise,
-                age=age,
-                gender=task.gender,
-                ethnicity=task.ethnicity,
-                origin=task.origin,
-                remote=task.remote
-            )
-            
-            img_prompt = get_avatar_prompt(
-                gender=task.gender,
-                ethnicity=task.ethnicity,
-                age_range=task.age_range
-            )
-            
-            # Save prompts to organized prompts/ folder
-            # Save prompts to organized prompts/ folder with ID-first naming
-            p_cv_path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
-            p_img_path = PROMPTS_DIR / f"{task.id}_image_prompt.txt"
-            
-            with open(p_cv_path, "w", encoding="utf-8") as f:
-                f.write(cv_prompt)
-            with open(p_img_path, "w", encoding="utf-8") as f:
-                f.write(img_prompt)
-
-            task.subtasks[0].message = "Prompts exported to output folder"
-            await task_manager._save_batches()
-            await asyncio.sleep(1) 
-            
-        except Exception as e:
-            print(f"Warning saving prompts: {e}")
         
         task.subtasks[0].status = TaskStatus.COMPLETE
         task.subtasks[0].progress = 100
@@ -153,9 +119,8 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         task.subtasks[1].message = f"Generating premium content ({llm_model or 'Auto'})..."
         await task_manager._save_batches()
 
-        # Age already extracted above
-
-        cv_data = await generate_cv_content(
+        # Generate CV Content and Capture Prompt
+        cv_data, used_cv_prompt = await generate_cv_content(
             role=task.role,
             expertise=task.expertise,
             age=age,
@@ -167,6 +132,14 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         )
         task.cv_data = cv_data
         
+        # Save REAL CV Prompt used
+        try:
+            p_cv_path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
+            with open(p_cv_path, "w", encoding="utf-8") as f:
+                f.write(used_cv_prompt)
+        except Exception as e:
+            print(f"Warning saving CV prompt: {e}")
+        
         task.subtasks[1].status = TaskStatus.COMPLETE
         task.subtasks[1].progress = 100
         task.progress = 40
@@ -177,16 +150,16 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         task.subtasks[2].message = "Designing professional avatar..."
         await task_manager._save_batches()
 
-        # Resolve gender coherence: Use LLM generated gender if available (e.g. for "Any")
+        # Resolve gender coherence: Use LLM generated gender if available
         effective_gender = task.gender
         if cv_data and isinstance(cv_data, dict):
-            # Try meta field
             meta_gender = cv_data.get("meta", {}).get("generated_gender")
             if meta_gender:
                 effective_gender = meta_gender
-                print(f"DEBUG: Using gender from LLM meta: {effective_gender}")
+                print(f"DEBUG: Using gender from LLM meta for Image Gen: {effective_gender}")
 
-        image_path = await generate_avatar(
+        # Generate Avatar and Capture Prompt
+        image_path, used_img_prompt = await generate_avatar(
             gender=effective_gender,
             ethnicity=task.ethnicity,
             age_range=task.age_range,
@@ -195,6 +168,14 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
             filename=f"{task.id}_avatar.jpg"
         )
         task.image_path = image_path
+        
+        # Save REAL Image Prompt used
+        try:
+            p_img_path = PROMPTS_DIR / f"{task.id}_image_prompt.txt"
+            with open(p_img_path, "w", encoding="utf-8") as f:
+                f.write(used_img_prompt)
+        except Exception as e:
+            print(f"Warning saving Image prompt: {e}")
         
         task.subtasks[2].status = TaskStatus.COMPLETE
         task.subtasks[2].progress = 100

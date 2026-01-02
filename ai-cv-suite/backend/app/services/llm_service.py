@@ -6,7 +6,7 @@ Enhanced with detailed prompts for comprehensive CVs
 import os
 import json
 import random
-from typing import Optional
+from typing import Optional, Tuple
 import httpx
 from dotenv import load_dotenv
 from pathlib import Path
@@ -103,6 +103,7 @@ RANDOM_TECH_ROLES = [
 
 def normalize_cv_data(cv_data: dict) -> dict:
     """Ensure consistency of CV data keys for HTML template."""
+    print(f"DEBUG NORMALIZE: Input CV keys: {list(cv_data.keys())}")
     
     # 1. Normalize Experience
     # Handle common aliases
@@ -112,6 +113,8 @@ def normalize_cv_data(cv_data: dict) -> dict:
         cv_data["experience"] = cv_data.pop("work_experience")
         
     # Ensure items fit HTML template (title, company, date_range, description, achievements)
+    normalized_exp = []
+    
     for exp in cv_data.get("experience", []):
         if "role" in exp and "title" not in exp:
             exp["title"] = exp.pop("role")
@@ -125,7 +128,22 @@ def normalize_cv_data(cv_data: dict) -> dict:
                 exp["description"] = "Key responsibilities and achievements:"
             elif "description" in exp:
                  # Ensure we have an achievements list even if empty for HTML check
-                 pass 
+                 pass
+        
+        normalized_exp.append(exp)
+        
+    cv_data["experience"] = normalized_exp
+    
+    # CRITICAL FALLBACK: If experience empty, inject dummy to prove HTML works
+    if not cv_data.get("experience"):
+        print("CRITICAL WARNING: No experience found after normalization. Injecting dummy data.")
+        cv_data["experience"] = [{
+            "title": "Senior Developer (Generated)",
+            "company": "Tech Corp",
+            "date_range": "2020 - Present",
+            "description": "Experience data was missing from LLM response. Showing placeholder.",
+            "achievements": ["Successfully integrated AI systems.", "Optimized backend performance."]
+        }]
 
     # 2. Normalize Skills - Critical for HTML bar charts
     # We need skills.technical list [{"name": "X", "level": N}]
@@ -238,45 +256,29 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
     if role.lower() == "any":
         role_instruction = "Role: CHOOSE A RANDOM HIGH-DEMAND TECH ROLE"
 
-    # 2. Try loading from external template
-    try:
-        template_path = BACKEND_DIR / "prompts" / "cv_prompt_template.txt"
-        if template_path.exists():
-            print(f"DEBUG: Loading external CV template from {template_path}")
-            with open(template_path, "r", encoding="utf-8") as f:
-                template_str = f.read()
-            
-            # Render Jinja2 template
-            return Template(template_str).render(
-                role=role if role.lower() != "any" else "High Demand Tech Role (Choose one)",
-                expertise=expertise,
-                age=age,
-                gender=gender,
-                ethnicity=ethnicity,
-                origin=origin,
-                remote="Preferred" if remote else "Flexible",
-                name="" # Let AI generate it
-            )
-    except Exception as e:
-        print(f"WARNING: Could not load/render CV template: {e}")
-
-    # 3. Fallback (Legacy prompt if file missing)
-    return f"""Generate a COMPLETE, REALISTIC CV (JSON format) for:
+    # 2. Load from external template - CRITICAL: FAIL FAST IF MISSING
+    template_path = BACKEND_DIR / "prompts" / "cv_prompt_template.txt"
     
-    Profile:
-    - {role_instruction}
-    - Level: {expertise}
-    - Age: {age}
-    - Gender: {gender}
-    - Ethnicity: {ethnicity}
-    - Location: {origin}
+    if not template_path.exists():
+        error_msg = f"CRITICAL ERROR: CV Template file not found at {template_path}"
+        print(error_msg)
+        raise FileNotFoundError(error_msg)
+        
+    print(f"DEBUG: Loading external CV template from {template_path}")
+    with open(template_path, "r", encoding="utf-8") as f:
+        template_str = f.read()
     
-    Requirements:
-    - JSON Output ONLY.
-    - Realistic name matching gender/ethnicity.
-    - 5-7 bullet points per job with metrics.
-    - Technical skills arrays.
-    """
+    # Render Jinja2 template
+    return Template(template_str).render(
+        role=role if role.lower() != "any" else "High Demand Tech Role (Choose one)",
+        expertise=expertise,
+        age=age,
+        gender=gender,
+        ethnicity=ethnicity,
+        origin=origin,
+        remote="Preferred" if remote else "Flexible",
+        name=name if name else "" 
+    )
 
 
 def get_available_models() -> list[dict]:
@@ -299,9 +301,10 @@ async def generate_cv_content(
     origin: str = "United States",
     remote: bool = False,
     model: Optional[str] = None
-) -> dict:
+) -> Tuple[dict, str]:
     """
     Generate detailed CV content using OpenRouter with enhanced prompts.
+    Returns: (cv_data, used_prompt)
     """
     # CRITICAL: Resolve "any" to a real role FIRST
     role = resolve_role(role)
@@ -418,7 +421,7 @@ async def generate_cv_content(
                         # Ensure data structure safety and HTML compatibility
                         cv_data = normalize_cv_data(cv_data)
                         print(f"SUCCESS: CV content generated with {model_id}")
-                        return cv_data
+                        return cv_data, user_prompt
                     except json.JSONDecodeError as e:
                         print(f"JSON Parse Error: {e}")
                         # Safe print for raw content
