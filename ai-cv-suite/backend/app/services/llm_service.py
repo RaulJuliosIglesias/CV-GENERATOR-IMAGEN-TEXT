@@ -246,11 +246,6 @@ Instructions:
 
 def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool, name: Optional[str] = None) -> str:
     """Create detailed user prompt based on profile using external template."""
-    import random
-    from jinja2 import Template
-    from typing import Optional
-    from backend.config import BACKEND_DIR
-    
     # 1. Resolve logical variables
     role_instruction = f"Role: {role}"
     if role.lower() == "any":
