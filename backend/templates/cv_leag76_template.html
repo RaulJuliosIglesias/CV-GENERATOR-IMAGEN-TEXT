@@ -549,20 +549,45 @@
 
         /* --- PRINT / PDF OPTIMIZATIONS --- */
         @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
             .bd-container {
                 max-width: 100%;
                 width: 100%;
+                margin: 0;
+            }
+
+            .resume {
+                display: grid;
+                grid-template-columns: .4fr 1fr;
+                box-shadow: none;
+                page-break-after: avoid;
+            }
+
+            .resume_left,
+            .resume_right {
+                padding: 0.5rem 1rem;
             }
 
             .section {
+                padding: 0.75rem 0;
                 page-break-inside: avoid;
+            }
+
+            .section-title {
+                margin-bottom: 0.5rem;
             }
 
             .experience_content,
             .education_content,
             .certificate_content {
                 page-break-inside: avoid;
-                margin-bottom: 1rem;
+                margin-bottom: 0.75rem;
             }
 
             .resume_right {
@@ -573,6 +598,19 @@
             h2,
             h3 {
                 page-break-after: avoid;
+            }
+
+            /* Hide interactive elements */
+            .l-header,
+            .change-theme,
+            .generate-pdf {
+                display: none !important;
+            }
+
+            /* Force print styles */
+            @page {
+                size: A4;
+                margin: 10mm 8mm;
             }
         }
     </style>
@@ -815,26 +853,31 @@
                 const body = document.body
                 const wasDark = body.classList.contains(darkTheme)
 
-                // 1. Force Light Mode
+                // 1. Force Light Mode for printing
                 if (wasDark) {
                     body.classList.remove(darkTheme)
                     themeButton.classList.remove(iconTheme)
                     themeButton.classList.add('fa-moon')
                 }
 
-                // 2. Scale and Generate
+                // 2. Add scale class for PDF sizing
                 addScaleCV()
-                generateResume()
 
-                // 3. Revert after delay
+                // 3. Use native print dialog instead of html2pdf for SELECTABLE TEXT
+                // This preserves text as vectors, not images
                 setTimeout(() => {
-                    removeScaleCV()
-                    if (wasDark) {
-                        body.classList.add(darkTheme)
-                        themeButton.classList.add(iconTheme)
-                        themeButton.classList.remove('fa-moon')
-                    }
-                }, 2000)
+                    window.print() // Opens Print dialog, user can save as PDF
+
+                    // 4. Revert classes after print dialog
+                    setTimeout(() => {
+                        removeScaleCV()
+                        if (wasDark) {
+                            body.classList.add(darkTheme)
+                            themeButton.classList.add(iconTheme)
+                            themeButton.classList.remove('fa-moon')
+                        }
+                    }, 500)
+                }, 100) // Short delay to apply scale-cv class
             })
         }
     </script>

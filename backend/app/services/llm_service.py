@@ -54,8 +54,8 @@ def fetch_openrouter_models() -> dict:
                 "cost": "Varies"
             }
             
-            # Add top models from API response
-            for model in data.get("data", [])[:50]:  # Limit to top 50
+            # Add ALL models from API response (removed limit)
+            for model in data.get("data", []):
                 model_id = model.get("id", "")
                 if model_id and model_id not in models:
                     pricing = model.get("pricing", {})

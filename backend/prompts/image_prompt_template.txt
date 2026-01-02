@@ -1,11 +1,29 @@
-Professional corporate headshot portrait of a {{gender_term}}, {{age}} years old, {{ethnicity}} heritage.
+Unretouched corporate headshot photo of a {{gender_term}}, age {{age}}, {{ethnicity}} heritage.
 {{role_context}}
 {{style_modifiers}}
-Wardrobe: tailored business attire (blazer/jacket), subtle neutral colors, no loud patterns.
-Background: seamless neutral studio backdrop (light gray or off-white), minimal and distraction-free.
-Lighting: soft key + gentle fill, cinematic yet natural skin tones, clean catchlights in both eyes.
-Camera: 85mm portrait lens look, f/1.8 shallow depth of field, sharp focus on eyes, high dynamic range.
-Pose/expression: confident, approachable, friendly professional expression, relaxed shoulders, natural posture.
-Output: photorealistic, ultra-detailed skin texture, realistic hair detail, 4k.
 
-Negative prompt: cartoon, illustration, drawing, anime, CGI, 3d render, plastic skin, waxy skin, oversmoothed, overprocessed, lowres, jpeg artifacts, blur, out of focus, motion blur, noise, grain, harsh shadows, overexposed, underexposed, incorrect anatomy, asymmetrical face, deformed hands, extra fingers, missing fingers, distorted eyes, cross-eye, lazy eye, bad teeth, open mouth, unnatural smile, watermark, text, logo, frame, cropped head, cut-off shoulders.
+IMPORTANT: depict a clearly different individual than previous generations; vary hairstyle, grooming/makeup, skin tone, facial proportions, and accessories. Avoid “default model” look.
+
+Identity / features (must vary):
+- Face: {{face_shape}}; {{distinct_feature_1}}; {{distinct_feature_2}}
+- Skin: {{skin_tone}} with {{skin_detail}} (natural pores, no beauty retouch)
+- Hair: {{hair_length}} {{hair_texture}} hair, {{hair_color}}, {{hair_style}}, {{hairline_detail}}
+- Grooming / makeup: {{grooming_makeup_style}} (natural, not glam)
+
+Wardrobe (vary within corporate):
+{{outfit}}; {{shirt_or_blouse}}; {{optional_tie_or_accessory}}
+
+Accessories (optional, vary):
+{{glasses_or_none}}, {{jewelry_or_none}}
+
+Photography:
+head-and-shoulders, centered, natural posture, closed-mouth slight smile or neutral-professional.
+soft studio key + gentle fill, realistic catchlights in both eyes.
+neutral seamless backdrop {{background_tone}}.
+true-to-life color, accurate white balance.
+85mm portrait lens look (or {{focal_length_variant}}), shallow depth of field, sharp focus on eyes.
+photorealistic, high detail.
+
+
+Negative prompt: cartoon, illustration, anime, CGI, 3d render, plastic skin, waxy skin, airbrushed, over-smoothed,
+blur, out of focus, lowres, jpeg artifacts, watermark, text, logo, distorted eyes, asymmetrical face

@@ -175,8 +175,10 @@ function TaskCard({ task }) {
 }
 
 export default function ProgressTracker() {
-    const { tasks, isGenerating, currentBatch } = useGenerationStore();
+    const { allTasks, isGenerating, activeBatchIds } = useGenerationStore();
 
+    // Use allTasks for aggregated view
+    const tasks = allTasks;
     const completedCount = tasks.filter((t) => t.status === 'complete').length;
     const totalCount = tasks.length;
     const overallProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -205,7 +207,7 @@ export default function ProgressTracker() {
                     <div>
                         <h2 className="text-xl font-bold text-foreground">Generation Progress</h2>
                         <p className="text-sm text-muted-foreground">
-                            Batch #{currentBatch} • {completedCount} of {totalCount} complete
+                            {activeBatchIds.length} Active Batch(es) • {completedCount} of {totalCount} complete
                         </p>
                     </div>
                     <div className="text-right">
