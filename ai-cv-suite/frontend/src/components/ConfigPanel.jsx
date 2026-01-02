@@ -1,4 +1,5 @@
-import { Sparkles, Users, Globe, Briefcase, Zap } from 'lucide-react';
+import { useEffect } from 'react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
@@ -23,14 +24,34 @@ const ETHNICITY_OPTIONS = [
 ];
 
 export default function ConfigPanel() {
-    const { config, setConfig, startGeneration, isGenerating } = useGenerationStore();
+    const {
+        config,
+        setConfig,
+        startGeneration,
+        isGenerating,
+        llmModels,
+        imageModels,
+        modelsLoaded,
+        loadModels
+    } = useGenerationStore();
+
+    // Load models on mount
+    useEffect(() => {
+        if (!modelsLoaded) {
+            loadModels();
+        }
+    }, [modelsLoaded, loadModels]);
 
     const handleGenerate = () => {
         startGeneration();
     };
 
+    // Get selected model info for display
+    const selectedLlmModel = llmModels.find(m => m.id === config.llm_model);
+    const selectedImageModel = imageModels.find(m => m.id === config.image_model);
+
     return (
-        <aside className="w-80 h-screen bg-card/50 backdrop-blur-xl border-r border-border/50 flex flex-col">
+        <aside className="w-96 h-screen bg-card/50 backdrop-blur-xl border-r border-border/50 flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-border/50">
                 <div className="flex items-center gap-3 mb-2">
@@ -45,7 +66,7 @@ export default function ConfigPanel() {
             </div>
 
             {/* Configuration Form */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 {/* Quantity Slider */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -66,6 +87,11 @@ export default function ConfigPanel() {
                         <span>1</span>
                         <span>20</span>
                     </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-border/50 pt-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">CV Configuration</p>
                 </div>
 
                 {/* Gender Select */}
@@ -132,6 +158,76 @@ export default function ConfigPanel() {
                         onChange={(e) => setConfig('role', e.target.value)}
                         placeholder="e.g., Software Developer, DevOps Engineer"
                     />
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-border/50 pt-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">AI Models</p>
+                </div>
+
+                {/* LLM Model Select */}
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                        <Cpu className="w-4 h-4 text-purple-400" />
+                        Text Model (LLM)
+                    </Label>
+                    <Select
+                        value={config.llm_model || ''}
+                        onValueChange={(value) => setConfig('llm_model', value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select LLM model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {llmModels.map((model) => (
+                                <SelectItem key={model.id} value={model.id}>
+                                    <div className="flex flex-col">
+                                        <span>{model.name}</span>
+                                        <span className="text-xs text-muted-foreground">{model.cost}</span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {selectedLlmModel && (
+                        <p className="text-xs text-muted-foreground">{selectedLlmModel.description}</p>
+                    )}
+                </div>
+
+                {/* Image Model Select */}
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                        <Image className="w-4 h-4 text-cyan-400" />
+                        Image Model (Krea)
+                    </Label>
+                    <Select
+                        value={config.image_model || ''}
+                        onValueChange={(value) => setConfig('image_model', value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select image model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {imageModels.map((model) => (
+                                <SelectItem key={model.id} value={model.id}>
+                                    <div className="flex items-center justify-between w-full gap-4">
+                                        <span>{model.name}</span>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Clock className="w-3 h-3" />
+                                            <span>{model.time}</span>
+                                            <Coins className="w-3 h-3 ml-1" />
+                                            <span>{model.compute_units}</span>
+                                        </div>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {selectedImageModel && (
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>{selectedImageModel.description}</span>
+                        </div>
+                    )}
                 </div>
             </div>
 

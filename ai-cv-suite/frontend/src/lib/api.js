@@ -10,6 +10,11 @@ const api = axios.create({
 });
 
 // API functions
+export const getModels = async () => {
+    const response = await api.get('/api/models');
+    return response.data;
+};
+
 export const generateBatch = async (params) => {
     const response = await api.post('/api/generate', params);
     return response.data;

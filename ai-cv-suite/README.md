@@ -2,13 +2,21 @@
 
 A full-stack web application for generating batches of realistic PDF résumés with AI-powered content and image generation.
 
+## 🔒 Security Notice
+
+**API keys are NEVER committed to git!**
+- `.env` files are excluded via `.gitignore`
+- Only `.env.example` (with placeholder values) is committed
+- Copy `.env.example` to `.env` and add your real API keys
+
 ## Features
 
-- 🤖 **AI Content Generation** - Uses OpenAI GPT-4 or Google Gemini to generate realistic CV content
-- 🖼️ **Avatar Generation** - Mock image service (ready for Nano Banana API integration)
+- 🤖 **AI Content Generation** - Uses OpenRouter with 10+ LLM models (Gemini, Claude, GPT-4, Llama, etc.)
+- 🖼️ **AI Avatar Generation** - Uses Krea API with 15+ image models (Flux, Imagen 4, Seedream, etc.)
 - 📄 **PDF Rendering** - Professional CVs using WeasyPrint + Jinja2 templates
 - ⚡ **Batch Processing** - Generate multiple CVs simultaneously
 - 📊 **Live Progress** - Real-time status tracking with visual indicators
+- 🎛️ **Model Selection** - Choose your preferred AI models with cost/speed info
 - 📁 **File Management** - Browse, open, and manage generated PDFs
 
 ## Tech Stack
@@ -17,8 +25,9 @@ A full-stack web application for generating batches of realistic PDF résumés w
 - **FastAPI** - Modern Python web framework
 - **WeasyPrint** - HTML/CSS to PDF conversion
 - **Jinja2** - Template engine
-- **OpenAI/Gemini** - AI content generation
-- **Pillow** - Image processing
+- **OpenRouter** - Multi-provider LLM API
+- **Krea AI** - Image generation API
+- **Pillow** - Image processing (fallback)
 
 ### Frontend
 - **React 18** - UI framework
@@ -49,9 +58,9 @@ venv\Scripts\activate  # Windows
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
+# Configure environment (IMPORTANT!)
 copy .env.example .env
-# Edit .env with your API keys
+# Edit .env and add your REAL API keys
 
 # Run server
 uvicorn app.main:app --reload
@@ -77,28 +86,48 @@ npm run dev
 
 ## Configuration
 
-Edit `backend/.env`:
+Edit `backend/.env` (create from `.env.example`):
 
 ```env
-# Choose LLM provider: "openai" or "gemini"
-LLM_PROVIDER=openai
+# OpenRouter - Get key from https://openrouter.ai/keys
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
 
-# API Keys (provide one based on LLM_PROVIDER)
-OPENAI_API_KEY=sk-...
-GEMINI_API_KEY=AIza...
+# Krea AI - Get key from https://krea.ai
+KREA_API_KEY=your-krea-key-here
 
-# Image generation (mock mode by default)
-NANO_BANANA_MOCK=true
+# Default models (can be changed in UI)
+DEFAULT_LLM_MODEL=google/gemini-2.0-flash-exp:free
+DEFAULT_IMAGE_MODEL=flux
 ```
+
+## Available Models
+
+### LLM Models (via OpenRouter)
+| Model | Provider | Cost |
+|-------|----------|------|
+| Gemini 2.0 Flash | Google | Free |
+| Claude 3.5 Sonnet | Anthropic | $3/1M |
+| GPT-4 Turbo | OpenAI | $10/1M |
+| Llama 3.1 70B | Meta | $0.40/1M |
+| And more... | | |
+
+### Image Models (via Krea)
+| Model | Speed | Compute |
+|-------|-------|---------|
+| Flux | 5s | 3 units |
+| Z Image | 5s | 2 units |
+| Krea 1 | 8s | 6 units |
+| Imagen 4 Fast | 17s | 16 units |
+| And more... | | |
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/api/models` | List available LLM & image models |
 | POST | `/api/generate` | Start batch generation |
 | GET | `/api/status` | Get current batch status |
 | GET | `/api/files` | List generated PDFs |
-| GET | `/api/files/{filename}` | Download a PDF |
 | POST | `/api/open-folder` | Open output folder in OS |
 | DELETE | `/api/clear` | Clear all generated files |
 
@@ -108,25 +137,26 @@ NANO_BANANA_MOCK=true
 ai-cv-suite/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py           # FastAPI entry point
+│   │   ├── main.py              # FastAPI entry point
 │   │   ├── core/
-│   │   │   ├── pdf_engine.py # Jinja2 + WeasyPrint
+│   │   │   ├── pdf_engine.py    # Jinja2 + WeasyPrint
 │   │   │   └── task_manager.py
 │   │   ├── services/
-│   │   │   ├── llm_service.py
-│   │   │   └── nano_banana.py
+│   │   │   ├── llm_service.py   # OpenRouter integration
+│   │   │   └── krea_service.py  # Krea API integration
 │   │   └── routers/
 │   │       └── generation.py
 │   ├── templates/
 │   │   ├── cv_template.html
 │   │   └── style.css
-│   ├── output/               # Generated PDFs
-│   └── assets/               # Generated images
+│   ├── .env.example             # Template (safe to commit)
+│   ├── .env                     # Real keys (NEVER commit!)
+│   └── output/                  # Generated PDFs
 │
 └── frontend/
     └── src/
         ├── components/
-        │   ├── ConfigPanel.jsx
+        │   ├── ConfigPanel.jsx  # With model selection
         │   ├── ProgressTracker.jsx
         │   └── FileExplorer.jsx
         ├── stores/

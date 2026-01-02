@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { generateBatch, getStatus, getFiles } from '../lib/api';
+import { generateBatch, getStatus, getFiles, getModels } from '../lib/api';
 
 const useGenerationStore = create((set, get) => ({
     // Configuration state
@@ -9,7 +9,14 @@ const useGenerationStore = create((set, get) => ({
         ethnicity: 'any',
         origin: 'Europe',
         role: 'Software Developer',
+        llm_model: null,  // Will be set from defaults
+        image_model: null,  // Will be set from defaults
     },
+
+    // Available models
+    llmModels: [],
+    imageModels: [],
+    modelsLoaded: false,
 
     // Generation state
     isGenerating: false,
@@ -23,6 +30,33 @@ const useGenerationStore = create((set, get) => ({
 
     // Error state
     error: null,
+
+    // Load available models
+    loadModels: async () => {
+        try {
+            const response = await getModels();
+            set({
+                llmModels: response.llm_models || [],
+                imageModels: response.image_models || [],
+                modelsLoaded: true,
+            });
+
+            // Set default models if not already set
+            const { config } = get();
+            if (!config.llm_model && response.llm_models?.length > 0) {
+                set((state) => ({
+                    config: { ...state.config, llm_model: response.llm_models[0].id }
+                }));
+            }
+            if (!config.image_model && response.image_models?.length > 0) {
+                set((state) => ({
+                    config: { ...state.config, image_model: response.image_models[0].id }
+                }));
+            }
+        } catch (error) {
+            console.error('Failed to load models:', error);
+        }
+    },
 
     // Actions
     setConfig: (key, value) => {

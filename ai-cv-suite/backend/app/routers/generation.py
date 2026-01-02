@@ -1,6 +1,6 @@
 """
 Generation Router - API Endpoints for CV Generation
-Handles batch generation, status tracking, and file management
+Handles batch generation, status tracking, model selection, and file management
 """
 
 import os
@@ -16,8 +16,8 @@ from typing import Optional
 
 from ..core.task_manager import task_manager, Task, TaskStatus
 from ..core.pdf_engine import render_cv_pdf
-from ..services.llm_service import generate_cv_content
-from ..services.nano_banana import generate_avatar, get_placeholder_avatar
+from ..services.llm_service import generate_cv_content, get_available_models as get_llm_models
+from ..services.krea_service import generate_avatar, get_available_models as get_image_models
 
 # Get paths
 BACKEND_DIR = Path(__file__).parent.parent.parent
@@ -38,6 +38,8 @@ class GenerationRequest(BaseModel):
     ethnicity: str = Field(default="any")
     origin: str = Field(default="Europe")
     role: str = Field(default="Software Developer")
+    llm_model: Optional[str] = Field(default=None, description="OpenRouter model ID")
+    image_model: Optional[str] = Field(default=None, description="Krea model ID")
 
 
 class GenerationResponse(BaseModel):
@@ -46,14 +48,15 @@ class GenerationResponse(BaseModel):
     total_tasks: int
 
 
-class StatusResponse(BaseModel):
-    batch_id: str
-    total: int
-    completed: int
-    failed: int
-    in_progress: int
-    is_complete: bool
-    tasks: list
+class ModelInfo(BaseModel):
+    id: str
+    name: str
+    description: str
+
+
+class ModelsResponse(BaseModel):
+    llm_models: list[dict]
+    image_models: list[dict]
 
 
 class FileInfo(BaseModel):
@@ -68,33 +71,39 @@ class FilesResponse(BaseModel):
     total: int
 
 
+# Store selected models per batch
+batch_models = {}
+
+
 # Background task for generating a single CV
-async def generate_single_cv(task: Task):
+async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: Optional[str]):
     """Generate a single CV with content and image."""
     try:
         # Step 1: Generate content and image concurrently
         await task_manager.update_task_status(
             task, TaskStatus.GENERATING_CONTENT, 
-            "Generating CV content with AI...", 25
+            f"Generating CV content...", 25
         )
         
         # Run both concurrently
         content_task = generate_cv_content(
             role=task.role,
             origin=task.origin,
-            gender=task.gender
+            gender=task.gender,
+            model=llm_model
         )
         
         await task_manager.update_task_status(
             task, TaskStatus.GENERATING_IMAGE,
-            "Generating avatar image...", 50
+            f"Generating avatar image...", 50
         )
         
         image_task = generate_avatar(
             gender=task.gender,
             ethnicity=task.ethnicity,
             age_range="25-45",
-            origin=task.origin
+            origin=task.origin,
+            model=image_model
         )
         
         # Wait for both to complete
@@ -130,20 +139,29 @@ async def generate_single_cv(task: Task):
 
 
 # Background task for processing a batch
-async def process_batch(batch_id: str):
+async def process_batch(batch_id: str, llm_model: Optional[str], image_model: Optional[str]):
     """Process all tasks in a batch concurrently."""
     batch = task_manager.get_batch(batch_id)
     if not batch:
         return
     
-    # Process all tasks concurrently (with some throttling to avoid overload)
+    # Process all tasks concurrently (with some throttling)
     semaphore = asyncio.Semaphore(3)  # Max 3 concurrent generations
     
     async def process_with_semaphore(task: Task):
         async with semaphore:
-            await generate_single_cv(task)
+            await generate_single_cv(task, llm_model, image_model)
     
     await asyncio.gather(*[process_with_semaphore(t) for t in batch.tasks])
+
+
+@router.get("/models", response_model=ModelsResponse)
+async def get_available_models():
+    """Get all available LLM and image generation models."""
+    return ModelsResponse(
+        llm_models=get_llm_models(),
+        image_models=get_image_models()
+    )
 
 
 @router.post("/generate", response_model=GenerationResponse)
@@ -163,8 +181,19 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
         role=request.role
     )
     
+    # Store model selections for this batch
+    batch_models[batch.id] = {
+        "llm_model": request.llm_model,
+        "image_model": request.image_model
+    }
+    
     # Start background processing
-    background_tasks.add_task(process_batch, batch.id)
+    background_tasks.add_task(
+        process_batch, 
+        batch.id, 
+        request.llm_model, 
+        request.image_model
+    )
     
     return GenerationResponse(
         batch_id=batch.id,
@@ -193,7 +222,13 @@ async def get_status():
             "tasks": []
         })
     
-    return JSONResponse(content=batch.to_dict())
+    result = batch.to_dict()
+    
+    # Add model info if available
+    if batch.id in batch_models:
+        result["models"] = batch_models[batch.id]
+    
+    return JSONResponse(content=result)
 
 
 @router.get("/status/{batch_id}")
@@ -260,8 +295,6 @@ async def delete_file(filename: str):
 async def open_folder():
     """
     Open the output directory in the OS file explorer.
-    
-    Works on Windows, macOS, and Linux.
     """
     folder_path = str(OUTPUT_DIR.absolute())
     
@@ -270,7 +303,7 @@ async def open_folder():
             os.startfile(folder_path)
         elif sys.platform == "darwin":
             subprocess.run(["open", folder_path])
-        else:  # Linux
+        else:
             subprocess.run(["xdg-open", folder_path])
         
         return {"message": "Opened folder", "path": folder_path}
@@ -281,7 +314,6 @@ async def open_folder():
 @router.delete("/clear")
 async def clear_all():
     """Clear all generated files and batches."""
-    # Clear files
     if OUTPUT_DIR.exists():
         for f in OUTPUT_DIR.glob("*.pdf"):
             f.unlink()
@@ -290,8 +322,8 @@ async def clear_all():
         for f in ASSETS_DIR.glob("avatar_*.jpg"):
             f.unlink()
     
-    # Clear batches
     task_manager.clear_batches()
+    batch_models.clear()
     
     return {"message": "Cleared all generated files and batches"}
 
@@ -299,4 +331,9 @@ async def clear_all():
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "openrouter_configured": bool(os.getenv("OPENROUTER_API_KEY")),
+        "krea_configured": bool(os.getenv("KREA_API_KEY"))
+    }
