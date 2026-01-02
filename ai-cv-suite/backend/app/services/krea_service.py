@@ -238,16 +238,24 @@ KREA_MODELS = {
 
 
 def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
-    """Generate the prompt for the avatar."""
-    gender_text = gender if gender != "any" else "professional"
+    """Generate the prompt for the avatar with explicit gender coherence."""
+    # CRITICAL: Explicit gender terms for coherent image generation
+    if gender.lower() == "female":
+        gender_text = "woman, female"
+    elif gender.lower() == "male":
+        gender_text = "man, male"
+    else:
+        gender_text = "professional person"
+    
     ethnicity_text = f"{ethnicity} " if ethnicity != "any" else ""
     
     return (
-        f"Professional corporate headshot portrait of a {age_range} year old "
-        f"{gender_text} {ethnicity_text}person, "
-        f"business attire, neutral studio background, high quality photography, "
-        f"LinkedIn profile photo style, well-lit, sharp focus, friendly expression, "
-        f"4k, highly detailed"
+        f"Professional corporate headshot portrait of a {gender_text}, "
+        f"{age_range} years old, {ethnicity_text}"
+        f"business attire, neutral gray studio background, high quality photography, "
+        f"LinkedIn profile photo style, soft studio lighting, sharp focus, "
+        f"confident friendly expression, looking at camera, "
+        f"4k, highly detailed, photorealistic"
     )
 
 
@@ -295,11 +303,28 @@ async def generate_avatar(
     # Use provided model or default - map old names to new API paths
     model_input = model or os.getenv("DEFAULT_IMAGE_MODEL", "bfl/flux-1-dev")
     
-    # Map simple names to API paths
+    # Map simple names to correct API paths (per Krea docs)
     MODEL_PATH_MAP = {
         "flux": "bfl/flux-1-dev",
+        "bfl/flux-1-dev": "bfl/flux-1-dev",
         "krea-1": "krea-1",
-        "bfl/flux-1-dev": "bfl/flux-1-dev"
+        "flux-1-krea": "flux-1-krea", 
+        "z-image": "alibaba/z-image",
+        "seedream-3": "bytedance/seedream-3",
+        "seedream-4": "bytedance/seedream-4",
+        "seedream-4.5": "bytedance/seedream-4.5",
+        "imagen-4-fast": "google/imagen-4-fast",
+        "imagen-4": "google/imagen-4",
+        "imagen-4-ultra": "google/imagen-4-ultra",
+        "flux-2": "bfl/flux-2-dev",
+        "flux-2-pro": "bfl/flux-2-pro",
+        "qwen": "alibaba/qwen-vl",
+        "ideogram-3": "ideogram/ideogram-3",
+        "kling-01": "kuaishou/kling-01",
+        "runway-gen-4": "runway/gen-4",
+        "flux-1.1-pro": "bfl/flux-1.1-pro",
+        "flux-1.1-pro-ultra": "bfl/flux-1.1-pro-ultra",
+        "nano-banana-pro": "google/nano-banana-pro"
     }
     model_id = MODEL_PATH_MAP.get(model_input, model_input)
     
