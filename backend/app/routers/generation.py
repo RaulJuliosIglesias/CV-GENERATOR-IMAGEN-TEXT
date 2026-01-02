@@ -52,7 +52,11 @@ class GenerationRequest(BaseModel):
     age_max: int = Field(ge=18, le=70, default=35, description="Maximum age")
     expertise_levels: list[str] = Field(default=["mid"], description="junior, mid, senior, expert")
     remote: bool = Field(default=False, description="Include remote work preference")
-    llm_model: Optional[str] = Field(default=None, description="OpenRouter model ID")
+    # New separate models
+    profile_model: Optional[str] = Field(default=None, description="LLM for Profile Generation")
+    cv_model: Optional[str] = Field(default=None, description="LLM for CV Content")
+    # Legacy fallback
+    llm_model: Optional[str] = Field(default=None, description="Fallback LLM model")
     image_model: Optional[str] = Field(default=None, description="Krea model ID")
 
 
@@ -84,12 +88,11 @@ class FilesResponse(BaseModel):
     files: list[FileInfo]
     total: int
 
-
 # Store selected models per batch
 batch_models = {}
 
 
-async def process_batch(batch_id: str, llm_model: Optional[str], image_model: Optional[str]):
+async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str]):
     """Execute the sequential 4-Phase Generation Pipeline."""
     batch = task_manager.get_batch(batch_id)
     if not batch: return
@@ -117,7 +120,7 @@ async def process_batch(batch_id: str, llm_model: Optional[str], image_model: Op
                     ethnicity=task.ethnicity,
                     origin=task.origin,
                     age_range=task.age_range,
-                    model=llm_model
+                    model=profile_model
                 )
                 
                 # Save Profile Data to Task
@@ -169,7 +172,7 @@ async def process_batch(batch_id: str, llm_model: Optional[str], image_model: Op
                     ethnicity=p.get('ethnicity', task.ethnicity),
                     origin=p.get('origin', task.origin),
                     remote=task.remote,
-                    model=llm_model,
+                    model=cv_model,
                     name=p.get('name'), # Pass name explicitly
                     profile_data=p # Pass full profile mainly for consistency 
                 )
@@ -314,7 +317,8 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
     
     # Store model selections
     batch_models[batch.id] = {
-        "llm_model": request.llm_model,
+        "profile_model": request.profile_model or request.llm_model,
+        "cv_model": request.cv_model or request.llm_model,
         "image_model": request.image_model
     }
     
@@ -322,7 +326,8 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
     background_tasks.add_task(
         process_batch, 
         batch.id, 
-        request.llm_model, 
+        request.profile_model or request.llm_model, # Phase 1
+        request.cv_model or request.llm_model,      # Phase 2
         request.image_model
     )
     

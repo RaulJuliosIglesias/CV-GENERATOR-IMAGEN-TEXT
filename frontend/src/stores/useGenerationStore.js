@@ -13,8 +13,11 @@ const useGenerationStore = create((set, get) => ({
         age_max: 35,
         expertise_levels: ['any'],  // Changed to 'any' for quick testing
         remote: false,
-        llm_model: null,
+        profile_model: null, // New: Phase 1
+        cv_model: null,      // New: Phase 2
+        llm_model: null,     // Legacy/Fallback
         image_model: null,
+        llmSort: 'default',   // default, price_asc, price_desc
     },
 
     // Available models
@@ -47,9 +50,15 @@ const useGenerationStore = create((set, get) => ({
 
             // Set default models if not already set
             const { config } = get();
-            if (!config.llm_model && response.llm_models?.length > 0) {
+            if (response.llm_models?.length > 0) {
+                const defaultModel = response.llm_models[0].id;
                 set((state) => ({
-                    config: { ...state.config, llm_model: response.llm_models[0].id }
+                    config: {
+                        ...state.config,
+                        llm_model: state.config.llm_model || defaultModel,
+                        profile_model: state.config.profile_model || defaultModel,
+                        cv_model: state.config.cv_model || defaultModel
+                    }
                 }));
             }
             if (!config.image_model && response.image_models?.length > 0) {
