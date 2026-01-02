@@ -20,18 +20,19 @@ print(f"DEBUG KREA: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})"
 ASSETS_DIR = BACKEND_DIR / "assets"
 ASSETS_DIR.mkdir(exist_ok=True)
 
-# Krea API Configuration - Updated endpoint format
-KREA_API_BASE = "https://api.krea.ai/generate/image"
+# Krea API Configuration - Per official docs (Jan 2026)
+KREA_API_BASE = "https://api.krea.ai"
+KREA_JOBS_URL = "https://api.krea.ai/jobs"
 
-# Available models with their properties
+# Available models with their properties - Using correct API path format
 KREA_MODELS = {
-    "flux": {
+    "bfl/flux-1-dev": {
         "name": "Flux",
-        "description": "Fastest and cheapest model",
+        "description": "Fastest and cheapest model (~5s)",
         "images": 4,
         "time": "5s",
         "compute_units": 3,
-        "model_id": "flux"
+        "model_id": "bfl/flux-1-dev"
     },
     "krea-1": {
         "name": "Krea 1",
@@ -291,18 +292,28 @@ async def generate_avatar(
         print(error_msg)
         raise ValueError(error_msg)
     
-    # Use provided model or default
-    model_id = model or os.getenv("DEFAULT_IMAGE_MODEL", "flux")
+    # Use provided model or default - map old names to new API paths
+    model_input = model or os.getenv("DEFAULT_IMAGE_MODEL", "bfl/flux-1-dev")
+    
+    # Map simple names to API paths
+    MODEL_PATH_MAP = {
+        "flux": "bfl/flux-1-dev",
+        "krea-1": "krea-1",
+        "bfl/flux-1-dev": "bfl/flux-1-dev"
+    }
+    model_id = MODEL_PATH_MAP.get(model_input, model_input)
+    
     print(f"DEBUG KREA: Using model: {model_id}")
     
     prompt = get_avatar_prompt(gender, ethnicity, age_range)
     
     try:
-        # Construct model-specific URL
-        api_url = f"{KREA_API_BASE}/{model_id}"
+        # Construct API URL per Krea docs
+        api_url = f"{KREA_API_BASE}/generate/image/{model_id}"
         print(f"DEBUG KREA: Calling {api_url}")
         
         async with httpx.AsyncClient(timeout=120.0) as client:
+            # Step 1: Create generation job
             response = await client.post(
                 api_url,
                 headers={
@@ -311,49 +322,73 @@ async def generate_avatar(
                 },
                 json={
                     "prompt": prompt,
-                    "scale": 1.0,
-                    "steps": 30
+                    "width": 512,
+                    "height": 512,
+                    "steps": 25
                 }
             )
-
-
-
             
-            if response.status_code == 200:
-                result = response.json()
-                
-                # Get the image URL from response
-                if "data" in result and len(result["data"]) > 0:
-                    image_data = result["data"][0]
-                    image_url = image_data.get("url") or image_data.get("image_url")
-                    
-                    if image_url:
-                        # Download and save the image
-                        img_response = await client.get(image_url)
-                        if img_response.status_code == 200:
-                            filename = f"avatar_{uuid.uuid4().hex[:8]}.jpg"
-                            filepath = ASSETS_DIR / filename
-                            
-                            with open(filepath, 'wb') as f:
-                                f.write(img_response.content)
-                            
-                            print(f"SUCCESS: Avatar generated with {model_id}: {filename}")
-                            return str(filepath)
-                
-                # If we got here, try to extract image differently (Krea API variations)
-                if "image" in result:
-                    # Base64 encoded image
-                    import base64
-                    image_data = base64.b64decode(result["image"])
-                    filename = f"avatar_{uuid.uuid4().hex[:8]}.jpg"
-                    filepath = ASSETS_DIR / filename
-                    
-                    with open(filepath, 'wb') as f:
-                        f.write(image_data)
-                    
-                    return str(filepath)
+            print(f"DEBUG KREA: Initial response status: {response.status_code}")
+            print(f"DEBUG KREA: Initial response: {response.text[:500]}")
             
-            error_msg = f"Krea API error: {response.status_code} - {response.text[:200]}"
+            if response.status_code != 200:
+                error_msg = f"Krea API error: {response.status_code} - {response.text[:300]}"
+                print(f"ERROR: {error_msg}")
+                raise RuntimeError(error_msg)
+            
+            result = response.json()
+            job_id = result.get("job_id")
+            
+            if not job_id:
+                error_msg = f"Krea API did not return job_id: {result}"
+                print(f"ERROR: {error_msg}")
+                raise RuntimeError(error_msg)
+            
+            print(f"DEBUG KREA: Job created: {job_id}")
+            
+            # Step 2: Poll for completion (max 60 seconds)
+            max_polls = 30
+            for poll_num in range(max_polls):
+                await asyncio.sleep(2)  # Wait 2 seconds between polls
+                
+                job_response = await client.get(
+                    f"{KREA_JOBS_URL}/{job_id}",
+                    headers={"Authorization": f"Bearer {api_key}"}
+                )
+                
+                if job_response.status_code != 200:
+                    print(f"DEBUG KREA: Poll {poll_num+1} - status {job_response.status_code}")
+                    continue
+                
+                job_data = job_response.json()
+                status = job_data.get("status", "")
+                print(f"DEBUG KREA: Poll {poll_num+1} - status: {status}")
+                
+                if job_data.get("completed_at"):
+                    if status == "completed":
+                        # Get image URL from result
+                        urls = job_data.get("result", {}).get("urls", [])
+                        if urls:
+                            image_url = urls[0]
+                            print(f"DEBUG KREA: Image ready: {image_url}")
+                            
+                            # Download and save the image
+                            img_response = await client.get(image_url)
+                            if img_response.status_code == 200:
+                                filename = f"avatar_{uuid.uuid4().hex[:8]}.jpg"
+                                filepath = ASSETS_DIR / filename
+                                
+                                with open(filepath, 'wb') as f:
+                                    f.write(img_response.content)
+                                
+                                print(f"SUCCESS: Avatar generated with {model_id}: {filename}")
+                                return str(filepath)
+                    else:
+                        error_msg = f"Krea job failed: {status}"
+                        print(f"ERROR: {error_msg}")
+                        raise RuntimeError(error_msg)
+            
+            error_msg = "Krea API timeout - job did not complete in 60 seconds"
             print(f"ERROR: {error_msg}")
             raise RuntimeError(error_msg)
             
