@@ -20,7 +20,8 @@ print(f"DEBUG: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})")
 # OpenRouter API Configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Available LLM models - CORRECT OpenRouter IDs (verified Jan 2026)
+# Available LLM models - VERIFIED WORKING OpenRouter IDs (Jan 2026)
+# Source: https://openrouter.ai/docs/api-reference/models
 LLM_MODELS = {
     "openrouter/auto": {
         "name": "Auto (Best Model)",
@@ -29,30 +30,9 @@ LLM_MODELS = {
         "context": "Varies",
         "cost": "Varies"
     },
-    "google/gemini-2.0-flash-exp:free": {
-        "name": "Gemini 2.0 Flash (Free)",
-        "description": "Google's fast, free experimental model",
-        "provider": "Google",
-        "context": "1M tokens",
-        "cost": "Free"
-    },
-    "google/gemini-flash-1.5": {
-        "name": "Gemini Flash 1.5",
-        "description": "Google's fast production model",
-        "provider": "Google",
-        "context": "1M tokens",
-        "cost": "$0.075/1M"
-    },
-    "google/gemini-pro-1.5": {
-        "name": "Gemini Pro 1.5",
-        "description": "Google's advanced model",
-        "provider": "Google",
-        "context": "2M tokens",
-        "cost": "$1.25/1M"
-    },
     "anthropic/claude-3.5-sonnet": {
         "name": "Claude 3.5 Sonnet",
-        "description": "Anthropic's balanced model - great for structured output",
+        "description": "Anthropic's best model for structured output",
         "provider": "Anthropic",
         "context": "200K tokens",
         "cost": "$3/1M"
@@ -66,7 +46,7 @@ LLM_MODELS = {
     },
     "openai/gpt-4o": {
         "name": "GPT-4o",
-        "description": "OpenAI's most capable multimodal model",
+        "description": "OpenAI's flagship multimodal model",
         "provider": "OpenAI",
         "context": "128K tokens",
         "cost": "$5/1M"
@@ -80,7 +60,7 @@ LLM_MODELS = {
     },
     "meta-llama/llama-3.1-70b-instruct": {
         "name": "Llama 3.1 70B",
-        "description": "Meta's open-source large model",
+        "description": "Meta's powerful open-source model",
         "provider": "Meta",
         "context": "128K tokens",
         "cost": "$0.40/1M"
@@ -92,12 +72,12 @@ LLM_MODELS = {
         "context": "128K tokens",
         "cost": "$0.05/1M"
     },
-    "mistralai/mixtral-8x7b-instruct": {
-        "name": "Mixtral 8x7B",
-        "description": "Mistral's MoE model - great balance",
+    "mistralai/mistral-7b-instruct": {
+        "name": "Mistral 7B",
+        "description": "Mistral's efficient instruction model",
         "provider": "Mistral",
         "context": "32K tokens",
-        "cost": "$0.27/1M"
+        "cost": "$0.06/1M"
     },
     "deepseek/deepseek-chat": {
         "name": "DeepSeek Chat",
@@ -105,13 +85,6 @@ LLM_MODELS = {
         "provider": "DeepSeek",
         "context": "64K tokens",
         "cost": "$0.14/1M"
-    },
-    "qwen/qwen-2.5-72b-instruct": {
-        "name": "Qwen 2.5 72B",
-        "description": "Alibaba's large instruction model",
-        "provider": "Alibaba",
-        "context": "128K tokens",
-        "cost": "$0.35/1M"
     }
 }
 
