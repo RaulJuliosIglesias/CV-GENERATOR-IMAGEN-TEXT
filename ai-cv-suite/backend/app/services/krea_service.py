@@ -268,7 +268,7 @@ async def generate_avatar(
     api_key = os.getenv("KREA_API_KEY", "")
     
     if not api_key or api_key == "your-krea-api-key-here":
-        print("⚠️ No Krea API key found, using mock avatar")
+        print("WARNING: No Krea API key found, using mock avatar")
         return await _generate_mock_avatar(gender, ethnicity)
     
     # Use provided model or default
@@ -319,7 +319,7 @@ async def generate_avatar(
                             with open(filepath, 'wb') as f:
                                 f.write(img_response.content)
                             
-                            print(f"✅ Avatar generated with {model_id}: {filename}")
+                            print(f"SUCCESS: Avatar generated with {model_id}: {filename}")
                             return str(filepath)
                 
                 # If we got here, try to extract image differently (Krea API variations)
@@ -335,11 +335,11 @@ async def generate_avatar(
                     
                     return str(filepath)
             
-            print(f"⚠️ Krea API error: {response.status_code} - {response.text[:200]}")
+            print(f"WARNING: Krea API error: {response.status_code} - {response.text[:200]}")
             return await _generate_mock_avatar(gender, ethnicity)
             
     except Exception as e:
-        print(f"⚠️ Krea API exception: {e}")
+        print(f"WARNING: Krea API exception: {e}")
         return await _generate_mock_avatar(gender, ethnicity)
 
 

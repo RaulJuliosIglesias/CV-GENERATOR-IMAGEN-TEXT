@@ -5,66 +5,89 @@ Handles concurrent generation of multiple CVs with status tracking
 
 import asyncio
 import uuid
+import random
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-
+from pathlib import Path
 
 class TaskStatus(str, Enum):
     PENDING = "pending"
+    RUNNING = "running"
     GENERATING_CONTENT = "generating_content"
-    GENERATING_IMAGE = "generating_image"
-    RENDERING_PDF = "rendering_pdf"
+    GENERATING_IMAGE = "generating_image" 
     COMPLETE = "complete"
     ERROR = "error"
 
+@dataclass
+class Subtask:
+    id: str
+    name: str  # generate_text, generate_image, assemble_html, create_pdf
+    status: TaskStatus = TaskStatus.PENDING
+    progress: int = 0
+    message: str = ""
 
 @dataclass
 class Task:
-    """Represents a single CV generation task."""
-    id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
-    batch_id: str = ""
-    status: TaskStatus = TaskStatus.PENDING
-    status_message: str = "Waiting to start..."
-    progress: int = 0
-    
-    # Input parameters
+    id: str
+    status: TaskStatus
+    created_at: str
+    role: str
+    origin: str
     gender: str = "any"
     ethnicity: str = "any"
-    origin: str = "any"
-    role: str = "Software Developer"
+    batch_id: Optional[str] = None
     age_range: str = "25-35"
     expertise: str = "mid"
     remote: bool = False
     
-    # Generated data
+    # Results
     cv_data: Optional[dict] = None
     image_path: Optional[str] = None
     pdf_path: Optional[str] = None
+    html_path: Optional[str] = None
+    error: Optional[str] = None
+    progress: int = 0
+    message: str = "Initialized"
     
-    # Timestamps
-    created_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
-    
-    # Error handling
-    error_message: Optional[str] = None
-    
-    def to_dict(self) -> dict:
-        """Convert task to dictionary for API response."""
+    # Subtasks tracking
+    subtasks: list[Subtask] = field(default_factory=lambda: [
+        Subtask(id="1", name="Generate Text (LLM)"),
+        Subtask(id="2", name="Generate Image (AI)"),
+        Subtask(id="3", name="Assemble HTML"),
+        Subtask(id="4", name="Create PDF")
+    ])
+    current_subtask_index: int = 0
+
+    def to_dict(self):
         return {
             "id": self.id,
             "status": self.status.value,
-            "status_message": self.status_message,
-            "progress": self.progress,
+            "created_at": self.created_at,
+            "role": self.role,
+            "origin": self.origin,
             "gender": self.gender,
             "ethnicity": self.ethnicity,
-            "origin": self.origin,
-            "role": self.role,
-            "pdf_path": self.pdf_path,
-            "created_at": self.created_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
-            "error_message": self.error_message
+            "batch_id": self.batch_id,
+            "age_range": self.age_range,
+            "expertise": self.expertise,
+            "remote": self.remote,
+            "progress": self.progress,
+            "message": self.message,
+            "pdf_path": f"/api/files/{Path(self.pdf_path).name}" if self.pdf_path else None,
+            "html_path": f"/api/files/{Path(self.html_path).name}" if self.html_path else None,
+            "image_path": f"/assets/{Path(self.image_path).name}" if self.image_path else None,
+            "error": self.error,
+            "subtasks": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "status": s.status.value,
+                    "progress": s.progress,
+                    "message": s.message
+                } for s in self.subtasks
+            ]
         }
 
 
@@ -133,14 +156,12 @@ class TaskManager:
         remote: bool = False
     ) -> Batch:
         """Create a new batch of CV generation tasks."""
-        import random
-        from uuid import uuid4
         
-        batch_id = str(uuid4())[:8]
+        batch_id = str(uuid.uuid4())[:8]
         tasks = []
         
         for i in range(qty):
-            task_id = str(uuid4())[:8]
+            task_id = str(uuid.uuid4())[:8]
             
             # Randomly select from the provided options
             selected_gender = random.choice(genders) if genders else "any"
@@ -151,20 +172,21 @@ class TaskManager:
             
             # Generate random age within the specified range
             selected_age = random.randint(age_min, age_max)
-            age_range = f"{selected_age}"  # Store as single age
+            age_range = f"{selected_age}"
             
             task = Task(
                 id=task_id,
                 batch_id=batch_id,
+                status=TaskStatus.PENDING,
+                created_at=datetime.now().isoformat(),
+                role=selected_role,
+                origin=selected_origin,
                 gender=selected_gender,
                 ethnicity=selected_ethnicity,
-                origin=selected_origin,
-                role=selected_role,
                 age_range=age_range,
                 expertise=selected_expertise,
                 remote=remote,
-                status=TaskStatus.PENDING,
-                status_message="Queued for generation",
+                message="Queued for generation",
                 progress=0
             )
             tasks.append(task)
@@ -185,29 +207,9 @@ class TaskManager:
             return self.batches.get(self.current_batch_id)
         return None
     
-    async def update_task_status(
-        self,
-        task: Task,
-        status: TaskStatus,
-        message: str = "",
-        progress: int = 0
-    ):
-        """Update a task's status."""
-        async with self._lock:
-            task.status = status
-            task.status_message = message
-            task.progress = progress
-            
-            if status == TaskStatus.COMPLETE:
-                task.completed_at = datetime.now()
-    
-    async def set_task_error(self, task: Task, error_message: str):
-        """Mark a task as failed with an error message."""
-        async with self._lock:
-            task.status = TaskStatus.ERROR
-            task.status_message = "Generation failed"
-            task.error_message = error_message
-            task.completed_at = datetime.now()
+    async def _save_batches(self):
+        """Dummy persistent save - could implement JSON DB here."""
+        pass
     
     def get_all_batches(self) -> list[Batch]:
         """Get all batches."""

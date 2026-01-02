@@ -52,22 +52,30 @@ const STATUS_CONFIG = {
     },
 };
 
+// Subtask status icons configuration
+const SUBTASK_CONFIG = {
+    pending: { icon: Clock, color: 'text-gray-500' },
+    running: { icon: Loader2, color: 'text-blue-500', animate: true },
+    complete: { icon: CheckCircle2, color: 'text-green-500' },
+    error: { icon: AlertCircle, color: 'text-red-500' }
+};
+
 function TaskCard({ task }) {
     const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
     const Icon = statusConfig.icon;
 
-    const handleOpenPdf = () => {
-        if (task.pdf_path) {
-            const filename = task.pdf_path.split(/[\\/]/).pop();
+    const handleOpenCv = () => {
+        // Prefer HTML path, fallback to PDF path (which points to HTML in new backend logic)
+        const path = task.html_path || task.pdf_path;
+        if (path) {
+            const filename = path.split(/[\\/]/).pop();
+            // Open in new tab
             window.open(getPdfUrl(filename), '_blank');
         }
     };
 
     return (
-        <div
-            className={`relative rounded-xl border ${statusConfig.borderColor} ${statusConfig.bgColor} p-4 transition-all duration-300 ${statusConfig.animate ? 'animate-pulse-glow' : ''
-                }`}
-        >
+        <div className={`relative rounded-xl border ${statusConfig.borderColor} ${statusConfig.bgColor} p-4 transition-all duration-300`}>
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -81,30 +89,50 @@ function TaskCard({ task }) {
                 <span className={`text-xs font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
             </div>
 
-            {/* Progress Bar */}
-            <Progress value={task.progress} className="h-1.5 mb-3" />
+            {/* Role */}
+            <p className="text-sm font-bold text-foreground truncate mb-3">{task.role}</p>
 
             {/* Status Message */}
-            <p className="text-xs text-muted-foreground truncate mb-2">{task.status_message}</p>
+            <p className="text-xs text-muted-foreground truncate mb-3 min-h-[1.5em]">{task.message}</p>
 
-            {/* Role */}
-            <p className="text-sm font-medium text-foreground/80 truncate">{task.role}</p>
+            {/* Progress Bar */}
+            <Progress value={task.progress} className="h-1.5 mb-4" />
+
+            {/* Subtasks List */}
+            <div className="space-y-2 bg-black/5 rounded-lg p-2 mb-3">
+                {task.subtasks?.map((subtask) => {
+                    const config = SUBTASK_CONFIG[subtask.status] || SUBTASK_CONFIG.pending;
+                    const SubIcon = config.icon;
+
+                    return (
+                        <div key={subtask.id} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                                <SubIcon className={`w-3.5 h-3.5 ${config.color} ${config.animate ? 'animate-spin' : ''}`} />
+                                <span className={subtask.status === 'pending' ? 'text-muted-foreground' : 'text-foreground'}>
+                                    {subtask.name}
+                                </span>
+                            </div>
+                            {subtask.status === 'running' && <span className="text-[10px] text-blue-500">Processing...</span>}
+                        </div>
+                    );
+                })}
+            </div>
 
             {/* Error Message */}
-            {task.error_message && (
-                <p className="text-xs text-red-400 mt-2 truncate">{task.error_message}</p>
+            {task.error && (
+                <p className="text-xs text-red-400 mb-2 truncate">{task.error}</p>
             )}
 
-            {/* Open PDF Button */}
-            {task.status === 'complete' && task.pdf_path && (
+            {/* Open CV Button */}
+            {task.status === 'complete' && (
                 <Button
-                    onClick={handleOpenPdf}
+                    onClick={handleOpenCv}
                     size="sm"
-                    variant="outline"
-                    className="w-full mt-3"
+                    variant="default"
+                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white"
                 >
                     <FileText className="w-4 h-4 mr-2" />
-                    Open PDF
+                    View CV (HTML)
                 </Button>
             )}
         </div>

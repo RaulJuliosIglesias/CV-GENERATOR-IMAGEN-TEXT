@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from ..core.task_manager import task_manager, Task, TaskStatus
-from ..core.pdf_engine import render_cv_pdf
+from ..core.pdf_engine import render_cv_html
 from ..services.llm_service import generate_cv_content, get_available_models as get_llm_models
 from ..services.krea_service import generate_avatar, get_available_models as get_image_models
 
@@ -81,65 +81,99 @@ batch_models = {}
 
 # Background task for generating a single CV
 async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: Optional[str]):
-    """Generate a single CV with content and image."""
+    """Generate a single CV with sequential subtasks."""
     try:
-        # Step 1: Generate content and image concurrently
-        await task_manager.update_task_status(
-            task, TaskStatus.GENERATING_CONTENT, 
-            f"Generating CV content...", 25
-        )
+        task.status = TaskStatus.GENERATING_CONTENT
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Run both concurrently
-        content_task = generate_cv_content(
+        # --- SUBTASK 1: Generate Text (LLM) ---
+        task.current_subtask_index = 0
+        task.subtasks[0].status = TaskStatus.RUNNING
+        task.subtasks[0].message = "Generating content with LLM..."
+        await task_manager._save_batches() # Force save update
+
+        cv_data = await generate_cv_content(
             role=task.role,
-            origin=task.origin,
+            expertise=task.expertise,
+            age=int(task.age_range.split('-')[0]) if '-' in task.age_range else 30, # Approx age
             gender=task.gender,
+            ethnicity=task.ethnicity,
+            origin=task.origin,
+            remote=task.remote,
             model=llm_model
         )
         
-        await task_manager.update_task_status(
-            task, TaskStatus.GENERATING_IMAGE,
-            f"Generating avatar image...", 50
-        )
+        task.cv_data = cv_data
+        task.subtasks[0].status = TaskStatus.COMPLETE
+        task.subtasks[0].progress = 100
+        task.progress = 25
         
-        image_task = generate_avatar(
+        # --- SUBTASK 2: Generate Image (AI) ---
+        task.current_subtask_index = 1
+        task.subtasks[1].status = TaskStatus.RUNNING
+        task.subtasks[1].message = "Generating avatar with Krea..."
+        await task_manager._save_batches()
+
+        image_path = await generate_avatar(
             gender=task.gender,
             ethnicity=task.ethnicity,
-            age_range="25-45",
+            age_range=task.age_range,
             origin=task.origin,
             model=image_model
         )
         
-        # Wait for both to complete
-        cv_data, image_path = await asyncio.gather(content_task, image_task)
-        
-        task.cv_data = cv_data
         task.image_path = image_path
+        task.subtasks[1].status = TaskStatus.COMPLETE
+        task.subtasks[1].progress = 100
+        task.progress = 50
         
-        # Step 2: Render PDF
-        await task_manager.update_task_status(
-            task, TaskStatus.RENDERING_PDF,
-            "Rendering PDF document...", 75
-        )
+        # --- SUBTASK 3: Assemble HTML ---
+        task.current_subtask_index = 2
+        task.subtasks[2].status = TaskStatus.RUNNING
+        task.subtasks[2].message = "Assembling HTML template..."
+        await task_manager._save_batches()
         
-        # Generate unique filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_name = cv_data.get("name", "CV").replace(" ", "_")
-        filename = f"CV_{safe_name}_{task.id}_{timestamp}.pdf"
+        filename = f"CV_{safe_name}_{task.id}_{timestamp}.html" # HTML extension
         
-        # Render the PDF
-        pdf_path = await render_cv_pdf(cv_data, image_path, filename)
-        task.pdf_path = pdf_path
+        html_path = await render_cv_html(cv_data, image_path, filename)
         
-        # Complete!
-        await task_manager.update_task_status(
-            task, TaskStatus.COMPLETE,
-            "CV generated successfully!", 100
-        )
+        task.html_path = html_path
+        task.subtasks[2].status = TaskStatus.COMPLETE
+        task.subtasks[2].progress = 100
+        task.progress = 75
+        
+        # --- SUBTASK 4: Create PDF (Ready for Export) ---
+        task.current_subtask_index = 3
+        task.subtasks[3].status = TaskStatus.RUNNING
+        task.subtasks[3].message = "Finalizing..."
+        await task_manager._save_batches()
+
+        # In this workflow, PDF is exported by client from HTML
+        # We assume success once HTML is ready
+        task.pdf_path = html_path 
+        
+        task.subtasks[3].status = TaskStatus.COMPLETE
+        task.subtasks[3].progress = 100
+        task.progress = 100
+        
+        # COMPLETE
+        task.status = TaskStatus.COMPLETE
+        task.message = "CV Generated Successfully"
+        await task_manager._save_batches()
         
     except Exception as e:
-        await task_manager.set_task_error(task, str(e))
-        print(f"Error generating CV {task.id}: {e}")
+        error_msg = str(e)
+        print(f"Error generating CV {task.id}: {error_msg}")
+        
+        # Mark current subtask as failed
+        if task.current_subtask_index < len(task.subtasks):
+            task.subtasks[task.current_subtask_index].status = TaskStatus.ERROR
+            task.subtasks[task.current_subtask_index].message = error_msg
+            
+        task.status = TaskStatus.ERROR
+        task.error = error_msg
+        await task_manager._save_batches()
 
 
 # Background task for processing a batch
@@ -149,8 +183,8 @@ async def process_batch(batch_id: str, llm_model: Optional[str], image_model: Op
     if not batch:
         return
     
-    # Process all tasks concurrently (with some throttling)
-    semaphore = asyncio.Semaphore(3)  # Max 3 concurrent generations
+    # Process all tasks concurrently (max 3)
+    semaphore = asyncio.Semaphore(3)
     
     async def process_with_semaphore(task: Task):
         async with semaphore:
@@ -170,12 +204,7 @@ async def get_available_models():
 
 @router.post("/generate", response_model=GenerationResponse)
 async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks):
-    """
-    Start a batch CV generation.
-    
-    Creates the specified number of CV generation tasks and processes them
-    in the background. Use GET /status to track progress.
-    """
+    """Start a batch CV generation."""
     # Create batch
     batch = await task_manager.create_batch(
         qty=request.qty,
@@ -189,7 +218,7 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
         remote=request.remote
     )
     
-    # Store model selections for this batch
+    # Store model selections
     batch_models[batch.id] = {
         "llm_model": request.llm_model,
         "image_model": request.image_model
@@ -212,11 +241,7 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
 
 @router.get("/status")
 async def get_status():
-    """
-    Get the current batch generation status.
-    
-    Returns detailed status for each CV in the current batch.
-    """
+    """Get the current batch generation status."""
     batch = task_manager.get_current_batch()
     
     if not batch:
@@ -231,8 +256,6 @@ async def get_status():
         })
     
     result = batch.to_dict()
-    
-    # Add model info if available
     if batch.id in batch_models:
         result["models"] = batch_models[batch.id]
     
@@ -243,24 +266,16 @@ async def get_status():
 async def get_batch_status(batch_id: str):
     """Get status for a specific batch."""
     batch = task_manager.get_batch(batch_id)
-    
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
-    
     return JSONResponse(content=batch.to_dict())
 
 
 @router.get("/files", response_model=FilesResponse)
 async def list_files():
-    """
-    List all generated files (PDF and HTML).
-    
-    Returns a list of all CV files in the output directory with metadata.
-    """
+    """List all generated files (PDF and HTML)."""
     files = []
-    
     if OUTPUT_DIR.exists():
-        # Search for both PDF and HTML files
         for pattern in ["*.pdf", "*.html"]:
             for filepath in sorted(OUTPUT_DIR.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True):
                 stat = filepath.stat()
@@ -270,52 +285,33 @@ async def list_files():
                     created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
                     size_kb=round(stat.st_size / 1024, 2)
                 ))
-    
     return FilesResponse(files=files, total=len(files))
 
 
 @router.get("/files/{filename}")
 async def get_file(filename: str):
-    """Download/view a specific file (PDF or HTML)."""
+    """Download/view a specific file."""
     filepath = OUTPUT_DIR / filename
-    
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="File not found")
     
-    # Determine media type
-    if filename.endswith('.pdf'):
-        media_type = "application/pdf"
-    elif filename.endswith('.html'):
-        media_type = "text/html"
-    else:
-        media_type = "application/octet-stream"
-    
-    return FileResponse(
-        path=str(filepath),
-        media_type=media_type,
-        filename=filename
-    )
+    media_type = "text/html" if filename.endswith('.html') else "application/pdf"
+    return FileResponse(path=str(filepath), media_type=media_type, filename=filename)
 
 
 @router.delete("/files/{filename}")
 async def delete_file(filename: str):
-    """Delete a specific PDF file."""
+    """Delete a file."""
     filepath = OUTPUT_DIR / filename
-    
-    if not filepath.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    filepath.unlink()
+    if filepath.exists():
+        filepath.unlink()
     return {"message": f"Deleted {filename}"}
 
 
 @router.post("/open-folder")
 async def open_folder():
-    """
-    Open the output directory in the OS file explorer.
-    """
+    """Open output folder."""
     folder_path = str(OUTPUT_DIR.absolute())
-    
     try:
         if sys.platform == "win32":
             os.startfile(folder_path)
@@ -323,28 +319,24 @@ async def open_folder():
             subprocess.run(["open", folder_path])
         else:
             subprocess.run(["xdg-open", folder_path])
-        
         return {"message": "Opened folder", "path": folder_path}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not open folder: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/clear")
 async def clear_all():
-    """Clear all generated files and batches."""
+    """Clear all files."""
     if OUTPUT_DIR.exists():
-        for pattern in ["*.pdf", "*.html"]:
-            for f in OUTPUT_DIR.glob(pattern):
-                f.unlink()
-    
+        for f in OUTPUT_DIR.glob("*.*"):
+            if f.is_file(): f.unlink()
     if ASSETS_DIR.exists():
         for f in ASSETS_DIR.glob("avatar_*.jpg"):
             f.unlink()
     
     task_manager.clear_batches()
     batch_models.clear()
-    
-    return {"message": "Cleared all generated files and batches"}
+    return {"message": "Cleared all generated files"}
 
 
 @router.get("/health")
@@ -352,7 +344,6 @@ async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "openrouter_configured": bool(os.getenv("OPENROUTER_API_KEY")),
-        "krea_configured": bool(os.getenv("KREA_API_KEY"))
+        "openrouter": bool(os.getenv("OPENROUTER_API_KEY")),
+        "krea": bool(os.getenv("KREA_API_KEY"))
     }

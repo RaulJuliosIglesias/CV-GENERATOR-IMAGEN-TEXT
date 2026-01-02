@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV - {{ name }}</title>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS ESTRACTED FROM STYLE.CSS --- */
+        :root {
+            --header-height: 3rem;
+            --title-color: #0B0A0A;
+            --text-color: #403A3A;
+            --text-color-light: #707070;
+            --container-color: #FAFAFA;
+            --container-color-alt: #F0EFEF;
+            --body-color: #FCFCFC;
+            --body-font: 'Poppins', sans-serif;
+            --h1-font-size: 1.5rem;
+            --h2-font-size: 1.25rem;
+            --h3-font-size: 1rem;
+            --normal-font-size: .938rem;
+            --small-font-size: .875rem;
+            --smaller-font-size: .813rem;
+            --font-medium: 500;
+            --font-semi-bold: 600;
+            --margin-1: .5rem;
+            --margin-2: 1rem;
+            --margin-3: 1.5rem;
+            --z-tooltip: 10;
+            --z-fixed: 100;
+        }
+
+        *,
+        ::before,
+        ::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0 0 var(--header-height) 0;
+            padding: 0;
+            font-family: var(--body-font);
+            font-size: var(--normal-font-size);
+            background-color: var(--body-color);
+            color: var(--text-color);
+            transition: .3s;
+        }
+
+        h1,
+        h2,
+        h3,
+        ul,
+        p {
+            margin: 0;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--title-color);
+            font-weight: var(--font-medium);
+        }
+
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .section {
+            padding: 1.5rem 0;
+        }
+
+        .section-title {
+            font-size: var(--h2-font-size);
+            color: var(--title-color);
+            font-weight: var(--font-semi-bold);
+            text-transform: uppercase;
+            letter-spacing: .35rem;
+            text-align: center;
+            margin-bottom: var(--margin-3);
+        }
+
+        .bd-container {
+            max-width: 968px;
+            width: calc(100% - 3rem);
+            margin-left: var(--margin-3);
+            margin-right: var(--margin-3);
+        }
+
+        .bd-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        /* HEADER & NAV */
+        .l-header {
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: var(--z-fixed);
+            background-color: var(--body-color);
+            box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav {
+            height: var(--header-height);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media screen and (max-width: 968px) {
+            .nav_menu {
+                position: fixed;
+                bottom: -100%;
+                left: 0;
+                width: 100%;
+                padding: 2rem 1.5rem;
+                background-color: var(--body-color);
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+                border-radius: 1rem 1rem 0 0;
+                z-index: var(--z-fixed);
+                transition: .3s;
+            }
+        }
+
+        .show-menu {
+            bottom: var(--header-height);
+        }
+
+        .nav_logo,
+        .nav_toggle {
+            color: var(--title-color);
+            font-weight: var(--font-medium);
+        }
+
+        .nav_toggle {
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .nav_list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .nav_link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: var(--smaller-font-size);
+            color: var(--text-color-light);
+            font-weight: var(--font-medium);
+        }
+
+        .nav_link:hover {
+            color: var(--title-color);
+        }
+
+        .nav_icon {
+            font-size: 1.2rem;
+            margin-bottom: var(--margin-1);
+        }
+
+        .active-link {
+            color: var(--title-color);
+        }
+
+        /* HOME */
+        .home {
+            position: relative;
+        }
+
+        .home_container {
+            gap: 3rem;
+        }
+
+        .home_data {
+            gap: .5rem;
+            text-align: center;
+        }
+
+        .home_img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            justify-self: center;
+            margin-bottom: var(--margin-1);
+            object-fit: cover;
+            border: 2px solid var(--container-color-alt);
+        }
+
+        .home_title {
+            font-size: var(--h1-font-size);
+        }
+
+        .home_profession {
+            font-size: var(--normal-font-size);
+            margin-bottom: var(--margin-1);
+            color: var(--text-color-light);
+        }
+
+        .home_address {
+            gap: 1rem;
+        }
+
+        .home_information {
+            display: flex;
+            align-items: center;
+            font-size: var(--small-font-size);
+        }
+
+        .home_icon {
+            font-size: 1.2rem;
+            margin-right: .25rem;
+        }
+
+        .home_link {
+            display: inline-flex;
+            align-items: center;
+            font-size: var(--small-font-size);
+            color: var(--text-color);
+        }
+
+        /* SOCIAL */
+        .social_container {
+            grid-template-columns: max-content;
+            gap: 1rem;
+        }
+
+        .social_link {
+            display: inline-flex;
+            align-items: center;
+            font-size: var(--small-font-size);
+            color: var(--text-color);
+        }
+
+        .social_icon {
+            font-size: 1.2rem;
+            margin-right: .25rem;
+        }
+
+        /* PROFILE */
+        .profile_description {
+            text-align: center;
+        }
+
+        /* EDUCATION & EXPERIENCE */
+        .education_content,
+        .experience_content,
+        .certificate_content {
+            display: flex;
+        }
+
+        .education_time,
+        .experience_time,
+        .certificate_item {
+            padding-right: 1rem;
+        }
+
+        .education_rounder,
+        .experience_rounder {
+            position: relative;
+            display: block;
+            width: 16px;
+            height: 16px;
+            background-color: var(--text-color-light);
+            border-radius: 50%;
+            margin-top: .25rem;
+        }
+
+        .education_line,
+        .experience_line {
+            display: block;
+            width: 2px;
+            height: 110%;
+            background-color: var(--text-color-light);
+            transform: translate(7px, 0);
+        }
+
+        .education_data,
+        .experience_data,
+        .certificate_data {
+            gap: .5rem;
+        }
+
+        .education_title,
+        .experience_title,
+        .certificate_year {
+            font-size: var(--h3-font-size);
+        }
+
+        .education_studies,
+        .experience_company,
+        .certificate_title {
+            font-size: var(--small-font-size);
+            color: var(--title-color);
+        }
+
+        .education_year,
+        .experience_year {
+            font-size: var(--smaller-font-size);
+        }
+
+        /* SKILLS */
+        .skills_content {
+            gap: 0.2rem;
+            padding-left: 2rem;
+        }
+
+        .skills_name {
+            display: flex;
+            align-items: center;
+            margin-bottom: .5rem;
+        }
+
+        .skills_circle {
+            width: 5px;
+            height: 5px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            margin-right: .75rem;
+        }
+
+        .skills_text {
+            display: inline-block;
+            width: 120px;
+            font-weight: var(--font-medium);
+        }
+
+        .skills_box {
+            flex-grow: 1;
+            height: 8px;
+            background-color: var(--container-color-alt);
+            /* Lighter bg for bar */
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .skills_progress {
+            display: block;
+            height: 100%;
+            background-color: var(--text-color);
+            border-radius: 6px;
+        }
+
+        /* CERTIFICATES */
+        .certificate_container {
+            gap: 1.5rem;
+        }
+
+        /* LANGUAGES */
+        .languages_content {
+            gap: 0;
+            padding-left: 2rem;
+        }
+
+        .languages_name {
+            display: flex;
+            align-items: center;
+            margin-bottom: .5rem;
+        }
+
+        .languages_text {
+            width: 100px;
+        }
+
+        .languages_stars {
+            color: var(--text-color-light);
+        }
+
+        .languages_stars .checked {
+            color: var(--title-color);
+        }
+
+        /* INTERESTS */
+        .interests_container {
+            grid-template-columns: repeat(3, 1fr);
+            margin-top: var(--margin-2);
+            gap: 1.5rem;
+        }
+
+        .interests_content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .interests_icon {
+            font-size: 1.5rem;
+            color: var(--text-color-light);
+            margin-bottom: .25rem;
+        }
+
+        /* THEME BUTTONS */
+        .change-theme {
+            position: absolute;
+            right: 1rem;
+            top: 2.2rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .generate-pdf {
+            display: none;
+            position: absolute;
+            left: 1rem;
+            top: 2.2rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .change-theme:hover,
+        .generate-pdf:hover {
+            color: var(--title-color);
+        }
+
+        /* DARK THEME */
+        body.dark-theme {
+            --title-color: #F2F2F2;
+            --text-color: #BFBFBF;
+            --container-color: #212121;
+            --container-color-alt: #181616;
+            --body-color: #2B2B2B;
+        }
+
+        /* MEDIA QUERIES & PC STYLES */
+        @media screen and (min-width: 968px) {
+            body {
+                margin: 3rem 0;
+            }
+
+            .bd-container {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .l-header {
+                display: none;
+            }
+
+            .resume {
+                display: grid;
+                grid-template-columns: .5fr 1fr;
+                background-color: var(--container-color);
+                box-shadow: 0 0 8px rgba(13, 12, 12, .15);
+                min-height: 1122px;
+                /* A4 height approx */
+            }
+
+            .resume_left {
+                background-color: var(--container-color-alt);
+                padding: 0 1.5rem;
+            }
+
+            .resume_right {
+                padding: 0 1.5rem;
+            }
+
+            .generate-pdf {
+                display: inline-block;
+            }
+
+            .section-title,
+            .profile_description {
+                text-align: initial;
+            }
+
+            .home_container {
+                gap: 1.5rem;
+            }
+
+            .home_button-movil {
+                display: none;
+            }
+        }
+
+        /* --- CLASS FOR PDF EXPORT Scaling --- */
+        body.scale-cv {
+            --h1-font-size: 0.938rem;
+            --h2-font-size: 0.938rem;
+            --h3-font-size: 0.875rem;
+            --normal-font-size: 0.813rem;
+            --small-font-size: 0.75rem;
+            --smaller-font-size: 0.688rem;
+        }
+
+        .scale-cv .bd-container {
+            max-width: none;
+            width: 780px;
+            margin: 0 auto;
+        }
+
+        /* A4 width optimized */
+        .scale-cv .section {
+            padding: 1rem 0;
+        }
+
+        .scale-cv .section-title {
+            margin-bottom: 0.5rem;
+        }
+
+        .scale-cv .resume_left,
+        .scale-cv .resume_right {
+            padding: 0 1rem;
+        }
+
+        .scale-cv .home_img {
+            width: 90px;
+            height: 90px;
+        }
+
+        .scale-cv .change-theme,
+        .scale-cv .generate-pdf {
+            display: none;
+        }
+
+        .scale-cv .resume {
+            min-height: 1100px;
+        }
+
+        .scale-cv .skills_box {
+            width: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- BUTTONS -->
+    <i class="fa-solid fa-moon change-theme" title="Theme" id="theme-button"></i>
+    <i class="fa-solid fa-download generate-pdf" title="Generate PDF" id="resume-button"></i>
+
+    <main class="l-main bd-container">
+        <div class="resume" id="area-cv">
+            <div class="resume_left">
+                <!-- HOME -->
+                <section class="home section" id="home">
+                    <div class="home_container bd-grid">
+                        <div class="home_data bd-grid">
+                            {% if profile_image %}
+                            <img src="{{ profile_image }}" alt="" class="home_img">
+                            {% endif %}
+
+                            <h1 class="home_title">{{ name }}</h1>
+                            <h3 class="home_profession">{{ title }}</h3>
+                        </div>
+
+                        <div class="home_address bd-grid">
+                            <span class="home_information">
+                                <i class="fa-solid fa-location-dot home_icon"></i> {{ location }}
+                            </span>
+                            <span class="home_information">
+                                <a href="mailto:{{ email }}" class="home_link">
+                                    <i class="fa-solid fa-envelope home_icon"></i> {{ email }}
+                                </a>
+                            </span>
+                            <span class="home_information">
+                                <a href="#" class="home_link">
+                                    <i class="fa-solid fa-phone home_icon"></i> {{ phone }}
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SOCIAL -->
+                <section class="social section">
+                    <h2 class="section-title">SOCIAL</h2>
+                    <div class="social_container bd-grid">
+                        {% for key, val in social.items() %}
+                        {% if val %}
+                        <a href="{{ val if 'http' in val else '#' }}" target="_blank" class="social_link">
+                            <i class="fa-brands fa-{{ key.lower() }} social_icon"></i> {{ val.split('/')[-1] if 'http'
+                            in val else val }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- PROFILE -->
+                <section class="profile section" id="profile">
+                    <h2 class="section-title">Profile</h2>
+                    <p class="profile_description">{{ profile_summary }}</p>
+                </section>
+
+                <!-- SKILLS -->
+                <section class="skills section" id="skills">
+                    <h2 class="section-title">Skills</h2>
+                    <div class="skills_content bd-grid">
+                        {% for skill in skills.technical %}
+                        <div class="skills_name">
+                            <span class="skills_text">{{ skill.name }}</span>
+                            <div class="skills_box">
+                                <span class="skills_progress" style="width: {{ skill.level }}%;"></span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- LANGUAGES -->
+                <section class="languages section">
+                    <h2 class="section-title">Languages</h2>
+                    <div class="languages_container">
+                        <div class="languages_content bd-grid">
+                            {% for lang in languages %}
+                            <div class="languages_name">
+                                <span class="languages_text">{{ lang.name }}</span>
+                                <span class="languages_stars">
+                                    {% for i in range(5) %}
+                                    {% if i < (lang.level_num|default(3)) %} <i class="fa-solid fa-star checked"></i>
+                                        {% else %}
+                                        <i class="fa-solid fa-star"></i>
+                                        {% endif %}
+                                        {% endfor %}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="resume_right">
+                <!-- EXPERIENCE -->
+                <section class="experience section" id="experience">
+                    <h2 class="section-title">Experience</h2>
+                    <div class="experience_container bd-grid">
+                        {% for exp in experience %}
+                        <div class="experience_content">
+                            <div class="experience_time">
+                                <span class="experience_rounder"></span>
+                                {% if not loop.last %}<span class="experience_line"></span>{% endif %}
+                            </div>
+                            <div class="experience_data bd-grid">
+                                <h3 class="experience_title">{{ exp.title }}</h3>
+                                <span class="experience_company">{{ exp.date_range }} | {{ exp.company }}</span>
+                                <p class="experience_description">{{ exp.description }}</p>
+                                {% if exp.achievements %}
+                                <ul
+                                    style="list-style-type: disc; margin-left: 1rem; color: var(--text-color-light); font-size: var(--smaller-font-size);">
+                                    {% for ach in exp.achievements %}
+                                    <li>{{ ach }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- EDUCATION -->
+                <section class="education section" id="education">
+                    <h2 class="section-title">Education</h2>
+                    <div class="education_container bd-grid">
+                        {% for edu in education %}
+                        <div class="education_content">
+                            <div class="education_time">
+                                <span class="education_rounder"></span>
+                                {% if not loop.last %}<span class="education_line"></span>{% endif %}
+                            </div>
+                            <div class="education_data bd-grid">
+                                <h3 class="education_title">{{ edu.degree }}</h3>
+                                <span class="education_studies">{{ edu.institution }}</span>
+                                <span class="education_year">{{ edu.year }}</span>
+                                {% if edu.honors %}
+                                <span style="font-size: var(--smaller-font-size); color: var(--text-color);">{{
+                                    edu.honors }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- CERTIFICATES -->
+                {% if certificates %}
+                <section class="certificate section" id="certificates">
+                    <h2 class="section-title">Certificates</h2>
+                    <div class="certificate_container bd-grid">
+                        {% for cert in certificates %}
+                        <div class="certificate_content">
+                            <div class="certificate_item">
+                                <span class="education_rounder"></span>
+                            </div>
+                            <div class="certificate_data bd-grid">
+                                <h3 class="certificate_year">{{ cert.date }}</h3>
+                                <span class="certificate_title">{{ cert.name }}</span>
+                                <span style="font-size: smaller;">{{ cert.issuer }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+
+                <!-- INTERESTS -->
+                <section class="interests section" id="interests">
+                    <h2 class="section-title">Interests</h2>
+                    <div class="interests_container bd-grid">
+                        {% for interest in interests %}
+                        <div class="interests_content">
+                            <i class="fa-solid fa-lightbulb interests_icon"></i>
+                            <span class="interests_name">{{ interest }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- HTML2PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        /* --- MAIN LOGIC --- */
+        const themeButton = document.getElementById('theme-button')
+        const darkTheme = 'dark-theme'
+        const iconTheme = 'fa-sun'
+
+        // Theme Toggle
+        themeButton.addEventListener('click', () => {
+            document.body.classList.toggle(darkTheme)
+            themeButton.classList.toggle(iconTheme)
+            themeButton.classList.toggle('fa-moon')
+        })
+
+        // Generate PDF
+        function generateResume() {
+            const areaCV = document.getElementById('area-cv')
+
+            // Force Light Mode classes for simple reset (safety)
+            if (document.body.classList.contains(darkTheme)) {
+                document.body.classList.remove(darkTheme)
+            }
+
+            let opt = {
+                margin: 0,
+                filename: 'CV_{{ name|replace(" ", "_") }}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: true }, // Lower scale for performance
+                jsPDF: { format: 'a4', orientation: 'portrait' }
+            }
+
+            html2pdf(areaCV, opt)
+        }
+
+        function addScaleCV() {
+            document.body.classList.add('scale-cv')
+        }
+
+        function removeScaleCV() {
+            document.body.classList.remove('scale-cv')
+        }
+
+        const resumeButton = document.getElementById('resume-button')
+        if (resumeButton) {
+            resumeButton.addEventListener("click", () => {
+                const body = document.body
+                const wasDark = body.classList.contains(darkTheme)
+
+                // 1. Force Light Mode
+                if (wasDark) {
+                    body.classList.remove(darkTheme)
+                    themeButton.classList.remove(iconTheme)
+                    themeButton.classList.add('fa-moon')
+                }
+
+                // 2. Scale and Generate
+                addScaleCV()
+                generateResume()
+
+                // 3. Revert after delay
+                setTimeout(() => {
+                    removeScaleCV()
+                    if (wasDark) {
+                        body.classList.add(darkTheme)
+                        themeButton.classList.add(iconTheme)
+                        themeButton.classList.remove('fa-moon')
+                    }
+                }, 2000)
+            })
+        }
+    </script>
+</body>
+
+</html>

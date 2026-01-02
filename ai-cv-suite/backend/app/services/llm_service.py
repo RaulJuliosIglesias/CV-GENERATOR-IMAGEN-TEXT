@@ -261,7 +261,7 @@ async def generate_cv_content(
     api_key = os.getenv("OPENROUTER_API_KEY", "")
     
     if not api_key or api_key == "your-openrouter-api-key-here":
-        print("⚠️ No OpenRouter API key found, using mock data")
+        print("WARNING: No OpenRouter API key found, using mock data")
         return _generate_mock_cv(role, origin, gender, expertise)
     
     # Use provided model or default
@@ -325,17 +325,17 @@ async def generate_cv_content(
                     
                     try:
                         cv_data = json.loads(content)
-                        print(f"✅ CV content generated with {model_id}")
+                        print(f"SUCCESS: CV content generated with {model_id}")
                         return cv_data
                     except json.JSONDecodeError as e:
-                        print(f"⚠️ JSON parse error: {e}")
+                        print(f"WARNING: JSON parse error: {e}")
                         print(f"Raw content: {content[:500]}")
             
-            print(f"⚠️ OpenRouter API error: {response.status_code}")
+            print(f"WARNING: OpenRouter API error: {response.status_code}")
             return _generate_mock_cv(role, origin, gender, expertise)
             
     except Exception as e:
-        print(f"⚠️ OpenRouter API exception: {e}")
+        print(f"WARNING: OpenRouter API exception: {e}")
         return _generate_mock_cv(role, origin, gender, expertise)
 
 
