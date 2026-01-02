@@ -12,8 +12,42 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from correct path
+BACKEND_DIR_INIT = Path(__file__).parent.parent
+ENV_PATH = BACKEND_DIR_INIT / ".env"
+
+# Manual .env reader (bypasses broken load_dotenv)
+def load_env_manually(env_path: Path):
+    """Manually read .env file and set environment variables."""
+    if not env_path.exists():
+        print(f"WARNING: .env file not found at {env_path}")
+        return
+    
+    try:
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, _, value = line.partition('=')
+                    key = key.strip()
+                    value = value.strip()
+                    # Remove quotes if present
+                    if value.startswith('"') and value.endswith('"'):
+                        value = value[1:-1]
+                    if value.startswith("'") and value.endswith("'"):
+                        value = value[1:-1]
+                    os.environ[key] = value
+                    print(f"DEBUG: Set {key}={value[:15]}..." if len(value) > 15 else f"DEBUG: Set {key}={value}")
+    except Exception as e:
+        print(f"ERROR reading .env: {e}")
+
+# Load using manual reader
+load_env_manually(ENV_PATH)
+
+# Debug: Confirm API key loaded at startup
+_api_key = os.getenv("OPENROUTER_API_KEY", "")
+print(f"DEBUG MAIN: .env path: {ENV_PATH} (exists: {ENV_PATH.exists()})")
+print(f"DEBUG MAIN: OPENROUTER_API_KEY loaded: {'YES (' + _api_key[:8] + '...)' if _api_key and len(_api_key) > 8 else 'NO/EMPTY'}")
 
 from .routers import generation
 

@@ -350,12 +350,14 @@ async def generate_avatar(
                     
                     return str(filepath)
             
-            print(f"WARNING: Krea API error: {response.status_code} - {response.text[:200]}")
-            return await _generate_mock_avatar(gender, ethnicity)
+            error_msg = f"Krea API error: {response.status_code} - {response.text[:200]}"
+            print(f"ERROR: {error_msg}")
+            raise RuntimeError(error_msg)
             
     except Exception as e:
-        print(f"WARNING: Krea API exception: {e}")
-        return await _generate_mock_avatar(gender, ethnicity)
+        error_msg = f"Krea API exception: {e}"
+        print(f"ERROR: {error_msg}")
+        raise RuntimeError(error_msg)
 
 
 async def _generate_mock_avatar(gender: str, ethnicity: str) -> str:

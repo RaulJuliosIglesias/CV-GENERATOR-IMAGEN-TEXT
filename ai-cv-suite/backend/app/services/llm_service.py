@@ -374,12 +374,14 @@ async def generate_cv_content(
                         print(f"WARNING: JSON parse error: {e}")
                         print(f"Raw content: {content[:500]}")
             
-            print(f"WARNING: OpenRouter API error: {response.status_code}")
-            return _generate_mock_cv(role, origin, gender, expertise)
+            error_msg = f"OpenRouter API returned status {response.status_code}"
+            print(f"ERROR: {error_msg}")
+            raise RuntimeError(error_msg)
             
     except Exception as e:
-        print(f"WARNING: OpenRouter API exception: {e}")
-        return _generate_mock_cv(role, origin, gender, expertise)
+        error_msg = f"OpenRouter API exception: {e}"
+        print(f"ERROR: {error_msg}")
+        raise RuntimeError(error_msg)
 
 
 def _generate_mock_cv(role: str, origin: str, gender: str, expertise: str = "mid") -> dict:
