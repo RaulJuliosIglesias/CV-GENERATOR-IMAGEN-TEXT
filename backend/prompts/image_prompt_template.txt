@@ -1,5 +1,11 @@
 Professional corporate headshot portrait of a {{gender_term}}, {{age}} years old, {{ethnicity}} heritage.
 {{role_context}}
 {{style_modifiers}}
-business attire, neutral professional studio background, soft cinematic lighting, 85mm lens, f/1.8, sharp focus on eyes, confident friendly expression, photorealistic, 4k, highly detailed texture.
-Negative prompt: cartoon, illustration, drawing, anime, deformities, blur, distorted eyes.
+Wardrobe: tailored business attire (blazer/jacket), subtle neutral colors, no loud patterns.
+Background: seamless neutral studio backdrop (light gray or off-white), minimal and distraction-free.
+Lighting: soft key + gentle fill, cinematic yet natural skin tones, clean catchlights in both eyes.
+Camera: 85mm portrait lens look, f/1.8 shallow depth of field, sharp focus on eyes, high dynamic range.
+Pose/expression: confident, approachable, friendly professional expression, relaxed shoulders, natural posture.
+Output: photorealistic, ultra-detailed skin texture, realistic hair detail, 4k.
+
+Negative prompt: cartoon, illustration, drawing, anime, CGI, 3d render, plastic skin, waxy skin, oversmoothed, overprocessed, lowres, jpeg artifacts, blur, out of focus, motion blur, noise, grain, harsh shadows, overexposed, underexposed, incorrect anatomy, asymmetrical face, deformed hands, extra fingers, missing fingers, distorted eyes, cross-eye, lazy eye, bad teeth, open mouth, unnatural smile, watermark, text, logo, frame, cropped head, cut-off shoulders.

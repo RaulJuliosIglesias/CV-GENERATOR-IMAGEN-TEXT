@@ -244,12 +244,108 @@ Instructions:
 """
 
 
-def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool, name: Optional[str] = None) -> str:
+
+def create_profile_prompt(role: str, gender: str, ethnicity: str, origin: str, age_range: str) -> str:
+    """Create a prompt for generating a unique user profile."""
+    
+    # Load from external template - FAIL FAST
+    template_path = BACKEND_DIR / "prompts" / "profile_creation_prompt.txt"
+    
+    if not template_path.exists():
+        error_msg = f"CRITICAL ERROR: Profile Template file not found at {template_path}"
+        print(error_msg)
+        raise FileNotFoundError(error_msg)
+        
+    print(f"DEBUG: Loading external Profile template from {template_path}")
+    with open(template_path, "r", encoding="utf-8") as f:
+        template_str = f.read()
+    
+    return Template(template_str).render(
+        role=role,
+        gender=gender,
+        ethnicity=ethnicity,
+        origin=origin,
+        age_range=age_range
+    )
+
+
+async def generate_profile_data(
+    role: str,
+    gender: str,
+    ethnicity: str,
+    origin: str,
+    age_range: str,
+    model: Optional[str] = None
+) -> Tuple[dict, str]:
+    """
+    Generate a unique profile (Phase 1)
+    Returns: (profile_data, used_prompt)
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY", "")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY not configured")
+        
+    model_id = model or os.getenv("DEFAULT_LLM_MODEL", "google/gemini-2.0-flash-exp:free")
+    
+    prompt = create_profile_prompt(role, gender, ethnicity, origin, age_range)
+    
+    try:
+        request_payload = {
+            "model": model_id,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.9, # High temperature for variety
+            "max_tokens": 1000
+        }
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                OPENROUTER_API_URL,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://ai-cv-suite.local",
+                },
+                json=request_payload
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                content = result["choices"][0]["message"]["content"]
+                
+                # Cleanup and parse
+                content = content.replace("```json", "").replace("```", "").strip()
+                start = content.find('{')
+                end = content.rfind('}')
+                if start != -1 and end != -1:
+                    content = content[start:end+1]
+                    
+                profile_data = json.loads(content)
+                print(f"SUCCESS: Generated Profile: {profile_data.get('name')}")
+                return profile_data, prompt
+            else:
+                 raise RuntimeError(f"Profile Gen Failed: {response.text}")
+
+    except Exception as e:
+        print(f"ERROR Generating Profile: {e}")
+        raise RuntimeError(f"Profile Gen Error: {e}")
+
+
+def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool, name: Optional[str] = None, profile_data: Optional[dict] = None) -> str:
     """Create detailed user prompt based on profile using external template."""
-    # 1. Resolve logical variables
-    role_instruction = f"Role: {role}"
-    if role.lower() == "any":
-        role_instruction = "Role: CHOOSE A RANDOM HIGH-DEMAND TECH ROLE"
+    
+    # Use Profile Data if available (Phase 2)
+    display_name = name
+    display_role = role
+    display_gender = gender
+    
+    if profile_data:
+        display_name = profile_data.get("name", name)
+        display_role = profile_data.get("role", role)
+        display_gender = profile_data.get("gender", gender)
+        # We can pass more profile data into the template if needed
 
     # 2. Load from external template - CRITICAL: FAIL FAST IF MISSING
     template_path = BACKEND_DIR / "prompts" / "cv_prompt_template.txt"
@@ -265,14 +361,14 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
     
     # Render Jinja2 template
     return Template(template_str).render(
-        role=role if role.lower() != "any" else "High Demand Tech Role (Choose one)",
+        role=display_role,
         expertise=expertise,
         age=age,
-        gender=gender,
+        gender=display_gender,
         ethnicity=ethnicity,
         origin=origin,
         remote="Preferred" if remote else "Flexible",
-        name=name if name else "" 
+        name=display_name if display_name else "" 
     )
 
 
@@ -287,7 +383,7 @@ def get_available_models() -> list[dict]:
     ]
 
 
-async def generate_cv_content(
+async def generate_cv_content_v2(
     role: str = "Software Developer",
     expertise: str = "mid",
     age: int = 30,
@@ -295,7 +391,9 @@ async def generate_cv_content(
     ethnicity: str = "any",
     origin: str = "United States",
     remote: bool = False,
-    model: Optional[str] = None
+    model: Optional[str] = None,
+    name: Optional[str] = None,
+    profile_data: Optional[dict] = None
 ) -> Tuple[dict, str]:
     """
     Generate detailed CV content using OpenRouter with enhanced prompts.
@@ -309,6 +407,7 @@ async def generate_cv_content(
     # Debug logging
     print(f"DEBUG: API Key loaded: {'YES (' + api_key[:8] + '...)' if api_key and len(api_key) > 8 else 'NO/EMPTY'}")
     print(f"DEBUG: Role for generation: {role}")
+    print(f"DEBUG: Using Profile Data: {bool(profile_data)} (Name: {name})")
     
     if not api_key or api_key == "your-openrouter-api-key-here":
         error_msg = "ERROR: OPENROUTER_API_KEY not configured in backend/.env - Cannot generate CV without real API key"
@@ -319,7 +418,17 @@ async def generate_cv_content(
     model_id = model or os.getenv("DEFAULT_LLM_MODEL", "google/gemini-2.0-flash-exp:free")
     print(f"DEBUG: Using LLM model: {model_id}")
     
-    user_prompt = create_user_prompt(role, expertise, age, gender, ethnicity, origin, remote)
+    user_prompt = create_user_prompt(
+        role=role, 
+        expertise=expertise, 
+        age=age, 
+        gender=gender, 
+        ethnicity=ethnicity, 
+        origin=origin, 
+        remote=remote,
+        name=name,
+        profile_data=profile_data
+    )
     
     # Adjust max_tokens based on expertise level - INCREASED to prevent JSON truncation
     max_tokens = {

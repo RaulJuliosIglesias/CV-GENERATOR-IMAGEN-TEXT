@@ -16,7 +16,7 @@ from typing import Optional
 
 from ..core.task_manager import task_manager, Task, TaskStatus
 from ..core.pdf_engine import render_cv_html
-from ..services.llm_service import generate_cv_content, get_available_models as get_llm_models, create_user_prompt
+from ..services.llm_service import generate_cv_content_v2, generate_profile_data, get_available_models as get_llm_models, create_user_prompt
 from ..services.krea_service import generate_avatar, get_available_models as get_image_models, get_avatar_prompt
 
 # Get paths
@@ -89,171 +89,202 @@ class FilesResponse(BaseModel):
 batch_models = {}
 
 
-# Background task for generating a single CV
-async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: Optional[str]):
-    """Generate a single CV with sequential subtasks."""
-    try:
-        task.status = TaskStatus.GENERATING_CONTENT
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        # --- SUBTASK 1: Drafting Prompts ---
-        # --- SUBTASK 1: Initialization ---
-        task.current_subtask_index = 0
-        task.subtasks[0].status = TaskStatus.RUNNING
-        task.subtasks[0].message = "Initializing AI pipeline..."
-        await task_manager._save_batches()
-        
-        # Safe age extraction
-        try:
-            age = int(task.age_range.split('-')[0]) if '-' in task.age_range else int(task.age_range)
-        except:
-            age = 30
-        
-        task.subtasks[0].status = TaskStatus.COMPLETE
-        task.subtasks[0].progress = 100
-        task.progress = 10
-        
-        # --- SUBTASK 2: Generating Content (LLM) ---
-        task.current_subtask_index = 1
-        task.subtasks[1].status = TaskStatus.RUNNING
-        task.subtasks[1].message = f"Generating premium content ({llm_model or 'Auto'})..."
-        await task_manager._save_batches()
-
-        # Generate CV Content and Capture Prompt
-        cv_data, used_cv_prompt = await generate_cv_content(
-            role=task.role,
-            expertise=task.expertise,
-            age=age,
-            gender=task.gender,
-            ethnicity=task.ethnicity,
-            origin=task.origin,
-            remote=task.remote,
-            model=llm_model
-        )
-        task.cv_data = cv_data
-        
-        # Save REAL CV Prompt used
-        try:
-            p_cv_path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
-            with open(p_cv_path, "w", encoding="utf-8") as f:
-                f.write(used_cv_prompt)
-        except Exception as e:
-            print(f"Warning saving CV prompt: {e}")
-        
-        task.subtasks[1].status = TaskStatus.COMPLETE
-        task.subtasks[1].progress = 100
-        task.progress = 40
-        
-        # --- SUBTASK 3: Generating Visuals (AI) ---
-        task.current_subtask_index = 2
-        task.subtasks[2].status = TaskStatus.RUNNING
-        task.subtasks[2].message = "Designing professional avatar..."
-        await task_manager._save_batches()
-
-        # Resolve gender coherence: Use LLM generated gender if available
-        effective_gender = task.gender
-        if cv_data and isinstance(cv_data, dict):
-            meta_gender = cv_data.get("meta", {}).get("generated_gender")
-            if meta_gender:
-                effective_gender = meta_gender
-                print(f"DEBUG: Using gender from LLM meta for Image Gen: {effective_gender}")
-
-        # Generate Avatar and Capture Prompt
-        image_path, used_img_prompt = await generate_avatar(
-            gender=effective_gender,
-            ethnicity=task.ethnicity,
-            age_range=task.age_range,
-            origin=task.origin,
-            model=image_model,
-            filename=f"{task.id}_avatar.jpg"
-        )
-        task.image_path = image_path
-        
-        # Save REAL Image Prompt used
-        try:
-            p_img_path = PROMPTS_DIR / f"{task.id}_image_prompt.txt"
-            with open(p_img_path, "w", encoding="utf-8") as f:
-                f.write(used_img_prompt)
-        except Exception as e:
-            print(f"Warning saving Image prompt: {e}")
-        
-        task.subtasks[2].status = TaskStatus.COMPLETE
-        task.subtasks[2].progress = 100
-        task.progress = 70
-        
-        # --- SUBTASK 4: Assembling HTML ---
-        task.current_subtask_index = 3
-        task.subtasks[3].status = TaskStatus.RUNNING
-        task.subtasks[3].message = "Assembling LeaG76 Template..."
-        await task_manager._save_batches()
-        
-        # Clean and format filename: Name_Role_Expertise_ID.html
-        safe_name = cv_data.get("name", "CV").replace(" ", "_")
-        safe_name = "".join([c for c in safe_name if c.isalnum() or c in ('_','-')])
-        
-        safe_role = task.role.replace(" ", "_") if task.role != "any" else cv_data.get("title", "Role").replace(" ", "_")
-        safe_role = "".join([c for c in safe_role if c.isalnum() or c in ('_','-')])
-        
-        safe_expertise = task.expertise
-        
-        # Format: ID_Name_Role.html -> ID first for sorting
-        filename = f"{task.id[:8]}_{safe_name}_{safe_role}_{safe_expertise}.html"
-        
-        html_path = await render_cv_html(cv_data, image_path, filename, HTML_DIR)
-        task.html_path = html_path
-        
-        task.subtasks[3].status = TaskStatus.COMPLETE
-        task.subtasks[3].progress = 100
-        task.progress = 90
-        
-        # --- SUBTASK 5: Finalizing & Exporting ---
-        task.current_subtask_index = 4
-        task.subtasks[4].status = TaskStatus.RUNNING
-        task.subtasks[4].message = "Finalizing export..."
-        await task_manager._save_batches()
-        
-        task.pdf_path = html_path # Points to HTML for client export
-        
-        task.subtasks[4].status = TaskStatus.COMPLETE
-        task.subtasks[4].progress = 100
-        task.progress = 100
-        
-        # COMPLETE
-        task.status = TaskStatus.COMPLETE
-        task.message = "CV Generated Successfully"
-        await task_manager._save_batches()
-        
-    except Exception as e:
-        error_msg = str(e)
-        print(f"Error generating CV {task.id}: {error_msg}")
-        import traceback
-        traceback.print_exc()
-        
-        # Mark current subtask as failed
-        if task.current_subtask_index < len(task.subtasks):
-            task.subtasks[task.current_subtask_index].status = TaskStatus.ERROR
-            task.subtasks[task.current_subtask_index].message = error_msg
-            
-        task.status = TaskStatus.ERROR
-        task.error = error_msg
-        await task_manager._save_batches()
-
-
-# Background task for processing a batch
 async def process_batch(batch_id: str, llm_model: Optional[str], image_model: Optional[str]):
-    """Process all tasks in a batch concurrently."""
+    """Execute the sequential 4-Phase Generation Pipeline."""
     batch = task_manager.get_batch(batch_id)
-    if not batch:
+    if not batch: return
+    
+    tasks = batch.tasks
+    
+    # --- PHASE 1: GENERATE UNIQUE PROFILES ---
+    # Concurrency: 5 (Fast, text only)
+    print(f"=== STARTING PHASE 1: PROFILES ({len(tasks)} tasks) ===")
+    
+    sem_phase1 = asyncio.Semaphore(5)
+    
+    async def run_phase1(task: Task):
+        async with sem_phase1:
+            try:
+                task.status = TaskStatus.RUNNING
+                task.current_subtask_index = 0
+                task.subtasks[0].status = TaskStatus.RUNNING
+                task.subtasks[0].message = "Inventing unique persona..."
+                await task_manager._save_batches()
+                
+                profile_data, prompt = await generate_profile_data(
+                    role=task.role,
+                    gender=task.gender,
+                    ethnicity=task.ethnicity,
+                    origin=task.origin,
+                    age_range=task.age_range,
+                    model=llm_model
+                )
+                
+                # Save Profile Data to Task
+                task.profile_data = profile_data
+                
+                # Update status
+                task.subtasks[0].status = TaskStatus.COMPLETE
+                task.subtasks[0].progress = 100
+                task.progress = 20
+                task.message = f"Profile Created: {profile_data.get('name')}"
+                await task_manager._save_batches()
+                
+            except Exception as e:
+                task.error = str(e)
+                task.status = TaskStatus.ERROR
+                task.subtasks[0].status = TaskStatus.ERROR
+                print(f"Phase 1 Error Task {task.id}: {e}")
+
+    await asyncio.gather(*[run_phase1(t) for t in tasks])
+    
+    # Check if we should proceed (at least one success)
+    active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
+    if not active_tasks:
+        print("Batch failed at Phase 1")
         return
+
+    # --- PHASE 2: GENERATE CV CONTENT ---
+    # Concurrency: 3 (Heavy LLM work)
+    print(f"=== STARTING PHASE 2: CV CONTENT ({len(active_tasks)} tasks) ===")
+    sem_phase2 = asyncio.Semaphore(3)
     
-    # Process all tasks concurrently (max 3)
-    semaphore = asyncio.Semaphore(3)
+    async def run_phase2(task: Task):
+        async with sem_phase2:
+            try:
+                task.current_subtask_index = 1
+                task.subtasks[1].status = TaskStatus.RUNNING
+                task.subtasks[1].message = "Writing detailed CV..."
+                task.status = TaskStatus.GENERATING_CONTENT
+                await task_manager._save_batches()
+                
+                # Use Profile Data from Phase 1
+                p = task.profile_data or {}
+                
+                cv_data, used_prompt = await generate_cv_content_v2(
+                    role=p.get('role', task.role),
+                    expertise=task.expertise, # Keep expertise from request
+                    age=p.get('age', 30),
+                    gender=p.get('gender', task.gender),
+                    ethnicity=p.get('ethnicity', task.ethnicity),
+                    origin=p.get('origin', task.origin),
+                    remote=task.remote,
+                    model=llm_model,
+                    name=p.get('name'), # Pass name explicitly
+                    profile_data=p # Pass full profile mainly for consistency 
+                )
+                
+                task.cv_data = cv_data
+                
+                # Save Prompt
+                try:
+                    path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
+                    with open(path, "w", encoding="utf-8") as f: f.write(used_prompt)
+                except: pass
+
+                task.subtasks[1].status = TaskStatus.COMPLETE
+                task.subtasks[1].progress = 100
+                task.progress = 50
+                await task_manager._save_batches()
+                
+            except Exception as e:
+                task.error = str(e)
+                task.status = TaskStatus.ERROR
+                task.subtasks[1].status = TaskStatus.ERROR
+                print(f"Phase 2 Error Task {task.id}: {e}")
+
+    await asyncio.gather(*[run_phase2(t) for t in active_tasks])
     
-    async def process_with_semaphore(task: Task):
-        async with semaphore:
-            await generate_single_cv(task, llm_model, image_model)
+    # Filter again
+    active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
     
-    await asyncio.gather(*[process_with_semaphore(t) for t in batch.tasks])
+    # --- PHASE 3: GENERATE IMAGES ---
+    # Concurrency: 2 (Rate limits often stricter here)
+    print(f"=== STARTING PHASE 3: IMAGES ({len(active_tasks)} tasks) ===")
+    sem_phase3 = asyncio.Semaphore(2)
+    
+    async def run_phase3(task: Task):
+        async with sem_phase3:
+            try:
+                task.current_subtask_index = 2
+                task.subtasks[2].status = TaskStatus.RUNNING
+                task.subtasks[2].message = "Generating avatar..."
+                task.status = TaskStatus.GENERATING_IMAGE
+                await task_manager._save_batches()
+                
+                p = task.profile_data or {}
+                
+                image_path, used_prompt = await generate_avatar(
+                    gender=p.get('gender', task.gender),
+                    ethnicity=p.get('ethnicity', task.ethnicity),
+                    age_range=task.age_range,
+                    origin=p.get('origin', task.origin),
+                    model=image_model,
+                    filename=f"{task.id}_avatar.jpg"
+                )
+                
+                task.image_path = image_path
+                
+                try:
+                    path = PROMPTS_DIR / f"{task.id}_image_prompt.txt"
+                    with open(path, "w", encoding="utf-8") as f: f.write(used_prompt)
+                except: pass
+                
+                task.subtasks[2].status = TaskStatus.COMPLETE
+                task.subtasks[2].progress = 100
+                task.progress = 80
+                await task_manager._save_batches()
+                
+            except Exception as e:
+                task.error = str(e)
+                task.status = TaskStatus.ERROR
+                task.subtasks[2].status = TaskStatus.ERROR
+                print(f"Phase 3 Error Task {task.id}: {e}")
+
+    await asyncio.gather(*[run_phase3(t) for t in active_tasks])
+    
+    # Filter again
+    active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
+
+    # --- PHASE 4: ASSEMBLY ---
+    # Concurrency: 10 (Fast local IO)
+    print(f"=== STARTING PHASE 4: ASSEMBLY ({len(active_tasks)} tasks) ===")
+    
+    for task in active_tasks:
+        try:
+            task.current_subtask_index = 3
+            task.subtasks[3].status = TaskStatus.RUNNING
+            task.subtasks[3].message = "Assembling HTML..."
+            await task_manager._save_batches()
+            
+            p = task.profile_data or {}
+            
+            # Format Filename
+            safe_name = p.get("name", "CV").replace(" ", "_")
+            safe_name = "".join([c for c in safe_name if c.isalnum() or c in ('_','-')])
+            safe_role = p.get("role", "Role").replace(" ", "_").replace("/", "-")
+            safe_role = "".join([c for c in safe_role if c.isalnum() or c in ('_','-')])
+            
+            filename = f"{task.id[:8]}_{safe_name}_{safe_role}.html"
+            
+            html_path = await render_cv_html(task.cv_data, task.image_path, filename, HTML_DIR)
+            task.html_path = html_path
+            task.pdf_path = html_path
+            
+            task.subtasks[3].status = TaskStatus.COMPLETE
+            task.subtasks[3].progress = 100
+            task.subtasks[4].status = TaskStatus.COMPLETE
+            task.subtasks[4].progress = 100
+            
+            task.status = TaskStatus.COMPLETE
+            task.progress = 100
+            task.message = "Complete"
+            await task_manager._save_batches()
+            
+        except Exception as e:
+            task.error = str(e)
+            task.status = TaskStatus.ERROR
+            print(f"Phase 4 Error Task {task.id}: {e}")
 
 
 @router.get("/models", response_model=ModelsResponse)
@@ -340,7 +371,7 @@ async def list_files():
     files = []
     if OUTPUT_DIR.exists():
         for pattern in ["*.pdf", "*.html"]:
-            for filepath in sorted(OUTPUT_DIR.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True):
+            for filepath in sorted(HTML_DIR.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True):
                 stat = filepath.stat()
                 files.append(FileInfo(
                     filename=filepath.name,
@@ -354,7 +385,7 @@ async def list_files():
 @router.get("/files/{filename}")
 async def get_file(filename: str):
     """Download/view a specific file."""
-    filepath = OUTPUT_DIR / filename
+    filepath = HTML_DIR / filename
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="File not found")
     
@@ -365,7 +396,7 @@ async def get_file(filename: str):
 @router.delete("/files/{filename}")
 async def delete_file(filename: str):
     """Delete a file."""
-    filepath = OUTPUT_DIR / filename
+    filepath = HTML_DIR / filename
     if filepath.exists():
         filepath.unlink()
     return {"message": f"Deleted {filename}"}
@@ -374,7 +405,8 @@ async def delete_file(filename: str):
 @router.post("/open-folder")
 async def open_folder():
     """Open output folder."""
-    folder_path = str(OUTPUT_DIR.absolute())
+    # Modified to open the HTML directory as requested
+    folder_path = str(HTML_DIR.absolute())
     try:
         if sys.platform == "win32":
             os.startfile(folder_path)
@@ -393,6 +425,9 @@ async def clear_all():
     if OUTPUT_DIR.exists():
         for f in OUTPUT_DIR.glob("*.*"):
             if f.is_file(): f.unlink()
+    if HTML_DIR.exists():
+        for f in HTML_DIR.glob("*.html"):
+            f.unlink()
     if ASSETS_DIR.exists():
         for f in ASSETS_DIR.glob("avatar_*.jpg"):
             f.unlink()

@@ -43,6 +43,7 @@ class Task:
     remote: bool = False
     
     # Results
+    profile_data: Optional[dict] = None # Phase 1 Result
     cv_data: Optional[dict] = None
     image_path: Optional[str] = None
     pdf_path: Optional[str] = None
@@ -51,13 +52,13 @@ class Task:
     progress: int = 0
     message: str = "Initialized"
     
-    # Subtasks tracking
+    # Subtasks tracking - PHASED PIPELINE
     subtasks: list[Subtask] = field(default_factory=lambda: [
-        Subtask(id="1", name="Drafting Prompts"),
-        Subtask(id="2", name="Generating Content (LLM)"),
-        Subtask(id="3", name="Generating Visuals (AI)"),
-        Subtask(id="4", name="Assembling HTML"),
-        Subtask(id="5", name="Finalizing & Exporting")
+        Subtask(id="1", name="Phase 1: Generating Unique Profile"),
+        Subtask(id="2", name="Phase 2: Generating CV Content"),
+        Subtask(id="3", name="Phase 3: Generating Visuals"),
+        Subtask(id="4", name="Phase 4: Assembly & HTML"),
+        Subtask(id="5", name="Finalizing")
     ])
     current_subtask_index: int = 0
 
