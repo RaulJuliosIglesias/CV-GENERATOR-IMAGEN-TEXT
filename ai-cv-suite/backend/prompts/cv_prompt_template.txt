@@ -39,12 +39,16 @@ JSON STRUCTURE:
     "github": "github.com/name",
     "portfolio": "portfolio.com"
   },
-  "technical_skills": {
-    "Languages": ["Python", "JavaScript", ...],
-    "Frameworks": ["React", "Django", ...],
-    "Tools": ["Docker", "AWS", ...]
+  "skills": {
+    "technical": [
+      {"name": "Python", "level": 95},
+      {"name": "React", "level": 90},
+      {"name": "Docker", "level": 85},
+      {"name": "AWS", "level": 80},
+      {"name": "CI/CD", "level": 85},
+      {"name": "System Design", "level": 80}
+    ]
   },
-  "soft_skills": ["Leadership", "Communication", ...],
   "languages": [
     {"name": "English", "level_num": 5, "level_text": "Native"},
     {"name": "Spanish", "level_num": 4, "level_text": "Professional"}
@@ -52,31 +56,36 @@ JSON STRUCTURE:
   "education": [
     {
       "degree": "Master of Science in Computer Science",
-      "school": "University Name",
+      "institution": "University Name",
       "year": "2018",
-      "details": "Specialized in AI..."
+      "honors": "Magna Cum Laude, Specialized in AI"
     }
   ],
   "experience": [
     {
-      "role": "Senior Developer",
+      "title": "Senior Developer",
       "company": "Tech Corp",
-      "period": "2019 - Present",
-      "description": [
-        "Led migration of legacy monolith to microservices reducing deployment time by 60%.",
-        "Managed team of 8 engineers...",
-        "..."
+      "date_range": "2019 - Present",
+      "description": "Led migration of legacy monolith to microservices reducing deployment time by 60%. Managed team of 8 engineers.",
+      "achievements": [
+        "Scaled revenue by 200% to $5M through infrastructure optimization.",
+        "Reduced cloud costs by 30% by implementing spot instances.",
+        "Mentored 4 junior developers to senior positions."
       ]
+    },
+    {
+       "title": "Developer",
+       "company": "StartUp Inc",
+       "date_range": "2016 - 2019",
+       "description": "Developed full stack web applications using React and Node.js.",
+       "achievements": [
+         "Built MVP in 3 months leading to Series A funding.",
+         "Implemented real-time chat feature using WebSockets."
+       ]
     }
   ],
   "certificates": [
     {"name": "AWS Professional", "issuer": "AWS", "date": "2023"}
-  ],
-  "projects": [
-    {
-      "name": "Project Alpha",
-      "description": "Description with tech stack used."
-    }
   ],
   "interests": ["Hiking", "Open Source"]
 }

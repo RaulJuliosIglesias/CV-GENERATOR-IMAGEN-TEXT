@@ -151,6 +151,7 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
     try:
         template_path = BACKEND_DIR / "prompts" / "cv_prompt_template.txt"
         if template_path.exists():
+            print(f"DEBUG: Loading external CV template from {template_path}")
             with open(template_path, "r", encoding="utf-8") as f:
                 template_str = f.read()
             

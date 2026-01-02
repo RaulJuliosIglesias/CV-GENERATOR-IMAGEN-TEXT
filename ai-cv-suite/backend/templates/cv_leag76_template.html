@@ -546,6 +546,35 @@
         .scale-cv .skills_box {
             width: 100px;
         }
+
+        /* --- PRINT / PDF OPTIMIZATIONS --- */
+        @media print {
+            .bd-container {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+
+            .experience_content,
+            .education_content,
+            .certificate_content {
+                page-break-inside: avoid;
+                margin-bottom: 1rem;
+            }
+
+            .resume_right {
+                page-break-before: auto;
+            }
+
+            h1,
+            h2,
+            h3 {
+                page-break-after: avoid;
+            }
+        }
     </style>
 </head>
 

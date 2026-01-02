@@ -258,6 +258,7 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
     try:
         template_path = BACKEND_DIR / "prompts" / "image_prompt_template.txt"
         if template_path.exists():
+            print(f"DEBUG: Loading external Image template from {template_path}")
             with open(template_path, "r", encoding="utf-8") as f:
                 template = f.read()
                 
