@@ -53,10 +53,11 @@ class Task:
     
     # Subtasks tracking
     subtasks: list[Subtask] = field(default_factory=lambda: [
-        Subtask(id="1", name="Generate Text (LLM)"),
-        Subtask(id="2", name="Generate Image (AI)"),
-        Subtask(id="3", name="Assemble HTML"),
-        Subtask(id="4", name="Create PDF")
+        Subtask(id="1", name="Drafting Prompts"),
+        Subtask(id="2", name="Generating Content (LLM)"),
+        Subtask(id="3", name="Generating Visuals (AI)"),
+        Subtask(id="4", name="Assembling HTML"),
+        Subtask(id="5", name="Finalizing & Exporting")
     ])
     current_subtask_index: int = 0
 

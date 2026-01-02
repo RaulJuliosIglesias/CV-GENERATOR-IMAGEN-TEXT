@@ -86,32 +86,51 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         task.status = TaskStatus.GENERATING_CONTENT
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # --- SUBTASK 1: Generate Text (LLM) ---
+        # --- SUBTASK 1: Drafting Prompts ---
         task.current_subtask_index = 0
         task.subtasks[0].status = TaskStatus.RUNNING
-        task.subtasks[0].message = "Generating content with LLM..."
-        await task_manager._save_batches() # Force save update
+        task.subtasks[0].message = "Engineering expert prompts for AI..."
+        await task_manager._save_batches()
+        
+        # Simulate prompt creation (visibility step)
+        await asyncio.sleep(1.5)
+        
+        task.subtasks[0].status = TaskStatus.COMPLETE
+        task.subtasks[0].progress = 100
+        task.progress = 10
+        
+        # --- SUBTASK 2: Generating Content (LLM) ---
+        task.current_subtask_index = 1
+        task.subtasks[1].status = TaskStatus.RUNNING
+        task.subtasks[1].message = f"Generating premium content ({llm_model or 'Auto'})..."
+        await task_manager._save_batches()
+
+        # Extract age safely
+        try:
+            age = int(task.age_range.split('-')[0]) if '-' in task.age_range else int(task.age_range)
+        except:
+            age = 30
 
         cv_data = await generate_cv_content(
             role=task.role,
             expertise=task.expertise,
-            age=int(task.age_range.split('-')[0]) if '-' in task.age_range else 30, # Approx age
+            age=age,
             gender=task.gender,
             ethnicity=task.ethnicity,
             origin=task.origin,
             remote=task.remote,
             model=llm_model
         )
-        
         task.cv_data = cv_data
-        task.subtasks[0].status = TaskStatus.COMPLETE
-        task.subtasks[0].progress = 100
-        task.progress = 25
         
-        # --- SUBTASK 2: Generate Image (AI) ---
-        task.current_subtask_index = 1
-        task.subtasks[1].status = TaskStatus.RUNNING
-        task.subtasks[1].message = "Generating avatar with Krea..."
+        task.subtasks[1].status = TaskStatus.COMPLETE
+        task.subtasks[1].progress = 100
+        task.progress = 40
+        
+        # --- SUBTASK 3: Generating Visuals (AI) ---
+        task.current_subtask_index = 2
+        task.subtasks[2].status = TaskStatus.RUNNING
+        task.subtasks[2].message = "Designing professional avatar..."
         await task_manager._save_batches()
 
         image_path = await generate_avatar(
@@ -121,40 +140,47 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
             origin=task.origin,
             model=image_model
         )
-        
         task.image_path = image_path
-        task.subtasks[1].status = TaskStatus.COMPLETE
-        task.subtasks[1].progress = 100
-        task.progress = 50
         
-        # --- SUBTASK 3: Assemble HTML ---
-        task.current_subtask_index = 2
-        task.subtasks[2].status = TaskStatus.RUNNING
-        task.subtasks[2].message = "Assembling HTML template..."
-        await task_manager._save_batches()
-        
-        safe_name = cv_data.get("name", "CV").replace(" ", "_")
-        filename = f"CV_{safe_name}_{task.id}_{timestamp}.html" # HTML extension
-        
-        html_path = await render_cv_html(cv_data, image_path, filename)
-        
-        task.html_path = html_path
         task.subtasks[2].status = TaskStatus.COMPLETE
         task.subtasks[2].progress = 100
-        task.progress = 75
+        task.progress = 70
         
-        # --- SUBTASK 4: Create PDF (Ready for Export) ---
+        # --- SUBTASK 4: Assembling HTML ---
         task.current_subtask_index = 3
         task.subtasks[3].status = TaskStatus.RUNNING
-        task.subtasks[3].message = "Finalizing..."
+        task.subtasks[3].message = "Assembling LeaG76 Template..."
         await task_manager._save_batches()
-
-        # In this workflow, PDF is exported by client from HTML
-        # We assume success once HTML is ready
-        task.pdf_path = html_path 
+        
+        # Clean and format filename: Name_Role_Expertise_ID.html
+        safe_name = cv_data.get("name", "CV").replace(" ", "_")
+        safe_name = "".join([c for c in safe_name if c.isalnum() or c in ('_','-')])
+        
+        safe_role = task.role.replace(" ", "_") if task.role != "any" else cv_data.get("title", "Role").replace(" ", "_")
+        safe_role = "".join([c for c in safe_role if c.isalnum() or c in ('_','-')])
+        
+        safe_expertise = task.expertise
+        
+        # Format: Name_Role_Expertise_ID5.html
+        filename = f"{safe_name}_{safe_role}_{safe_expertise}_{task.id[:5]}.html"
+        
+        html_path = await render_cv_html(cv_data, image_path, filename)
+        task.html_path = html_path
         
         task.subtasks[3].status = TaskStatus.COMPLETE
         task.subtasks[3].progress = 100
+        task.progress = 90
+        
+        # --- SUBTASK 5: Finalizing & Exporting ---
+        task.current_subtask_index = 4
+        task.subtasks[4].status = TaskStatus.RUNNING
+        task.subtasks[4].message = "Finalizing export..."
+        await task_manager._save_batches()
+        
+        task.pdf_path = html_path # Points to HTML for client export
+        
+        task.subtasks[4].status = TaskStatus.COMPLETE
+        task.subtasks[4].progress = 100
         task.progress = 100
         
         # COMPLETE
@@ -165,6 +191,8 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
     except Exception as e:
         error_msg = str(e)
         print(f"Error generating CV {task.id}: {error_msg}")
+        import traceback
+        traceback.print_exc()
         
         # Mark current subtask as failed
         if task.current_subtask_index < len(task.subtasks):

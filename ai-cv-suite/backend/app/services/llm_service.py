@@ -97,97 +97,73 @@ LLM_MODELS = {
 }
 
 # Enhanced system prompt for detailed CVs
-SYSTEM_PROMPT = """You are an expert CV/Resume writer. Generate COMPLETE, DETAILED, PROFESSIONAL CVs in JSON format.
+# Enhanced system prompt for detailed CVs
+SYSTEM_PROMPT = """You are an expert Executive CV/Resume Writer for top-tier tech roles. 
+Your goal is to generate an EXTREMELY DETAILED, RICH, and PREMIUM curriculum vitae.
 
-REQUIREMENTS BY EXPERIENCE LEVEL:
-- any/junior (0-2 years): 1 page, 1-2 experiences, education focus
-- mid (2-5 years): 1-2 pages, 2-3 experiences, balanced
-- senior (5-10 years): 2 FULL pages, 3-5 experiences, leadership
-- expert (10+ years): 2 FULL pages, 4-6 experiences, strategic vision
+RULES FOR CONTENT GENERATION:
+1.  **Length & Detail**: The content MUST be sufficient for a 2-page CV. detailed descriptions are required.
+    - EXPERIENCE: Generate 3-4 roles. For the most recent role, provide 5-7 distinct bullet points with metrics (e.g., "Improved latency by 40%").
+    - PROJECTS: Generate 3-4 detailed projects (hackathons, open source, complex apps). Description should be 2-3 sentences each.
+    - SUMMARY: write a compelling, 4-line executive summary.
 
-CONTENT GUIDELINES:
+2.  **Creativity**: Do generic "team player" bullet points. Use strong action verbs (Architected, Orchestrated, Spearheaded).
 
-1. EXPERIENCE - MUST BE DETAILED:
-   - Junior: 100-150 words per role
-   - Mid: 150-250 words per role
-   - Senior/Expert: 250-400 words per role
-   - Include: specific projects, technologies (8-12 for senior), methodologies, achievements with metrics, team size, impact
-   - Example metrics: "Reduced API latency by 45%", "Led team of 8"
-
-2. SKILLS (15-30 items):
-   - Technical skills with levels 60-100
-   - Categories: Languages, Frameworks, Databases, Cloud, DevOps
-   - Soft skills: Leadership, Communication, etc.
-
-3. OUTPUT STRICT JSON:
+3.  **Strict JSON Structure**: Return ONLY valid JSON matching this exact structure:
 {
-  "name": "Realistic Full Name",
-  "title": "Professional Job Title",
+  "name": "Full Name",
+  "title": "Target Role",
+  "email": "email@example.com",
+  "phone": "+1 234 567 890",
   "location": "City, Country",
-  "email": "name@email.com",
-  "phone": "+X XXX XXX XXX",
-  "profile_summary": "150-500 words based on level - career highlights, expertise, goals",
-  "experience": [
-    {
-      "title": "Job Title",
-      "company": "Company Name",
-      "location": "City",
-      "start_date": "Month YYYY",
-      "end_date": "Month YYYY or Present",
-      "description": "DETAILED description with projects, tech stack, achievements, metrics, team work...",
-      "technologies": ["Tech1", "Tech2",...],
-      "achievements": ["Achievement with metric"...]
-    }
-  ],
+  "profile_summary": "Compelling executive summary...",
   "skills": {
     "technical": [
-      {"name": "Skill", "level": 90, "years": 4, "category": "Languages"}
-    ],
-    "soft": ["Leadership", "Communication",...]
+        {"name": "Skill 1", "level": 95}, 
+        {"name": "Skill 2", "level": 90}
+    ]
   },
+  "social": {
+    "github": "https://github.com/username",
+    "linkedin": "https://linkedin.com/in/username",
+    "portfolio": "https://portfolio.com"
+  },
+  "experiences": [
+    {
+      "title": "Role Title",
+      "company": "Company Name",
+      "date_range": "2020 - Present",
+      "description": "High-level overview of the role responsibility.",
+      "achievements": [
+        "Spearheaded the migration of legacy monolith to microservices...",
+        "Reduced cloud costs by 35% through optimization..."
+      ]
+    }
+  ],
   "education": [
     {
-      "degree": "Degree Name",
-      "institution": "University",
-      "location": "City",
-      "start_year": "YYYY",
-      "end_year": "YYYY",
-      "honors": "GPA 3.8/4.0"
+       "degree": "Master of Science in CS",
+       "institution": "University Name",
+       "year": "2018-2020",
+       "honors": "Summa Cum Laude"
     }
   ],
   "certificates": [
-    {
-      "name": "Cert Name",
-      "issuer": "Organization",
-      "date": "Month YYYY",
-      "credential_id": "ABC123"
-    }
+    {"name": "AWS Solutions Architect", "issuer": "Amazon", "date": "2022"}
   ],
+  "interests": ["Quantum Computing", "Generative AI Art", "Triathlon"],
   "projects": [
     {
-      "name": "Project Name",
-      "description": "150-250 words about problem, solution, tech, impact",
-      "url": "https://github.com/user/repo",
-      "technologies": ["React", "Node.js",...]
+       "name": "Project Alpha",
+       "description": "A high-performance distributed system for..."
     }
   ],
   "languages": [
-    {"name": "English", "level": "C2", "proficiency": "Native"}
-  ],
-  "interests": ["AI/ML", "Open Source",...],
-  "social": {
-    "github": "username",
-    "linkedin": "username",
-    "portfolio": "https://site.com"
-  }
+    {"name": "English", "level_num": 5},
+    {"name": "Spanish", "level_num": 4}
+  ]
 }
-
-RULES:
-1. Match detail level to experience (senior = MUCH more detail)
-2. Use realistic metrics and achievements
-3. Names match gender/ethnicity
-4. Technologies current and relevant
-5. OUTPUT ONLY VALID JSON - NO markdown, NO explanations"""
+"""
 
 
 def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool) -> str:
@@ -213,10 +189,15 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
     
     detail_level = detail_requirement.get(expertise, "balanced detail")
     
+    
+    role_instruction = f"Role: {role}"
+    if role.lower() == "any":
+        role_instruction = "Role: CHOOSE A RANDOM HIGH-DEMAND TECH ROLE (e.g. Senior DevOps, AI Research Scientist, Blockchain Lead, Full Stack Architect, Data Engineer)"
+
     return f"""Generate a COMPLETE, REALISTIC CV for:
 
 **Profile**:
-- Role: {role}
+- {role_instruction}
 - Experience Level: {expertise} ({years_experience} years)
 - Age: {age} years old
 - Gender: {gender}
@@ -325,6 +306,8 @@ async def generate_cv_content(
                     
                     try:
                         cv_data = json.loads(content)
+                        # Ensure data structure safety
+                        cv_data = ensure_social_dict(cv_data)
                         print(f"SUCCESS: CV content generated with {model_id}")
                         return cv_data
                     except json.JSONDecodeError as e:
