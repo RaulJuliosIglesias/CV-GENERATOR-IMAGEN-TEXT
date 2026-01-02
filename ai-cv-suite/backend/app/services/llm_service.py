@@ -101,6 +101,93 @@ RANDOM_TECH_ROLES = [
 ]
 
 
+def normalize_cv_data(cv_data: dict) -> dict:
+    """Ensure consistency of CV data keys for HTML template."""
+    
+    # 1. Normalize Experience
+    # Handle common aliases
+    if "experiences" in cv_data and "experience" not in cv_data:
+        cv_data["experience"] = cv_data.pop("experiences")
+    if "work_experience" in cv_data and "experience" not in cv_data:
+        cv_data["experience"] = cv_data.pop("work_experience")
+        
+    # Ensure items fit HTML template (title, company, date_range, description, achievements)
+    for exp in cv_data.get("experience", []):
+        if "role" in exp and "title" not in exp:
+            exp["title"] = exp.pop("role")
+        if "period" in exp and "date_range" not in exp:
+            exp["date_range"] = exp.pop("period")
+        
+        # If 'achievements' is missing but 'description' is a list, move list to achievements
+        if "achievements" not in exp:
+            if isinstance(exp.get("description"), list):
+                exp["achievements"] = exp.pop("description")
+                exp["description"] = "Key responsibilities and achievements:"
+            elif "description" in exp:
+                 # Ensure we have an achievements list even if empty for HTML check
+                 pass 
+
+    # 2. Normalize Skills - Critical for HTML bar charts
+    # We need skills.technical list [{"name": "X", "level": N}]
+    if "technical_skills" in cv_data and "skills" not in cv_data:
+         # Convert old format
+         tech_skills = cv_data.pop("technical_skills")
+         new_skills = []
+         if isinstance(tech_skills, dict):
+             # flatten {'Languages': ['Python'], ...}
+             for category, items in tech_skills.items():
+                 if isinstance(items, list):
+                     for item in items:
+                         new_skills.append({"name": item, "level": random.randint(75, 95)})
+         elif isinstance(tech_skills, list):
+             for s in tech_skills:
+                 if isinstance(s, str):
+                     new_skills.append({"name": s, "level": random.randint(75, 95)})
+                 else:
+                     new_skills.append(s)
+         cv_data["skills"] = {"technical": new_skills}
+         
+    # Ensure struct existence
+    if "skills" not in cv_data:
+        cv_data["skills"] = {"technical": []}
+    
+    # If LLM returned "skills": [...] list instead of dict
+    if isinstance(cv_data["skills"], list):
+        raw_list = cv_data["skills"]
+        new_list = []
+        for s in raw_list:
+             if isinstance(s, str):
+                 new_list.append({"name": s, "level": random.randint(75, 95)})
+             elif isinstance(s, dict):
+                 new_list.append(s)
+        cv_data["skills"] = {"technical": new_list}
+        
+    # Ensure technical key exists inside skills dict
+    if isinstance(cv_data["skills"], dict) and "technical" not in cv_data["skills"]:
+         # Maybe keys are categories? Flatten them
+         flattened = []
+         for k, v in cv_data["skills"].items():
+             if isinstance(v, list):
+                 for item in v:
+                      if isinstance(item, str):
+                          flattened.append({"name": item, "level": random.randint(75, 95)})
+                      elif isinstance(item, dict):
+                          flattened.append(item)
+         cv_data["skills"]["technical"] = flattened
+
+    # 3. Normalize Education
+    for edu in cv_data.get("education", []):
+        if "school" in edu and "institution" not in edu:
+            edu["institution"] = edu.pop("school")
+        if "details" in edu and "honors" not in edu:
+            edu["honors"] = edu.pop("details")
+
+    # 4. Social
+    cv_data = ensure_social_dict(cv_data)
+    
+    return cv_data
+
+
 def ensure_social_dict(cv_data: dict) -> dict:
     """Ensure the social field is a proper dictionary with expected keys."""
     if not cv_data:
@@ -139,8 +226,12 @@ Instructions:
 """
 
 
-def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool) -> str:
+def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool, name: Optional[str] = None) -> str:
     """Create detailed user prompt based on profile using external template."""
+    import random
+    from jinja2 import Template
+    from typing import Optional
+    from backend.config import BACKEND_DIR
     
     # 1. Resolve logical variables
     role_instruction = f"Role: {role}"
@@ -324,8 +415,8 @@ async def generate_cv_content(
                     
                     try:
                         cv_data = json.loads(content)
-                        # Ensure data structure safety
-                        cv_data = ensure_social_dict(cv_data)
+                        # Ensure data structure safety and HTML compatibility
+                        cv_data = normalize_cv_data(cv_data)
                         print(f"SUCCESS: CV content generated with {model_id}")
                         return cv_data
                     except json.JSONDecodeError as e:

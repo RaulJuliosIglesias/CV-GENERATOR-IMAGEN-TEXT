@@ -177,8 +177,17 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         task.subtasks[2].message = "Designing professional avatar..."
         await task_manager._save_batches()
 
+        # Resolve gender coherence: Use LLM generated gender if available (e.g. for "Any")
+        effective_gender = task.gender
+        if cv_data and isinstance(cv_data, dict):
+            # Try meta field
+            meta_gender = cv_data.get("meta", {}).get("generated_gender")
+            if meta_gender:
+                effective_gender = meta_gender
+                print(f"DEBUG: Using gender from LLM meta: {effective_gender}")
+
         image_path = await generate_avatar(
-            gender=task.gender,
+            gender=effective_gender,
             ethnicity=task.ethnicity,
             age_range=task.age_range,
             origin=task.origin,

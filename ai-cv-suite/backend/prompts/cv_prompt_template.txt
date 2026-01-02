@@ -2,7 +2,7 @@ You are an elite Resume Writer and Career Strategist.
 Your task is to generate a realistic, high-impact CV in pure JSON format for a candidate with the following profile:
 
 PROFILE PARAMETERS:
-- Name: {{name}} (Generate a realistic name consistent with ethnicity/origin if not provided, MUST match gender: {{gender}})
+- Name: {{name}} (Generate a UNIQUE, REALISTIC name consistent with ethnicity/origin. Do NOT use "Alexandra Chen", "John Doe" or common placeholders. Be creative with the name.)
 - Role: {{role}}
 - Gender: {{gender}}
 - Age: {{age}}
@@ -28,6 +28,9 @@ INSTRUCTIONS:
 
 JSON STRUCTURE:
 {
+  "meta": {
+    "generated_gender": "Male or Female (Must match the name generated)"
+  },
   "name": "Full Name",
   "title": "Current Role Title",
   "email": "professional.email@example.com",
@@ -41,12 +44,7 @@ JSON STRUCTURE:
   },
   "skills": {
     "technical": [
-      {"name": "Python", "level": 95},
-      {"name": "React", "level": 90},
-      {"name": "Docker", "level": 85},
-      {"name": "AWS", "level": 80},
-      {"name": "CI/CD", "level": 85},
-      {"name": "System Design", "level": 80}
+      {"name": "Skill Name", "level": 90}
     ]
   },
   "languages": [
