@@ -133,6 +133,16 @@ class Batch:
         }
 
 
+# Pools for randomization when "any" is selected
+ALL_GENDERS = ["Male", "Female"]
+ALL_ETHNICITIES = ["Asian", "Black/African", "White/Caucasian", "Hispanic/Latino", "Middle Eastern", "South Asian", "Mixed Heritage"]
+ALL_ORIGINS = ["United States", "United Kingdom", "Germany", "France", "Canada", "Australia", "Japan", "Brazil", "India", "Singapore", "Sweden", "Spain"]
+ALL_ROLES = [
+    "Full Stack Developer", "DevOps Engineer", "Data Scientist", "System Architect",
+    "Product Manager", "UX/UI Designer", "Mobile App Developer", "Cloud Solutions Architect",
+    "Cybersecurity Analyst", "Blockchain Developer", "AI Engineer", "Game Developer"
+]
+
 class TaskManager:
     """
     Manages CV generation tasks and batches.
@@ -164,17 +174,45 @@ class TaskManager:
         for i in range(qty):
             task_id = str(uuid.uuid4())[:8]
             
-            # Randomly select from the provided options
-            selected_gender = random.choice(genders) if genders else "any"
-            selected_ethnicity = random.choice(ethnicities) if ethnicities else "any"
-            selected_origin = random.choice(origins) if origins else "any"
-            selected_role = random.choice(roles) if roles else "Software Developer"
+            # --- CRITICAL: RESOLVE "ANY" TO CONCRETE VALUES HERE ---
+            # This ensures that we pass a SPECIFIC profile to the LLM, 
+            # preventing it from defaulting to "Rafael Mendoza" every time.
+            
+            # 1. Resolve Gender
+            if not genders or "any" in [g.lower() for g in genders]:
+                selected_gender = random.choice(ALL_GENDERS)
+            else:
+                selected_gender = random.choice(genders)
+                
+            # 2. Resolve Ethnicity
+            if not ethnicities or "any" in [e.lower() for e in ethnicities]:
+                selected_ethnicity = random.choice(ALL_ETHNICITIES)
+            else:
+                selected_ethnicity = random.choice(ethnicities)
+                
+            # 3. Resolve Origin
+            if not origins or "any" in [o.lower() for o in origins]:
+                selected_origin = random.choice(ALL_ORIGINS)
+            else:
+                selected_origin = random.choice(origins)
+            
+            # 4. Resolve Role (if "any" logic needed, though less critical than demographic)
+            if not roles or "any" in [r.lower() for r in roles]:
+                 selected_role = random.choice(ALL_ROLES)
+            else:
+                 selected_role = random.choice(roles)
+            
+            # 5. Resolve Expertise
             selected_expertise = random.choice(expertise_levels) if expertise_levels else "mid"
             
             # Generate random age within the specified range
             selected_age = random.randint(age_min, age_max)
             age_range = f"{selected_age}"
             
+            print(f"DEBUG BATCH: Created Task {task_id} with Profile -> "
+                  f"Role: {selected_role}, Gender: {selected_gender}, "
+                  f"Ethnicity: {selected_ethnicity}, Origin: {selected_origin}")
+
             task = Task(
                 id=task_id,
                 batch_id=batch_id,

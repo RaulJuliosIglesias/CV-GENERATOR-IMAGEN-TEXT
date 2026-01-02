@@ -1,7 +1,8 @@
 # Implementation Plan: Strict Template Enforcement & Sequential Data Flow
 
 ## 1. Objective
-Ensure absolute fidelity between generated CVs/Images and the external prompt templates (`cv_prompt_template.txt`, `image_prompt_template.txt`), and guarantee that image generation inherits coherence (Gender/Ethnicity) from the generated CV.
+Ensure absolute fidelity between generated CVs/Images and the external prompt templates. 
+**CRITICAL GOAL**: Guarantee uniqueness for every CV in a batch. If inputs are "Any", the system MUST resolve them to specific, concrete values (randomized) *before* asking the LLM, to avoid identical outputs (e.g., "Rafael Mendoza").
 
 ## 2. Completed Actions (Verification)
 
