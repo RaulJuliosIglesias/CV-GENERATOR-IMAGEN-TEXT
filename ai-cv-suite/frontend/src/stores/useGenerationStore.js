@@ -5,12 +5,16 @@ const useGenerationStore = create((set, get) => ({
     // Configuration state
     config: {
         qty: 3,
-        gender: 'any',
-        ethnicity: 'any',
-        origin: 'Europe',
-        role: 'Software Developer',
-        llm_model: null,  // Will be set from defaults
-        image_model: null,  // Will be set from defaults
+        genders: ['any'],
+        ethnicities: ['any'],
+        origins: ['any'],
+        roles: [],  // Custom tags, not predefined
+        age_min: 25,
+        age_max: 35,
+        expertise_levels: ['mid'],
+        remote: false,
+        llm_model: null,
+        image_model: null,
     },
 
     // Available models
@@ -65,12 +69,41 @@ const useGenerationStore = create((set, get) => ({
         }));
     },
 
+    addRole: (role) => {
+        set((state) => ({
+            config: {
+                ...state.config,
+                roles: [...state.config.roles, role]
+            }
+        }));
+    },
+
+    removeRole: (index) => {
+        set((state) => ({
+            config: {
+                ...state.config,
+                roles: state.config.roles.filter((_, i) => i !== index)
+            }
+        }));
+    },
+
     startGeneration: async () => {
         const { config } = get();
+
+        // Convert age_min/age_max to age range format
+        const ageRange = `${config.age_min}-${config.age_max}`;
+
+        // Build request
+        const request = {
+            ...config,
+            ages: [ageRange],  // Convert to array for backend
+            roles: config.roles.length > 0 ? config.roles : ['Software Developer'] // Default if empty
+        };
+
         set({ isGenerating: true, error: null, tasks: [] });
 
         try {
-            const response = await generateBatch(config);
+            const response = await generateBatch(request);
             set({ currentBatch: response.batch_id });
 
             // Start polling for status

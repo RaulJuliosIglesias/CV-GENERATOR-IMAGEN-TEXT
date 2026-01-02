@@ -33,11 +33,15 @@ router = APIRouter(prefix="/api", tags=["generation"])
 
 # Request/Response Models
 class GenerationRequest(BaseModel):
-    qty: int = Field(ge=1, le=20, default=1)
-    gender: str = Field(default="any")
-    ethnicity: str = Field(default="any")
-    origin: str = Field(default="Europe")
-    role: str = Field(default="Software Developer")
+    qty: int = Field(ge=1, le=50, default=1)
+    genders: list[str] = Field(default=["any"], description="List of genders: male, female, any")
+    ethnicities: list[str] = Field(default=["any"], description="List of ethnicities")
+    origins: list[str] = Field(default=["any"], description="List of regions/countries")
+    roles: list[str] = Field(default=["Software Developer"], description="Custom role tags - any text allowed")
+    age_min: int = Field(ge=18, le=70, default=25, description="Minimum age")
+    age_max: int = Field(ge=18, le=70, default=35, description="Maximum age")
+    expertise_levels: list[str] = Field(default=["mid"], description="junior, mid, senior, expert")
+    remote: bool = Field(default=False, description="Include remote work preference")
     llm_model: Optional[str] = Field(default=None, description="OpenRouter model ID")
     image_model: Optional[str] = Field(default=None, description="Krea model ID")
 
@@ -124,7 +128,7 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         filename = f"CV_{safe_name}_{task.id}_{timestamp}.pdf"
         
         # Render the PDF
-        pdf_path = render_cv_pdf(cv_data, image_path, filename)
+        pdf_path = await render_cv_pdf(cv_data, image_path, filename)
         task.pdf_path = pdf_path
         
         # Complete!
@@ -175,10 +179,14 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
     # Create batch
     batch = await task_manager.create_batch(
         qty=request.qty,
-        gender=request.gender,
-        ethnicity=request.ethnicity,
-        origin=request.origin,
-        role=request.role
+        genders=request.genders,
+        ethnicities=request.ethnicities,
+        origins=request.origins,
+        roles=request.roles,
+        age_min=request.age_min,
+        age_max=request.age_max,
+        expertise_levels=request.expertise_levels,
+        remote=request.remote
     )
     
     # Store model selections for this batch
@@ -245,36 +253,46 @@ async def get_batch_status(batch_id: str):
 @router.get("/files", response_model=FilesResponse)
 async def list_files():
     """
-    List all generated PDF files.
+    List all generated files (PDF and HTML).
     
-    Returns a list of all PDF files in the output directory with metadata.
+    Returns a list of all CV files in the output directory with metadata.
     """
     files = []
     
     if OUTPUT_DIR.exists():
-        for filepath in sorted(OUTPUT_DIR.glob("*.pdf"), key=lambda x: x.stat().st_mtime, reverse=True):
-            stat = filepath.stat()
-            files.append(FileInfo(
-                filename=filepath.name,
-                path=str(filepath),
-                created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                size_kb=round(stat.st_size / 1024, 2)
-            ))
+        # Search for both PDF and HTML files
+        for pattern in ["*.pdf", "*.html"]:
+            for filepath in sorted(OUTPUT_DIR.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True):
+                stat = filepath.stat()
+                files.append(FileInfo(
+                    filename=filepath.name,
+                    path=str(filepath),
+                    created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    size_kb=round(stat.st_size / 1024, 2)
+                ))
     
     return FilesResponse(files=files, total=len(files))
 
 
 @router.get("/files/{filename}")
 async def get_file(filename: str):
-    """Download a specific PDF file."""
+    """Download/view a specific file (PDF or HTML)."""
     filepath = OUTPUT_DIR / filename
     
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="File not found")
     
+    # Determine media type
+    if filename.endswith('.pdf'):
+        media_type = "application/pdf"
+    elif filename.endswith('.html'):
+        media_type = "text/html"
+    else:
+        media_type = "application/octet-stream"
+    
     return FileResponse(
         path=str(filepath),
-        media_type="application/pdf",
+        media_type=media_type,
         filename=filename
     )
 
@@ -315,8 +333,9 @@ async def open_folder():
 async def clear_all():
     """Clear all generated files and batches."""
     if OUTPUT_DIR.exists():
-        for f in OUTPUT_DIR.glob("*.pdf"):
-            f.unlink()
+        for pattern in ["*.pdf", "*.html"]:
+            for f in OUTPUT_DIR.glob(pattern):
+                f.unlink()
     
     if ASSETS_DIR.exists():
         for f in ASSETS_DIR.glob("avatar_*.jpg"):

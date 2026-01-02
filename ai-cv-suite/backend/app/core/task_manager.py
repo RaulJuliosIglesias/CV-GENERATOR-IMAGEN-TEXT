@@ -24,6 +24,7 @@ class TaskStatus(str, Enum):
 class Task:
     """Represents a single CV generation task."""
     id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    batch_id: str = ""
     status: TaskStatus = TaskStatus.PENDING
     status_message: str = "Waiting to start..."
     progress: int = 0
@@ -33,6 +34,9 @@ class Task:
     ethnicity: str = "any"
     origin: str = "any"
     role: str = "Software Developer"
+    age_range: str = "25-35"
+    expertise: str = "mid"
+    remote: bool = False
     
     # Generated data
     cv_data: Optional[dict] = None
@@ -119,28 +123,57 @@ class TaskManager:
     async def create_batch(
         self,
         qty: int,
-        gender: str = "any",
-        ethnicity: str = "any",
-        origin: str = "any",
-        role: str = "Software Developer"
+        genders: list[str],
+        ethnicities: list[str],
+        origins: list[str],
+        roles: list[str],
+        age_min: int,
+        age_max: int,
+        expertise_levels: list[str],
+        remote: bool = False
     ) -> Batch:
         """Create a new batch of CV generation tasks."""
-        async with self._lock:
-            batch = Batch()
+        import random
+        from uuid import uuid4
+        
+        batch_id = str(uuid4())[:8]
+        tasks = []
+        
+        for i in range(qty):
+            task_id = str(uuid4())[:8]
             
-            for i in range(qty):
-                task = Task(
-                    gender=gender,
-                    ethnicity=ethnicity,
-                    origin=origin,
-                    role=role
-                )
-                batch.tasks.append(task)
+            # Randomly select from the provided options
+            selected_gender = random.choice(genders) if genders else "any"
+            selected_ethnicity = random.choice(ethnicities) if ethnicities else "any"
+            selected_origin = random.choice(origins) if origins else "any"
+            selected_role = random.choice(roles) if roles else "Software Developer"
+            selected_expertise = random.choice(expertise_levels) if expertise_levels else "mid"
             
-            self.batches[batch.id] = batch
-            self.current_batch_id = batch.id
+            # Generate random age within the specified range
+            selected_age = random.randint(age_min, age_max)
+            age_range = f"{selected_age}"  # Store as single age
             
-            return batch
+            task = Task(
+                id=task_id,
+                batch_id=batch_id,
+                gender=selected_gender,
+                ethnicity=selected_ethnicity,
+                origin=selected_origin,
+                role=selected_role,
+                age_range=age_range,
+                expertise=selected_expertise,
+                remote=remote,
+                status=TaskStatus.PENDING,
+                status_message="Queued for generation",
+                progress=0
+            )
+            tasks.append(task)
+        
+        batch = Batch(id=batch_id, tasks=tasks)
+        self.batches[batch_id] = batch
+        self.current_batch_id = batch_id
+        
+        return batch
     
     def get_batch(self, batch_id: str) -> Optional[Batch]:
         """Get a batch by ID."""

@@ -142,6 +142,94 @@ KREA_MODELS = {
         "time": "18s",
         "compute_units": 54,
         "model_id": "ideogram-3"
+    },
+    "kling-01": {
+        "name": "Kling O1",
+        "description": "High quality image model with reference support",
+        "images": 2,
+        "time": "30s",
+        "compute_units": 22,
+        "model_id": "kling-01"
+    },
+    "runway-gen-4": {
+        "name": "Runway Gen-4",
+        "description": "Cinematic image model with references",
+        "images": 2,
+        "time": "60s",
+        "compute_units": 40,
+        "model_id": "runway-gen-4"
+    },
+    "flux-1.1-pro": {
+        "name": "Flux 1.1 Pro",
+        "description": "Advanced yet efficient model from BFL",
+        "images": 2,
+        "time": "11s",
+        "compute_units": 31,
+        "model_id": "flux-1.1-pro"
+    },
+    "flux-1.1-pro-ultra": {
+        "name": "Flux 1.1 Pro Ultra",
+        "description": "BFL's highest quality text to image model",
+        "images": 2,
+        "time": "18s",
+        "compute_units": 47,
+        "model_id": "flux-1.1-pro-ultra"
+    },
+    "flux-kontext": {
+        "name": "Flux Kontext",
+        "description": "Frontier model designed for image editing, optimized for Krea",
+        "images": 2,
+        "time": "5s",
+        "compute_units": 6,
+        "model_id": "flux-kontext"
+    },
+    "flux-kontext-pro": {
+        "name": "Flux Kontext Pro",
+        "description": "Frontier model designed for image editing",
+        "images": 2,
+        "time": "16s",
+        "compute_units": 32,
+        "model_id": "flux-kontext-pro"
+    },
+    "wan-2.2": {
+        "name": "Wan 2.2",
+        "description": "Slow model with great ultra-realistic textures for aesthetic outputs",
+        "images": 2,
+        "time": "20s",
+        "compute_units": 30,
+        "model_id": "wan-2.2"
+    },
+    "chatgpt-image": {
+        "name": "ChatGPT Image",
+        "description": "Highest quality with best prompt adherence, ideal for logos, icons, and text",
+        "images": 2,
+        "time": "60s",
+        "compute_units": 184,
+        "model_id": "chatgpt-image"
+    },
+    "chatgpt-image-1.5": {
+        "name": "ChatGPT Image 1.5",
+        "description": "Highest quality with best prompt adherence, ideal for logos, icons, and text",
+        "images": 2,
+        "time": "60s",
+        "compute_units": 184,
+        "model_id": "chatgpt-image-1.5"
+    },
+    "nano-banana": {
+        "name": "Nano Banana",
+        "description": "Smart model, best for image editing",
+        "images": 2,
+        "time": "10s",
+        "compute_units": 32,
+        "model_id": "nano-banana"
+    },
+    "nano-banana-pro": {
+        "name": "Nano Banana Pro",
+        "description": "Newer model with native 4K image generation and editing capabilities",
+        "images": 2,
+        "time": "30s",
+        "compute_units": 119,
+        "model_id": "nano-banana-pro"
     }
 }
 

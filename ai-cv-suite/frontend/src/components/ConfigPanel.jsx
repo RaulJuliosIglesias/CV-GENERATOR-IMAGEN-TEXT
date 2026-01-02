@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins } from 'lucide-react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
+import { RangeSlider } from './ui/RangeSlider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
-import { Input } from './ui/Input';
 import { Label } from './ui/Label';
+import { MultiSelect } from './ui/MultiSelect';
+import { TagInput } from './ui/TagInput';
 import useGenerationStore from '../stores/useGenerationStore';
 
 const GENDER_OPTIONS = [
@@ -21,6 +23,41 @@ const ETHNICITY_OPTIONS = [
     { value: 'hispanic', label: 'Hispanic' },
     { value: 'middle-eastern', label: 'Middle Eastern' },
     { value: 'mixed', label: 'Mixed' },
+];
+
+// Hierarchical location options
+const LOCATION_OPTIONS = [
+    { value: 'any', label: '🌍 Any Location' },
+    { value: '---continent', label: '--- Continents ---', disabled: true },
+    { value: 'Europe', label: '🇪🇺 Europe' },
+    { value: 'Asia', label: '🌏 Asia' },
+    { value: 'North America', label: '🌎 North America' },
+    { value: 'South America', label: '🌎 South America' },
+    { value: 'Africa', label: '🌍 Africa' },
+    { value: 'Oceania', label: '🌏 Oceania' },
+    { value: '---countries', label: '--- Countries ---', disabled: true },
+    { value: 'United States', label: '🇺🇸 United States' },
+    { value: 'United Kingdom', label: '🇬🇧 United Kingdom' },
+    { value: 'Germany', label: '🇩🇪 Germany' },
+    { value: 'France', label: '🇫🇷 France' },
+    { value: 'Spain', label: '🇪🇸 Spain' },
+    { value: 'Italy', label: '🇮🇹 Italy' },
+    { value: 'Netherlands', label: '🇳🇱 Netherlands' },
+    { value: 'Canada', label: '🇨🇦 Canada' },
+    { value: 'Australia', label: '🇦🇺 Australia' },
+    { value: 'China', label: '🇨🇳 China' },
+    { value: 'Japan', label: '🇯🇵 Japan' },
+    { value: 'India', label: '🇮🇳 India' },
+    { value: 'Brazil', label: '🇧🇷 Brazil' },
+    { value: 'Mexico', label: '🇲🇽 Mexico' },
+    { value: 'Singapore', label: '🇸🇬 Singapore' },
+].filter(opt => !opt.disabled);
+
+const EXPERTISE_OPTIONS = [
+    { value: 'junior', label: 'Junior (0-2 years)' },
+    { value: 'mid', label: 'Mid-Level (2-5 years)' },
+    { value: 'senior', label: 'Senior (5-10 years)' },
+    { value: 'expert', label: 'Expert (10+ years)' },
 ];
 
 export default function ConfigPanel() {
@@ -51,9 +88,9 @@ export default function ConfigPanel() {
     const selectedImageModel = imageModels.find(m => m.id === config.image_model);
 
     return (
-        <aside className="w-96 h-screen bg-card/50 backdrop-blur-xl border-r border-border/50 flex flex-col">
+        <aside className="w-96 h-screen bg-card/50 backdrop-blur-xl border-r border-border/50 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-border/50">
+            <div className="p-6 border-b border-border/50 flex-shrink-0">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                         <Sparkles className="w-5 h-5 text-white" />
@@ -65,7 +102,7 @@ export default function ConfigPanel() {
                 </div>
             </div>
 
-            {/* Configuration Form */}
+            {/* Configuration Form - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 {/* Quantity Slider */}
                 <div className="space-y-3">
@@ -80,84 +117,132 @@ export default function ConfigPanel() {
                         value={[config.qty]}
                         onValueChange={([value]) => setConfig('qty', value)}
                         min={1}
-                        max={20}
+                        max={50}
                         step={1}
                     />
                     <div className="flex justify-between text-xs text-muted-foreground">
                         <span>1</span>
-                        <span>20</span>
+                        <span>50</span>
                     </div>
                 </div>
 
                 {/* Divider */}
                 <div className="border-t border-border/50 pt-4">
-                    <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">CV Configuration</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Profile Configuration</p>
                 </div>
 
-                {/* Gender Select */}
+                {/* Gender Multi-Select */}
                 <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-pink-400" />
                         Gender
                     </Label>
-                    <Select value={config.gender} onValueChange={(value) => setConfig('gender', value)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {GENDER_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <MultiSelect
+                        options={GENDER_OPTIONS}
+                        value={config.genders}
+                        onChange={(value) => setConfig('genders', value)}
+                        placeholder="Select genders..."
+                    />
                 </div>
 
-                {/* Ethnicity Select */}
+                {/* Ethnicity Multi-Select */}
                 <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-blue-400" />
                         Ethnicity
                     </Label>
-                    <Select value={config.ethnicity} onValueChange={(value) => setConfig('ethnicity', value)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select ethnicity" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {ETHNICITY_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Origin Input */}
-                <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-green-400" />
-                        Region / Origin
-                    </Label>
-                    <Input
-                        value={config.origin}
-                        onChange={(e) => setConfig('origin', e.target.value)}
-                        placeholder="e.g., Europe, United States, Asia"
+                    <MultiSelect
+                        options={ETHNICITY_OPTIONS}
+                        value={config.ethnicities}
+                        onChange={(value) => setConfig('ethnicities', value)}
+                        placeholder="Select ethnicities..."
                     />
                 </div>
 
-                {/* Role Input */}
+                {/* Location Multi-Select with Hierarchy */}
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-green-400" />
+                        Location / Origin
+                    </Label>
+                    <MultiSelect
+                        options={LOCATION_OPTIONS}
+                        value={config.origins}
+                        onChange={(value) => setConfig('origins', value)}
+                        placeholder="Select locations..."
+                    />
+                    <p className="text-xs text-muted-foreground">Continents or specific countries</p>
+                </div>
+
+                {/* Age Range Slider */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-cyan-400" />
+                            Age Range
+                        </Label>
+                        <span className="text-sm font-semibold text-primary">
+                            {config.age_min} - {config.age_max} years
+                        </span>
+                    </div>
+                    <RangeSlider
+                        value={[config.age_min, config.age_max]}
+                        onValueChange={([min, max]) => {
+                            setConfig('age_min', min);
+                            setConfig('age_max', max);
+                        }}
+                        min={18}
+                        max={70}
+                        step={1}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>18</span>
+                        <span>70</span>
+                    </div>
+                </div>
+
+                {/* Expertise Multi-Select */}
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                        <Award className="w-4 h-4 text-purple-400" />
+                        Expertise Level
+                    </Label>
+                    <MultiSelect
+                        options={EXPERTISE_OPTIONS}
+                        value={config.expertise_levels}
+                        onChange={(value) => setConfig('expertise_levels', value)}
+                        placeholder="Select expertise levels..."
+                    />
+                </div>
+
+                {/* Target Roles - Custom Tags */}
                 <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                         <Briefcase className="w-4 h-4 text-orange-400" />
-                        Target Role
+                        Target Roles
                     </Label>
-                    <Input
-                        value={config.role}
-                        onChange={(e) => setConfig('role', e.target.value)}
-                        placeholder="e.g., Software Developer, DevOps Engineer"
+                    <TagInput
+                        value={config.roles}
+                        onChange={(value) => setConfig('roles', value)}
+                        placeholder="Type to search or add custom roles..."
                     />
+                    <p className="text-xs text-muted-foreground">
+                        Search suggestions or add any custom role
+                    </p>
+                </div>
+
+                {/* Remote Work */}
+                <div className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        id="remote"
+                        checked={config.remote}
+                        onChange={(e) => setConfig('remote', e.target.checked)}
+                        className="w-4 h-4 rounded border-input bg-background"
+                    />
+                    <Label htmlFor="remote" className="text-sm cursor-pointer">
+                        Include remote work preference
+                    </Label>
                 </div>
 
                 {/* Divider */}
@@ -178,12 +263,16 @@ export default function ConfigPanel() {
                         <SelectTrigger>
                             <SelectValue placeholder="Select LLM model" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-80">
                             {llmModels.map((model) => (
                                 <SelectItem key={model.id} value={model.id}>
-                                    <div className="flex flex-col">
-                                        <span>{model.name}</span>
-                                        <span className="text-xs text-muted-foreground">{model.cost}</span>
+                                    <div className="flex flex-col py-1">
+                                        <span className="font-medium">{model.name}</span>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span>{model.provider}</span>
+                                            <span>•</span>
+                                            <span>{model.cost}</span>
+                                        </div>
                                     </div>
                                 </SelectItem>
                             ))}
@@ -207,12 +296,12 @@ export default function ConfigPanel() {
                         <SelectTrigger>
                             <SelectValue placeholder="Select image model" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-80">
                             {imageModels.map((model) => (
                                 <SelectItem key={model.id} value={model.id}>
-                                    <div className="flex items-center justify-between w-full gap-4">
-                                        <span>{model.name}</span>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <div className="flex items-center justify-between w-full gap-4 py-1">
+                                        <span className="font-medium">{model.name}</span>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
                                             <Clock className="w-3 h-3" />
                                             <span>{model.time}</span>
                                             <Coins className="w-3 h-3 ml-1" />
@@ -231,8 +320,8 @@ export default function ConfigPanel() {
                 </div>
             </div>
 
-            {/* Generate Button */}
-            <div className="p-6 border-t border-border/50">
+            {/* Generate Button - Fixed at bottom */}
+            <div className="p-6 border-t border-border/50 flex-shrink-0">
                 <Button
                     onClick={handleGenerate}
                     disabled={isGenerating}
