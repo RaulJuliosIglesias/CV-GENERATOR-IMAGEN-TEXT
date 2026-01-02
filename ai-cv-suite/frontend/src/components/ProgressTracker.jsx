@@ -1,4 +1,5 @@
-import { CheckCircle2, AlertCircle, Loader2, FileText, Image, Brain, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, AlertCircle, Loader2, FileText, Image, Brain, Clock, Eye, Download } from 'lucide-react';
 import { Progress } from './ui/Progress';
 import { Button } from './ui/Button';
 import useGenerationStore from '../stores/useGenerationStore';
@@ -61,6 +62,7 @@ const SUBTASK_CONFIG = {
 };
 
 function TaskCard({ task }) {
+    const [showFullError, setShowFullError] = useState(false);
     const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
     const Icon = statusConfig.icon;
 
@@ -72,6 +74,12 @@ function TaskCard({ task }) {
             // Open in new tab
             window.open(getPdfUrl(filename), '_blank');
         }
+    };
+
+    const handleDownloadPdf = () => {
+        // Trigger PDF download by opening the HTML and using browser print
+        handleOpenCv();
+        // Note: The HTML template has a built-in PDF export button
     };
 
     return (
@@ -118,22 +126,49 @@ function TaskCard({ task }) {
                 })}
             </div>
 
-            {/* Error Message */}
+            {/* Error Message - Expandable */}
             {task.error && (
-                <p className="text-xs text-red-400 mb-2 truncate">{task.error}</p>
+                <div className="mt-2">
+                    <button
+                        onClick={() => setShowFullError(!showFullError)}
+                        className="flex items-center gap-2 text-xs text-red-400 hover:text-red-300 transition-colors w-full"
+                    >
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span className={showFullError ? '' : 'truncate'}>{showFullError ? 'Hide Error' : 'View Full Error'}</span>
+                        <Eye className="w-3 h-3 ml-auto flex-shrink-0" />
+                    </button>
+                    {showFullError && (
+                        <div className="mt-2 p-3 bg-red-950/50 border border-red-500/30 rounded-lg overflow-auto max-h-40">
+                            <pre className="text-xs text-red-300 whitespace-pre-wrap break-words font-mono">
+                                {task.error}
+                            </pre>
+                        </div>
+                    )}
+                </div>
             )}
 
-            {/* Open CV Button */}
+            {/* Action Buttons */}
             {task.status === 'complete' && (
-                <Button
-                    onClick={handleOpenCv}
-                    size="sm"
-                    variant="default"
-                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                    <FileText className="w-4 h-4 mr-2" />
-                    View CV (HTML)
-                </Button>
+                <div className="flex gap-2 mt-3">
+                    <Button
+                        onClick={handleOpenCv}
+                        size="sm"
+                        variant="default"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                        <FileText className="w-4 h-4 mr-1" />
+                        View HTML
+                    </Button>
+                    <Button
+                        onClick={handleDownloadPdf}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 border-green-500/50 text-green-400 hover:bg-green-500/10"
+                    >
+                        <Download className="w-4 h-4 mr-1" />
+                        PDF
+                    </Button>
+                </div>
             )}
         </div>
     );

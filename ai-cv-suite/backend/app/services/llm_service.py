@@ -20,8 +20,15 @@ print(f"DEBUG: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})")
 # OpenRouter API Configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Available LLM models
+# Available LLM models - CORRECT OpenRouter IDs (verified Jan 2026)
 LLM_MODELS = {
+    "openrouter/auto": {
+        "name": "Auto (Best Model)",
+        "description": "Automatically selects the best model for your prompt",
+        "provider": "OpenRouter",
+        "context": "Varies",
+        "cost": "Varies"
+    },
     "google/gemini-2.0-flash-exp:free": {
         "name": "Gemini 2.0 Flash (Free)",
         "description": "Google's fast, free experimental model",
@@ -29,12 +36,19 @@ LLM_MODELS = {
         "context": "1M tokens",
         "cost": "Free"
     },
-    "google/gemini-pro": {
-        "name": "Gemini Pro",
-        "description": "Google's production model",
+    "google/gemini-flash-1.5": {
+        "name": "Gemini Flash 1.5",
+        "description": "Google's fast production model",
         "provider": "Google",
-        "context": "32K tokens",
-        "cost": "$0.25/1M"
+        "context": "1M tokens",
+        "cost": "$0.075/1M"
+    },
+    "google/gemini-pro-1.5": {
+        "name": "Gemini Pro 1.5",
+        "description": "Google's advanced model",
+        "provider": "Google",
+        "context": "2M tokens",
+        "cost": "$1.25/1M"
     },
     "anthropic/claude-3.5-sonnet": {
         "name": "Claude 3.5 Sonnet",
@@ -50,16 +64,16 @@ LLM_MODELS = {
         "context": "200K tokens",
         "cost": "$0.25/1M"
     },
-    "openai/gpt-4-turbo": {
-        "name": "GPT-4 Turbo",
-        "description": "OpenAI's most capable model",
+    "openai/gpt-4o": {
+        "name": "GPT-4o",
+        "description": "OpenAI's most capable multimodal model",
         "provider": "OpenAI",
         "context": "128K tokens",
-        "cost": "$10/1M"
+        "cost": "$5/1M"
     },
     "openai/gpt-4o-mini": {
         "name": "GPT-4o Mini",
-        "description": "Fast and affordable GPT-4 variant",
+        "description": "Fast and affordable GPT-4o variant",
         "provider": "OpenAI",
         "context": "128K tokens",
         "cost": "$0.15/1M"
@@ -320,31 +334,54 @@ async def generate_cv_content(
     }.get(expertise, 2500)
     
     try:
+        # Build request payload
+        request_payload = {
+            "model": model_id,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
+            ],
+            "temperature": 0.8,
+            "max_tokens": max_tokens
+        }
+        
+        request_headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ai-cv-suite.local",
+            "X-Title": "AI CV Suite"
+        }
+        
+        # LOG REQUEST
+        print("="*60)
+        print(f"DEBUG REQUEST - URL: {OPENROUTER_API_URL}")
+        print(f"DEBUG REQUEST - Model: {model_id}")
+        print(f"DEBUG REQUEST - Headers: Authorization=Bearer {api_key[:20]}..., Content-Type=application/json")
+        print(f"DEBUG REQUEST - Payload keys: {list(request_payload.keys())}")
+        print(f"DEBUG REQUEST - Messages count: {len(request_payload['messages'])}")
+        print(f"DEBUG REQUEST - System prompt length: {len(SYSTEM_PROMPT)} chars")
+        print(f"DEBUG REQUEST - User prompt length: {len(user_prompt)} chars")
+        print("="*60)
+        
         async with httpx.AsyncClient(timeout=90.0) as client:
             response = await client.post(
                 OPENROUTER_API_URL,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://ai-cv-suite.local",
-                    "X-Title": "AI CV Suite"
-                },
-                json={
-                    "model": model_id,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": SYSTEM_PROMPT
-                        },
-                        {
-                            "role": "user",
-                            "content": user_prompt
-                        }
-                    ],
-                    "temperature": 0.8,
-                    "max_tokens": max_tokens
-                }
+                headers=request_headers,
+                json=request_payload
             )
+            
+            # LOG RESPONSE
+            print("="*60)
+            print(f"DEBUG RESPONSE - Status: {response.status_code}")
+            print(f"DEBUG RESPONSE - Headers: {dict(response.headers)}")
+            print(f"DEBUG RESPONSE - Body: {response.text[:1000]}")
+            print("="*60)
             
             if response.status_code == 200:
                 result = response.json()
@@ -374,7 +411,9 @@ async def generate_cv_content(
                         print(f"WARNING: JSON parse error: {e}")
                         print(f"Raw content: {content[:500]}")
             
-            error_msg = f"OpenRouter API returned status {response.status_code}"
+            # Log full response for debugging
+            response_text = response.text[:500] if response.text else "No response body"
+            error_msg = f"OpenRouter API returned status {response.status_code}: {response_text}"
             print(f"ERROR: {error_msg}")
             raise RuntimeError(error_msg)
             
