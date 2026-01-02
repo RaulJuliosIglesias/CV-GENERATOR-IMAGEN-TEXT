@@ -33,19 +33,19 @@ TEMPLATES_DIR.mkdir(exist_ok=True)
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     # Startup
-    print("🚀 AI CV Suite Backend Starting...")
-    print(f"📁 Output Directory: {OUTPUT_DIR}")
-    print(f"🖼️  Assets Directory: {ASSETS_DIR}")
-    print(f"📄 Templates Directory: {TEMPLATES_DIR}")
+    print(">> AI CV Suite Backend Starting...")
+    print(f">> Output Directory: {OUTPUT_DIR}")
+    print(f">> Assets Directory: {ASSETS_DIR}")
+    print(f">> Templates Directory: {TEMPLATES_DIR}")
     
     # Check LLM provider
-    llm_provider = os.getenv("LLM_PROVIDER", "openai")
-    print(f"🤖 LLM Provider: {llm_provider}")
+    llm_provider = "openrouter" if os.getenv("OPENROUTER_API_KEY") else "mock"
+    print(f">> LLM Provider: {llm_provider}")
     
     yield
     
     # Shutdown
-    print("👋 AI CV Suite Backend Shutting Down...")
+    print(">> AI CV Suite Backend Shutting Down...")
 
 
 # Create FastAPI app
@@ -61,8 +61,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # Vite dev server
+        "http://localhost:5174",  # Vite alternate port
+        "http://localhost:5175",  # Vite alternate port
         "http://localhost:3000",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
         "http://127.0.0.1:3000",
     ],
     allow_credentials=True,

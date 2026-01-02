@@ -54,6 +54,7 @@ const LOCATION_OPTIONS = [
 ].filter(opt => !opt.disabled);
 
 const EXPERTISE_OPTIONS = [
+    { value: 'any', label: 'Any Level' },
     { value: 'junior', label: 'Junior (0-2 years)' },
     { value: 'mid', label: 'Mid-Level (2-5 years)' },
     { value: 'senior', label: 'Senior (5-10 years)' },

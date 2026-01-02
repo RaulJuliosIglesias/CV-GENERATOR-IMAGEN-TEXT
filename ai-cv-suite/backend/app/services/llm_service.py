@@ -1,6 +1,6 @@
 """
 LLM Service - OpenRouter Integration for CV Content Generation
-Supports multiple LLM models with different capabilities and costs
+Enhanced with detailed prompts for comprehensive CVs
 """
 
 import os
@@ -96,65 +96,142 @@ LLM_MODELS = {
     }
 }
 
-# CV Data structure template
-CV_STRUCTURE = """
+# Enhanced system prompt for detailed CVs
+SYSTEM_PROMPT = """You are an expert CV/Resume writer. Generate COMPLETE, DETAILED, PROFESSIONAL CVs in JSON format.
+
+REQUIREMENTS BY EXPERIENCE LEVEL:
+- any/junior (0-2 years): 1 page, 1-2 experiences, education focus
+- mid (2-5 years): 1-2 pages, 2-3 experiences, balanced
+- senior (5-10 years): 2 FULL pages, 3-5 experiences, leadership
+- expert (10+ years): 2 FULL pages, 4-6 experiences, strategic vision
+
+CONTENT GUIDELINES:
+
+1. EXPERIENCE - MUST BE DETAILED:
+   - Junior: 100-150 words per role
+   - Mid: 150-250 words per role
+   - Senior/Expert: 250-400 words per role
+   - Include: specific projects, technologies (8-12 for senior), methodologies, achievements with metrics, team size, impact
+   - Example metrics: "Reduced API latency by 45%", "Led team of 8"
+
+2. SKILLS (15-30 items):
+   - Technical skills with levels 60-100
+   - Categories: Languages, Frameworks, Databases, Cloud, DevOps
+   - Soft skills: Leadership, Communication, etc.
+
+3. OUTPUT STRICT JSON:
 {
-    "name": "Full Name (culturally appropriate for the region)",
-    "title": "Professional Title matching the role",
-    "email": "professional.email@domain.com",
-    "phone": "+XX XXX-XXX-XXXX (format appropriate for region)",
-    "profile_summary": "2-3 compelling sentences about professional background, expertise, and career goals",
-    "skills": [
-        {"name": "Skill Name", "level": 85}
+  "name": "Realistic Full Name",
+  "title": "Professional Job Title",
+  "location": "City, Country",
+  "email": "name@email.com",
+  "phone": "+X XXX XXX XXX",
+  "profile_summary": "150-500 words based on level - career highlights, expertise, goals",
+  "experience": [
+    {
+      "title": "Job Title",
+      "company": "Company Name",
+      "location": "City",
+      "start_date": "Month YYYY",
+      "end_date": "Month YYYY or Present",
+      "description": "DETAILED description with projects, tech stack, achievements, metrics, team work...",
+      "technologies": ["Tech1", "Tech2",...],
+      "achievements": ["Achievement with metric"...]
+    }
+  ],
+  "skills": {
+    "technical": [
+      {"name": "Skill", "level": 90, "years": 4, "category": "Languages"}
     ],
-    "languages": [
-        {"name": "Language", "level": 5}
-    ],
-    "experience": [
-        {
-            "title": "Job Title",
-            "company": "Company Name",
-            "years": "2020 - Present",
-            "description": "Brief, impactful description of responsibilities and achievements"
-        }
-    ],
-    "education": [
-        {
-            "degree": "Degree Name",
-            "institution": "University Name",
-            "years": "2015 - 2019"
-        }
-    ],
-    "certificates": [
-        {"year": "2023", "title": "Certificate Name", "honors": "Certification Body"}
-    ],
-    "interests": [
-        {"name": "Interest", "icon": "fa-icon-name"}
-    ],
-    "social": [
-        {"platform": "LinkedIn", "username": "username", "url": "https://linkedin.com/in/username", "icon": "fa-linkedin"}
-    ]
+    "soft": ["Leadership", "Communication",...]
+  },
+  "education": [
+    {
+      "degree": "Degree Name",
+      "institution": "University",
+      "location": "City",
+      "start_year": "YYYY",
+      "end_year": "YYYY",
+      "honors": "GPA 3.8/4.0"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Cert Name",
+      "issuer": "Organization",
+      "date": "Month YYYY",
+      "credential_id": "ABC123"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project Name",
+      "description": "150-250 words about problem, solution, tech, impact",
+      "url": "https://github.com/user/repo",
+      "technologies": ["React", "Node.js",...]
+    }
+  ],
+  "languages": [
+    {"name": "English", "level": "C2", "proficiency": "Native"}
+  ],
+  "interests": ["AI/ML", "Open Source",...],
+  "social": {
+    "github": "username",
+    "linkedin": "username",
+    "portfolio": "https://site.com"
+  }
 }
-"""
 
-SYSTEM_PROMPT = """You are a professional CV/resume content generator. Your task is to create realistic, believable professional profiles.
+RULES:
+1. Match detail level to experience (senior = MUCH more detail)
+2. Use realistic metrics and achievements
+3. Names match gender/ethnicity
+4. Technologies current and relevant
+5. OUTPUT ONLY VALID JSON - NO markdown, NO explanations"""
 
-OUTPUT FORMAT: You MUST output ONLY valid JSON that matches EXACTLY this structure:
-{structure}
 
-CRITICAL RULES:
-1. Generate culturally appropriate names for the specified origin region
-2. Skills should have levels from 60-95 (percentage proficiency) - be realistic
-3. Languages should have levels from 1-5 (1=basic, 3=conversational, 5=native)
-4. Include 4-6 skills directly relevant to the specified role
-5. Include 2-3 languages (always include English)
-6. Include 2-3 work experiences with realistic company names
-7. Include 1-2 education entries from real universities in the region
-8. Include 1-3 certificates relevant to the role
-9. Include 3-4 interests with Font Awesome icon names (fa-code, fa-music, fa-book, fa-plane, etc.)
-10. Include GitHub and LinkedIn social links with realistic usernames
-11. Make the profile feel authentic and professional
-12. Output ONLY the JSON object - no markdown, no explanations, no code blocks"""
+def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool) -> str:
+    """Create detailed user prompt based on profile."""
+    
+    expertise_map = {
+        'any': '2-5',
+        'junior': '0-2',
+        'mid': '2-5',
+        'senior': '5-10',
+        'expert': '10+'
+    }
+    
+    years_experience = expertise_map.get(expertise, '2-5')
+    
+    detail_requirement = {
+        'any': "balanced detail",
+        'junior': "focus on education and potential",
+        'mid': "balanced skills and achievements",
+        'senior': "MAXIMUM DETAIL - 2 full pages with leadership focus",
+        'expert': "MAXIMUM DETAIL - 2 full pages with strategic vision"
+    }
+    
+    detail_level = detail_requirement.get(expertise, "balanced detail")
+    
+    return f"""Generate a COMPLETE, REALISTIC CV for:
+
+**Profile**:
+- Role: {role}
+- Experience Level: {expertise} ({years_experience} years)
+- Age: {age} years old
+- Gender: {gender}
+- Ethnicity: {ethnicity}
+- Location/Origin: {origin}
+- Remote Work: {"Preferred" if remote else "Flexible"}
+
+**Requirements**:
+- {detail_level}
+- Use appropriate experience count for {expertise} level
+- Include specific technologies for {role}
+- Generate realistic name matching {gender} and {ethnicity}
+- Make achievements quantifiable with metrics
+
+OUTPUT ONLY THE JSON, NO OTHER TEXT."""
 
 
 def get_available_models() -> list[dict]:
@@ -170,39 +247,39 @@ def get_available_models() -> list[dict]:
 
 async def generate_cv_content(
     role: str = "Software Developer",
-    origin: str = "United States",
+    expertise: str = "mid",
+    age: int = 30,
     gender: str = "any",
+    ethnicity: str = "any",
+    origin: str = "United States",
+    remote: bool = False,
     model: Optional[str] = None
 ) -> dict:
     """
-    Generate realistic CV content using OpenRouter.
-    
-    Args:
-        role: Target professional role
-        origin: Geographic origin for culturally appropriate names
-        gender: Gender for name generation
-        model: OpenRouter model ID to use (defaults to env var DEFAULT_LLM_MODEL)
-    
-    Returns:
-        Dictionary containing all CV data
+    Generate detailed CV content using OpenRouter with enhanced prompts.
     """
     api_key = os.getenv("OPENROUTER_API_KEY", "")
     
     if not api_key or api_key == "your-openrouter-api-key-here":
         print("⚠️ No OpenRouter API key found, using mock data")
-        return _generate_mock_cv(role, origin, gender)
+        return _generate_mock_cv(role, origin, gender, expertise)
     
     # Use provided model or default
     model_id = model or os.getenv("DEFAULT_LLM_MODEL", "google/gemini-2.0-flash-exp:free")
     
-    user_prompt = (
-        f"Generate a complete, realistic CV for a {gender if gender != 'any' else ''} "
-        f"{role} professional from {origin}. "
-        f"Make it authentic with real-sounding companies, universities, and achievements."
-    )
+    user_prompt = create_user_prompt(role, expertise, age, gender, ethnicity, origin, remote)
+    
+    # Adjust max_tokens based on expertise level
+    max_tokens = {
+        'junior': 2000,
+        'mid': 3000,
+        'senior': 4000,
+        'expert': 4000,
+        'any': 2500
+    }.get(expertise, 2500)
     
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=90.0) as client:
             response = await client.post(
                 OPENROUTER_API_URL,
                 headers={
@@ -216,7 +293,7 @@ async def generate_cv_content(
                     "messages": [
                         {
                             "role": "system",
-                            "content": SYSTEM_PROMPT.format(structure=CV_STRUCTURE)
+                            "content": SYSTEM_PROMPT
                         },
                         {
                             "role": "user",
@@ -224,7 +301,7 @@ async def generate_cv_content(
                         }
                     ],
                     "temperature": 0.8,
-                    "max_tokens": 2000
+                    "max_tokens": max_tokens
                 }
             )
             
@@ -240,7 +317,6 @@ async def generate_cv_content(
                     # Remove markdown code blocks if present
                     if content.startswith("```"):
                         lines = content.split("\n")
-                        # Remove first and last lines (code block markers)
                         content = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
                         content = content.strip()
                     
@@ -256,14 +332,14 @@ async def generate_cv_content(
                         print(f"Raw content: {content[:500]}")
             
             print(f"⚠️ OpenRouter API error: {response.status_code}")
-            return _generate_mock_cv(role, origin, gender)
+            return _generate_mock_cv(role, origin, gender, expertise)
             
     except Exception as e:
         print(f"⚠️ OpenRouter API exception: {e}")
-        return _generate_mock_cv(role, origin, gender)
+        return _generate_mock_cv(role, origin, gender, expertise)
 
 
-def _generate_mock_cv(role: str, origin: str, gender: str) -> dict:
+def _generate_mock_cv(role: str, origin: str, gender: str, expertise: str = "mid") -> dict:
     """Generate mock CV data when API is unavailable."""
     
     # Name pools by origin

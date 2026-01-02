@@ -8,10 +8,10 @@ const useGenerationStore = create((set, get) => ({
         genders: ['any'],
         ethnicities: ['any'],
         origins: ['any'],
-        roles: [],  // Custom tags, not predefined
+        roles: ['any'],  // Changed to 'any' for quick testing
         age_min: 25,
         age_max: 35,
-        expertise_levels: ['mid'],
+        expertise_levels: ['any'],  // Changed to 'any' for quick testing
         remote: false,
         llm_model: null,
         image_model: null,
