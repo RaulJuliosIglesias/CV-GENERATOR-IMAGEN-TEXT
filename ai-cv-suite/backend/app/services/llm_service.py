@@ -100,6 +100,26 @@ RANDOM_TECH_ROLES = [
 ]
 
 
+def ensure_social_dict(cv_data: dict) -> dict:
+    """Ensure the social field is a proper dictionary with expected keys."""
+    if not cv_data:
+        return cv_data
+    
+    # Ensure social is a dict, not a list
+    social = cv_data.get("social", {})
+    if isinstance(social, list):
+        # Convert list of dicts to single dict
+        social_dict = {}
+        for item in social:
+            if isinstance(item, dict):
+                social_dict.update(item)
+        cv_data["social"] = social_dict
+    elif not isinstance(social, dict):
+        cv_data["social"] = {}
+    
+    return cv_data
+
+
 def resolve_role(role: str) -> str:
     """Convert 'any' to a random high-demand tech role."""
     if role.lower() == "any":
