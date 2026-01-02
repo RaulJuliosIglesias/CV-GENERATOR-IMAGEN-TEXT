@@ -658,7 +658,7 @@
                 <section class="social section">
                     <h2 class="section-title">SOCIAL</h2>
                     <div class="social_container bd-grid">
-                        {% for key, val in social.items() %}
+                        {% for key, val in (social|default({})).items() %}
                         {% if val %}
                         <a href="{{ val if 'http' in val else '#' }}" target="_blank" class="social_link">
                             <i class="fa-brands fa-{{ key.lower() }} social_icon"></i> {{ val.split('/')[-1] if 'http'
@@ -679,7 +679,7 @@
                 <section class="skills section" id="skills">
                     <h2 class="section-title">Skills</h2>
                     <div class="skills_content bd-grid">
-                        {% for skill in skills.technical %}
+                        {% for skill in (skills.technical|default([])) %}
                         <div class="skills_name">
                             <span class="skills_text">{{ skill.name }}</span>
                             <div class="skills_box">
@@ -699,7 +699,7 @@
                     <h2 class="section-title">Languages</h2>
                     <div class="languages_container">
                         <div class="languages_content bd-grid">
-                            {% for lang in languages %}
+                            {% for lang in (languages|default([])) %}
                             <div class="languages_name">
                                 <span class="languages_text">{{ lang.name }}</span>
                                 <span class="languages_stars">
@@ -722,7 +722,7 @@
                 <section class="experience section" id="experience">
                     <h2 class="section-title">Experience</h2>
                     <div class="experience_container bd-grid">
-                        {% for exp in experience %}
+                        {% for exp in (experience|default([])) %}
                         <div class="experience_content">
                             <div class="experience_time">
                                 <span class="experience_rounder"></span>
@@ -750,7 +750,7 @@
                 <section class="education section" id="education">
                     <h2 class="section-title">Education</h2>
                     <div class="education_container bd-grid">
-                        {% for edu in education %}
+                        {% for edu in (education|default([])) %}
                         <div class="education_content">
                             <div class="education_time">
                                 <span class="education_rounder"></span>
@@ -796,7 +796,7 @@
                     <h2 class="section-title">Interests</h2>
                     <div class="interests_container">
                         <ul style="list-style: none; padding-left: 1rem;">
-                            {% for interest in interests %}
+                            {% for interest in (interests|default([])) %}
                             <li
                                 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-color);">
                                 <i class="fa-solid fa-circle-dot"
