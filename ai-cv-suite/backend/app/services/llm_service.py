@@ -9,8 +9,13 @@ import random
 from typing import Optional
 import httpx
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# CRITICAL: Load .env from backend directory, not CWD
+BACKEND_DIR = Path(__file__).parent.parent.parent
+ENV_PATH = BACKEND_DIR / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
+print(f"DEBUG: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})")
 
 # OpenRouter API Configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -124,67 +129,86 @@ def resolve_role(role: str) -> str:
     return role
 
 # Enhanced system prompt for detailed CVs
-# Enhanced system prompt for detailed CVs
-SYSTEM_PROMPT = """You are an expert Executive CV/Resume Writer for top-tier tech roles. 
-Your goal is to generate an EXTREMELY DETAILED, RICH, and PREMIUM curriculum vitae.
+SYSTEM_PROMPT = """You are an ELITE Executive CV Writer creating premium, realistic curricula vitae.
 
-RULES FOR CONTENT GENERATION:
-1.  **Length & Detail**: The content MUST be sufficient for a 2-page CV. detailed descriptions are required.
-    - EXPERIENCE: Generate 3-4 roles. For the most recent role, provide 5-7 distinct bullet points with metrics (e.g., "Improved latency by 40%").
-    - PROJECTS: Generate 3-4 detailed projects (hackathons, open source, complex apps). Description should be 2-3 sentences each.
-    - SUMMARY: write a compelling, 4-line executive summary.
+CRITICAL RULES:
+1. Generate REALISTIC names based on the gender, ethnicity, and origin provided.
+2. Use SPECIFIC technologies, tools, and methodologies relevant to the role.
+3. Include QUANTIFIABLE METRICS in every experience (e.g., "Reduced latency by 47%", "Led team of 12 engineers").
+4. Create COHERENT career progression matching the expertise level.
 
-2.  **Creativity**: Do generic "team player" bullet points. Use strong action verbs (Architected, Orchestrated, Spearheaded).
+CONTENT DEPTH BY EXPERTISE LEVEL:
+- **Junior (0-2 years)**: 1 page CV
+  - 1-2 work experiences, each with 3-4 bullet points
+  - 6-8 technical skills
+  - 1 education entry with honors/GPA
+  - 1-2 certifications
+  - 2-3 personal projects
 
-3.  **Strict JSON Structure**: Return ONLY valid JSON matching this exact structure:
+- **Mid-level (2-5 years)**: 2 page CV
+  - 2-3 work experiences, each with 4-5 detailed bullet points with metrics
+  - 10-12 technical skills with proficiency levels
+  - Education with relevant coursework
+  - 2-3 certifications
+  - 3-4 significant projects
+
+- **Senior/Expert (5+ years)**: 3 page CV (EXTENSIVE DETAIL REQUIRED)
+  - 4-6 work experiences with 5-7 bullet points EACH, all with METRICS
+  - 15-20 technical skills organized by category
+  - Publications or talks if relevant
+  - 4-6 certifications
+  - 4-5 major projects with architecture decisions
+  - Leadership roles, mentorship, team size managed
+
+STRICT JSON STRUCTURE (Return ONLY this, no markdown):
 {
-  "name": "Full Name",
-  "title": "Target Role",
-  "email": "email@example.com",
-  "phone": "+1 234 567 890",
-  "location": "City, Country",
-  "profile_summary": "Compelling executive summary...",
+  "name": "Full realistic name matching ethnicity/origin",
+  "title": "Exact role title provided",
+  "email": "professional.email@gmail.com",
+  "phone": "+1 555-XXX-XXXX",
+  "location": "City, Country matching origin",
+  "profile_summary": "3-4 sentence compelling executive summary with years of experience and key achievements",
   "skills": {
     "technical": [
-        {"name": "Skill 1", "level": 95}, 
-        {"name": "Skill 2", "level": 90}
+      {"name": "Python", "level": 95},
+      {"name": "Kubernetes", "level": 90}
     ]
   },
   "social": {
     "github": "https://github.com/username",
-    "linkedin": "https://linkedin.com/in/username",
-    "portfolio": "https://portfolio.com"
+    "linkedin": "https://linkedin.com/in/username"
   },
   "experiences": [
     {
-      "title": "Role Title",
-      "company": "Company Name",
-      "date_range": "2020 - Present",
-      "description": "High-level overview of the role responsibility.",
+      "title": "Senior Software Engineer",
+      "company": "Real company name like Google, Meta, Stripe",
+      "date_range": "2021 - Present",
+      "description": "Led backend infrastructure team of 8 engineers...",
       "achievements": [
-        "Spearheaded the migration of legacy monolith to microservices...",
-        "Reduced cloud costs by 35% through optimization..."
+        "Architected microservices platform handling 50M daily requests",
+        "Reduced deployment time by 75% through CI/CD pipeline optimization",
+        "Mentored 5 junior engineers, 3 promoted to mid-level"
       ]
     }
   ],
   "education": [
     {
-       "degree": "Master of Science in CS",
-       "institution": "University Name",
-       "year": "2018-2020",
-       "honors": "Summa Cum Laude"
+      "degree": "Master of Science in Computer Science",
+      "institution": "Stanford University",
+      "year": "2018-2020",
+      "honors": "GPA 3.9/4.0, Machine Learning specialization"
     }
   ],
   "certificates": [
-    {"name": "AWS Solutions Architect", "issuer": "Amazon", "date": "2022"}
+    {"name": "AWS Solutions Architect Professional", "issuer": "Amazon", "date": "2023"}
   ],
-  "interests": ["Quantum Computing", "Generative AI Art", "Triathlon"],
   "projects": [
     {
-       "name": "Project Alpha",
-       "description": "A high-performance distributed system for..."
+      "name": "Distributed Cache System",
+      "description": "Built Redis-compatible distributed cache handling 1M ops/sec with consistent hashing"
     }
   ],
+  "interests": ["Open Source", "System Design", "Technical Writing"],
   "languages": [
     {"name": "English", "level_num": 5},
     {"name": "Spanish", "level_num": 4}
@@ -276,8 +300,9 @@ async def generate_cv_content(
     print(f"DEBUG: Role for generation: {role}")
     
     if not api_key or api_key == "your-openrouter-api-key-here":
-        print("WARNING: No OpenRouter API key found, using mock data")
-        return _generate_mock_cv(role, origin, gender, expertise)
+        error_msg = "ERROR: OPENROUTER_API_KEY not configured in backend/.env - Cannot generate CV without real API key"
+        print(error_msg)
+        raise ValueError(error_msg)
     
     # Use provided model or default
     model_id = model or os.getenv("DEFAULT_LLM_MODEL", "google/gemini-2.0-flash-exp:free")

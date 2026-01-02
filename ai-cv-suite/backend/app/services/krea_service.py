@@ -11,10 +11,12 @@ from typing import Optional
 import httpx
 from dotenv import load_dotenv
 
-load_dotenv()
-
-# Get paths
+# Get paths - CRITICAL: load .env from backend directory
 BACKEND_DIR = Path(__file__).parent.parent.parent
+ENV_PATH = BACKEND_DIR / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
+print(f"DEBUG KREA: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})")
+
 ASSETS_DIR = BACKEND_DIR / "assets"
 ASSETS_DIR.mkdir(exist_ok=True)
 
@@ -285,8 +287,9 @@ async def generate_avatar(
     print(f"DEBUG KREA: API Key loaded: {'YES (' + api_key[:8] + '...)' if api_key and len(api_key) > 8 else 'NO/EMPTY'}")
     
     if not api_key or api_key == "your-krea-api-key-here":
-        print("WARNING: No Krea API key found, using mock avatar")
-        return await _generate_mock_avatar(gender, ethnicity)
+        error_msg = "ERROR: KREA_API_KEY not configured in backend/.env - Cannot generate avatar without real API key"
+        print(error_msg)
+        raise ValueError(error_msg)
     
     # Use provided model or default
     model_id = model or os.getenv("DEFAULT_IMAGE_MODEL", "flux")
