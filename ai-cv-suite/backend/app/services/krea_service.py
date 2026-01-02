@@ -20,8 +20,8 @@ print(f"DEBUG KREA: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})"
 ASSETS_DIR = BACKEND_DIR / "assets"
 ASSETS_DIR.mkdir(exist_ok=True)
 
-# Krea API Configuration
-KREA_API_URL = "https://api.krea.ai/v1/images/generations"
+# Krea API Configuration - Updated endpoint format
+KREA_API_BASE = "https://api.krea.ai/generate/image"
 
 # Available models with their properties
 KREA_MODELS = {
@@ -298,18 +298,21 @@ async def generate_avatar(
     prompt = get_avatar_prompt(gender, ethnicity, age_range)
     
     try:
+        # Construct model-specific URL
+        api_url = f"{KREA_API_BASE}/{model_id}"
+        print(f"DEBUG KREA: Calling {api_url}")
+        
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
-                KREA_API_URL,
+                api_url,
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": model_id,
                     "prompt": prompt,
-                    "n": 1,
-                    "size": "1024x1024"
+                    "scale": 1.0,
+                    "steps": 30
                 }
             )
 
