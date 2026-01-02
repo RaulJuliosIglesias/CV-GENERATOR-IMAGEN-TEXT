@@ -96,6 +96,33 @@ LLM_MODELS = {
     }
 }
 
+# Random tech roles for "any" selection
+RANDOM_TECH_ROLES = [
+    "Senior DevOps Engineer",
+    "AI Research Scientist",
+    "Blockchain Lead Developer",
+    "Full Stack Architect",
+    "Data Platform Engineer",
+    "Cloud Security Specialist",
+    "Machine Learning Engineer",
+    "Site Reliability Engineer",
+    "Principal Software Engineer",
+    "Backend Systems Architect",
+    "Mobile Development Lead",
+    "Cybersecurity Analyst",
+    "Quantum Computing Researcher",
+    "Platform Engineering Manager"
+]
+
+
+def resolve_role(role: str) -> str:
+    """Convert 'any' to a random high-demand tech role."""
+    if role.lower() == "any":
+        resolved = random.choice(RANDOM_TECH_ROLES)
+        print(f"DEBUG: Resolved 'any' role to: {resolved}")
+        return resolved
+    return role
+
 # Enhanced system prompt for detailed CVs
 # Enhanced system prompt for detailed CVs
 SYSTEM_PROMPT = """You are an expert Executive CV/Resume Writer for top-tier tech roles. 
@@ -239,7 +266,14 @@ async def generate_cv_content(
     """
     Generate detailed CV content using OpenRouter with enhanced prompts.
     """
+    # CRITICAL: Resolve "any" to a real role FIRST
+    role = resolve_role(role)
+    
     api_key = os.getenv("OPENROUTER_API_KEY", "")
+    
+    # Debug logging
+    print(f"DEBUG: API Key loaded: {'YES (' + api_key[:8] + '...)' if api_key and len(api_key) > 8 else 'NO/EMPTY'}")
+    print(f"DEBUG: Role for generation: {role}")
     
     if not api_key or api_key == "your-openrouter-api-key-here":
         print("WARNING: No OpenRouter API key found, using mock data")
@@ -247,6 +281,7 @@ async def generate_cv_content(
     
     # Use provided model or default
     model_id = model or os.getenv("DEFAULT_LLM_MODEL", "google/gemini-2.0-flash-exp:free")
+    print(f"DEBUG: Using LLM model: {model_id}")
     
     user_prompt = create_user_prompt(role, expertise, age, gender, ethnicity, origin, remote)
     

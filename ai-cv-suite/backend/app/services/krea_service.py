@@ -281,12 +281,16 @@ async def generate_avatar(
     """
     api_key = os.getenv("KREA_API_KEY", "")
     
+    # Debug logging
+    print(f"DEBUG KREA: API Key loaded: {'YES (' + api_key[:8] + '...)' if api_key and len(api_key) > 8 else 'NO/EMPTY'}")
+    
     if not api_key or api_key == "your-krea-api-key-here":
         print("WARNING: No Krea API key found, using mock avatar")
         return await _generate_mock_avatar(gender, ethnicity)
     
     # Use provided model or default
     model_id = model or os.getenv("DEFAULT_IMAGE_MODEL", "flux")
+    print(f"DEBUG KREA: Using model: {model_id}")
     
     prompt = get_avatar_prompt(gender, ethnicity, age_range)
     
