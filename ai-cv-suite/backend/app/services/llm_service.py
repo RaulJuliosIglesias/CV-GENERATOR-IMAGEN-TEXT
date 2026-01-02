@@ -19,74 +19,67 @@ print(f"DEBUG: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})")
 
 # OpenRouter API Configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
 
-# Available LLM models - VERIFIED WORKING OpenRouter IDs (Jan 2026)
-# Source: https://openrouter.ai/docs/api-reference/models
-LLM_MODELS = {
+# Fallback models in case API fetch fails
+FALLBACK_LLM_MODELS = {
     "openrouter/auto": {
         "name": "Auto (Best Model)",
         "description": "Automatically selects the best model for your prompt",
         "provider": "OpenRouter",
         "context": "Varies",
         "cost": "Varies"
-    },
-    "anthropic/claude-3.5-sonnet": {
-        "name": "Claude 3.5 Sonnet",
-        "description": "Anthropic's best model for structured output",
-        "provider": "Anthropic",
-        "context": "200K tokens",
-        "cost": "$3/1M"
-    },
-    "anthropic/claude-3-haiku": {
-        "name": "Claude 3 Haiku",
-        "description": "Fast and cheap Claude model",
-        "provider": "Anthropic",
-        "context": "200K tokens",
-        "cost": "$0.25/1M"
-    },
-    "openai/gpt-4o": {
-        "name": "GPT-4o",
-        "description": "OpenAI's flagship multimodal model",
-        "provider": "OpenAI",
-        "context": "128K tokens",
-        "cost": "$5/1M"
-    },
-    "openai/gpt-4o-mini": {
-        "name": "GPT-4o Mini",
-        "description": "Fast and affordable GPT-4o variant",
-        "provider": "OpenAI",
-        "context": "128K tokens",
-        "cost": "$0.15/1M"
-    },
-    "meta-llama/llama-3.1-70b-instruct": {
-        "name": "Llama 3.1 70B",
-        "description": "Meta's powerful open-source model",
-        "provider": "Meta",
-        "context": "128K tokens",
-        "cost": "$0.40/1M"
-    },
-    "meta-llama/llama-3.1-8b-instruct": {
-        "name": "Llama 3.1 8B",
-        "description": "Meta's fast open-source model",
-        "provider": "Meta",
-        "context": "128K tokens",
-        "cost": "$0.05/1M"
-    },
-    "mistralai/mistral-7b-instruct": {
-        "name": "Mistral 7B",
-        "description": "Mistral's efficient instruction model",
-        "provider": "Mistral",
-        "context": "32K tokens",
-        "cost": "$0.06/1M"
-    },
-    "deepseek/deepseek-chat": {
-        "name": "DeepSeek Chat",
-        "description": "DeepSeek's capable chat model",
-        "provider": "DeepSeek",
-        "context": "64K tokens",
-        "cost": "$0.14/1M"
     }
 }
+
+def fetch_openrouter_models() -> dict:
+    """Fetch live model list from OpenRouter API."""
+    import requests
+    
+    try:
+        print("DEBUG: Fetching live models from OpenRouter API...")
+        response = requests.get(OPENROUTER_MODELS_URL, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            models = {}
+            
+            # Always include auto first
+            models["openrouter/auto"] = {
+                "name": "Auto (Best Model)",
+                "description": "Automatically selects the best model for your prompt",
+                "provider": "OpenRouter",
+                "context": "Varies",
+                "cost": "Varies"
+            }
+            
+            # Add top models from API response
+            for model in data.get("data", [])[:50]:  # Limit to top 50
+                model_id = model.get("id", "")
+                if model_id and model_id not in models:
+                    pricing = model.get("pricing", {})
+                    prompt_cost = float(pricing.get("prompt", 0)) * 1000000 if pricing.get("prompt") else 0
+                    
+                    models[model_id] = {
+                        "name": model.get("name", model_id),
+                        "description": model.get("description", "")[:100] if model.get("description") else "",
+                        "provider": model_id.split("/")[0].title() if "/" in model_id else "Unknown",
+                        "context": f"{model.get('context_length', 0)//1000}K tokens",
+                        "cost": f"${prompt_cost:.2f}/1M" if prompt_cost else "Free"
+                    }
+            
+            print(f"DEBUG: Fetched {len(models)} models from OpenRouter")
+            return models
+        else:
+            print(f"WARNING: OpenRouter models API returned {response.status_code}")
+            return FALLBACK_LLM_MODELS
+            
+    except Exception as e:
+        print(f"WARNING: Failed to fetch OpenRouter models: {e}")
+        return FALLBACK_LLM_MODELS
+
+# Fetch live models from OpenRouter (runs once at module load)
+LLM_MODELS = fetch_openrouter_models()
 
 # Random tech roles for "any" selection
 RANDOM_TECH_ROLES = [
