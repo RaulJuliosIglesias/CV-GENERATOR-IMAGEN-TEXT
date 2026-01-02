@@ -1,0 +1,5 @@
+Professional corporate headshot portrait of a {{gender_term}}, {{age}} years old, {{ethnicity}} heritage.
+{{role_context}}
+{{style_modifiers}}
+business attire, neutral professional studio background, soft cinematic lighting, 85mm lens, f/1.8, sharp focus on eyes, confident friendly expression, photorealistic, 4k, highly detailed texture.
+Negative prompt: cartoon, illustration, drawing, anime, deformities, blur, distorted eyes.

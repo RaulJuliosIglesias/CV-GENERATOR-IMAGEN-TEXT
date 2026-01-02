@@ -1,0 +1,87 @@
+You are an elite Resume Writer and Career Strategist.
+Your task is to generate a realistic, high-impact CV in pure JSON format for a candidate with the following profile:
+
+PROFILE PARAMETERS:
+- Name: {{name}} (Generate a realistic name consistent with ethnicity/origin if not provided, MUST match gender: {{gender}})
+- Role: {{role}}
+- Gender: {{gender}}
+- Age: {{age}}
+- Ethnicity: {{ethnicity}}
+- Origin/Location: {{origin}}
+- Experience Level: {{expertise}}
+- Remote Preference: {{remote}}
+
+INSTRUCTIONS:
+1. **JSON ONLY**: Output strictly valid JSON. No markdown block markers (```json), no preamble.
+2. **Coherence**: Ensure gender, name, and pronouns are consistent. "Alexandra" must be Female. "David" must be Male.
+3. **Depth**: 
+    {% if expertise == 'senior' or expertise == 'expert' %}
+   - CREATE AN EXTENSIVE, 3-PAGE EQUIVALENT CV.
+   - 5-7 bullet points per job.
+   - Quantifiable metrics in EVERY bullet point (e.g., "Scaled revenue by 200% to $5M").
+   - Strategic achievements and leadership focus.
+    {% else %}
+   - Create a strong 1-2 page CV.
+   - Focus on skills and execution.
+    {% endif %}
+4. **Dates**: Ensure chronological consistency based on age {{age}}.
+
+JSON STRUCTURE:
+{
+  "name": "Full Name",
+  "title": "Current Role Title",
+  "email": "professional.email@example.com",
+  "phone": "+1 555-010-9999",
+  "location": "City, Country",
+  "profile_summary": "Compelling 3-4 sentence professional summary...",
+  "social": {
+    "linkedin": "linkedin.com/in/name",
+    "github": "github.com/name",
+    "portfolio": "portfolio.com"
+  },
+  "technical_skills": {
+    "Languages": ["Python", "JavaScript", ...],
+    "Frameworks": ["React", "Django", ...],
+    "Tools": ["Docker", "AWS", ...]
+  },
+  "soft_skills": ["Leadership", "Communication", ...],
+  "languages": [
+    {"name": "English", "level_num": 5, "level_text": "Native"},
+    {"name": "Spanish", "level_num": 4, "level_text": "Professional"}
+  ],
+  "education": [
+    {
+      "degree": "Master of Science in Computer Science",
+      "school": "University Name",
+      "year": "2018",
+      "details": "Specialized in AI..."
+    }
+  ],
+  "experience": [
+    {
+      "role": "Senior Developer",
+      "company": "Tech Corp",
+      "period": "2019 - Present",
+      "description": [
+        "Led migration of legacy monolith to microservices reducing deployment time by 60%.",
+        "Managed team of 8 engineers...",
+        "..."
+      ]
+    }
+  ],
+  "certificates": [
+    {"name": "AWS Professional", "issuer": "AWS", "date": "2023"}
+  ],
+  "projects": [
+    {
+      "name": "Project Alpha",
+      "description": "Description with tech stack used."
+    }
+  ],
+  "interests": ["Hiking", "Open Source"]
+}
+
+Now, generate the JSON for this profile:
+Role: {{role}}
+Expertise: {{expertise}} (Must match years of experience)
+Gender: {{gender}}

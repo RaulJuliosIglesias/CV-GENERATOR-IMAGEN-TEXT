@@ -10,6 +10,7 @@ from typing import Optional
 import httpx
 from dotenv import load_dotenv
 from pathlib import Path
+from jinja2 import Template
 
 # CRITICAL: Load .env from backend directory, not CWD
 BACKEND_DIR = Path(__file__).parent.parent.parent
@@ -129,142 +130,61 @@ def resolve_role(role: str) -> str:
     return role
 
 # Enhanced system prompt for detailed CVs
-SYSTEM_PROMPT = """You are an ELITE Executive CV Writer creating premium, realistic curricula vitae.
-
-CRITICAL RULES:
-1. Generate REALISTIC names based on the gender, ethnicity, and origin provided.
-2. Use SPECIFIC technologies, tools, and methodologies relevant to the role.
-3. Include QUANTIFIABLE METRICS in every experience (e.g., "Reduced latency by 47%", "Led team of 12 engineers").
-4. Create COHERENT career progression matching the expertise level.
-
-CONTENT DEPTH BY EXPERTISE LEVEL:
-- **Junior (0-2 years)**: 1 page CV
-  - 1-2 work experiences, each with 3-4 bullet points
-  - 6-8 technical skills
-  - 1 education entry with honors/GPA
-  - 1-2 certifications
-  - 2-3 personal projects
-
-- **Mid-level (2-5 years)**: 2 page CV
-  - 2-3 work experiences, each with 4-5 detailed bullet points with metrics
-  - 10-12 technical skills with proficiency levels
-  - Education with relevant coursework
-  - 2-3 certifications
-  - 3-4 significant projects
-
-- **Senior/Expert (5+ years)**: 3 page CV (EXTENSIVE DETAIL REQUIRED)
-  - 4-6 work experiences with 5-7 bullet points EACH, all with METRICS
-  - 15-20 technical skills organized by category
-  - Publications or talks if relevant
-  - 4-6 certifications
-  - 4-5 major projects with architecture decisions
-  - Leadership roles, mentorship, team size managed
-
-STRICT JSON STRUCTURE (Return ONLY this, no markdown):
-{
-  "name": "Full realistic name matching ethnicity/origin",
-  "title": "Exact role title provided",
-  "email": "professional.email@gmail.com",
-  "phone": "+1 555-XXX-XXXX",
-  "location": "City, Country matching origin",
-  "profile_summary": "3-4 sentence compelling executive summary with years of experience and key achievements",
-  "skills": {
-    "technical": [
-      {"name": "Python", "level": 95},
-      {"name": "Kubernetes", "level": 90}
-    ]
-  },
-  "social": {
-    "github": "https://github.com/username",
-    "linkedin": "https://linkedin.com/in/username"
-  },
-  "experiences": [
-    {
-      "title": "Senior Software Engineer",
-      "company": "Real company name like Google, Meta, Stripe",
-      "date_range": "2021 - Present",
-      "description": "Led backend infrastructure team of 8 engineers...",
-      "achievements": [
-        "Architected microservices platform handling 50M daily requests",
-        "Reduced deployment time by 75% through CI/CD pipeline optimization",
-        "Mentored 5 junior engineers, 3 promoted to mid-level"
-      ]
-    }
-  ],
-  "education": [
-    {
-      "degree": "Master of Science in Computer Science",
-      "institution": "Stanford University",
-      "year": "2018-2020",
-      "honors": "GPA 3.9/4.0, Machine Learning specialization"
-    }
-  ],
-  "certificates": [
-    {"name": "AWS Solutions Architect Professional", "issuer": "Amazon", "date": "2023"}
-  ],
-  "projects": [
-    {
-      "name": "Distributed Cache System",
-      "description": "Built Redis-compatible distributed cache handling 1M ops/sec with consistent hashing"
-    }
-  ],
-  "interests": ["Open Source", "System Design", "Technical Writing"],
-  "languages": [
-    {"name": "English", "level_num": 5},
-    {"name": "Spanish", "level_num": 4}
-  ]
-}
-}
-""" + "\nIMPORTANT: Return ONLY the JSON object. Do not include any markdown formatting, explanations, or code blocks. Start closely with { and end with }."
+# Simplified System Prompt - Details are now in the external template
+SYSTEM_PROMPT = """You are an expert CV generator. 
+Instructions:
+1. Return ONLY valid JSON.
+2. No markdown formatting.
+3. Follow the user's detailed requirements exactly.
+"""
 
 
 def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool) -> str:
-    """Create detailed user prompt based on profile."""
+    """Create detailed user prompt based on profile using external template."""
     
-    expertise_map = {
-        'any': '2-5',
-        'junior': '0-2',
-        'mid': '2-5',
-        'senior': '5-10',
-        'expert': '10+'
-    }
-    
-    years_experience = expertise_map.get(expertise, '2-5')
-    
-    detail_requirement = {
-        'any': "balanced detail",
-        'junior': "focus on education and potential",
-        'mid': "balanced skills and achievements",
-        'senior': "MAXIMUM DETAIL - 2 full pages with leadership focus",
-        'expert': "MAXIMUM DETAIL - 2 full pages with strategic vision"
-    }
-    
-    detail_level = detail_requirement.get(expertise, "balanced detail")
-    
-    
+    # 1. Resolve logical variables
     role_instruction = f"Role: {role}"
     if role.lower() == "any":
-        role_instruction = "Role: CHOOSE A RANDOM HIGH-DEMAND TECH ROLE (e.g. Senior DevOps, AI Research Scientist, Blockchain Lead, Full Stack Architect, Data Engineer)"
+        role_instruction = "Role: CHOOSE A RANDOM HIGH-DEMAND TECH ROLE"
 
-    return f"""Generate a COMPLETE, REALISTIC CV for:
+    # 2. Try loading from external template
+    try:
+        template_path = BACKEND_DIR / "prompts" / "cv_prompt_template.txt"
+        if template_path.exists():
+            with open(template_path, "r", encoding="utf-8") as f:
+                template_str = f.read()
+            
+            # Render Jinja2 template
+            return Template(template_str).render(
+                role=role if role.lower() != "any" else "High Demand Tech Role (Choose one)",
+                expertise=expertise,
+                age=age,
+                gender=gender,
+                ethnicity=ethnicity,
+                origin=origin,
+                remote="Preferred" if remote else "Flexible",
+                name="" # Let AI generate it
+            )
+    except Exception as e:
+        print(f"WARNING: Could not load/render CV template: {e}")
 
-**Profile**:
-- {role_instruction}
-- Experience Level: {expertise} ({years_experience} years)
-- Age: {age} years old
-- Gender: {gender}
-- Ethnicity: {ethnicity}
-- Location/Origin: {origin}
-- Remote Work: {"Preferred" if remote else "Flexible"}
-
-**Requirements**:
-- {detail_level}
-- Use appropriate experience count for {expertise} level
-- Include specific technologies for {role}
-- Generate realistic name matching {gender} and {ethnicity}
-- Make achievements quantifiable with metrics
-
-OUTPUT ONLY THE JSON, NO OTHER TEXT."""
+    # 3. Fallback (Legacy prompt if file missing)
+    return f"""Generate a COMPLETE, REALISTIC CV (JSON format) for:
+    
+    Profile:
+    - {role_instruction}
+    - Level: {expertise}
+    - Age: {age}
+    - Gender: {gender}
+    - Ethnicity: {ethnicity}
+    - Location: {origin}
+    
+    Requirements:
+    - JSON Output ONLY.
+    - Realistic name matching gender/ethnicity.
+    - 5-7 bullet points per job with metrics.
+    - Technical skills arrays.
+    """
 
 
 def get_available_models() -> list[dict]:

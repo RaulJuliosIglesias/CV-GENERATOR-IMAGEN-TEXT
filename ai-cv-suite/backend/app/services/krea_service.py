@@ -241,20 +241,40 @@ KREA_MODELS = {
 
 
 def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
-    """Generate the prompt for the avatar with explicit gender coherence."""
-    # CRITICAL: Explicit gender terms for coherent image generation
+    """Generate the prompt for the avatar using external template."""
+    
+    # Map variables for template
     if gender.lower() == "female":
-        gender_text = "woman, female"
+        gender_term = "woman"
     elif gender.lower() == "male":
-        gender_text = "man, male"
+        gender_term = "man"
     else:
-        gender_text = "professional person"
+        gender_term = "professional person"
+        
+    ethnicity_term = ethnicity if ethnicity != "any" else "mixed heritage"
+    age_val = age_range.split('-')[0] if '-' in age_range else age_range
     
-    ethnicity_text = f"{ethnicity} " if ethnicity != "any" else ""
-    
+    # Try to load from template file
+    try:
+        template_path = BACKEND_DIR / "prompts" / "image_prompt_template.txt"
+        if template_path.exists():
+            with open(template_path, "r", encoding="utf-8") as f:
+                template = f.read()
+                
+            # Replace placeholders
+            prompt = template.replace("{{gender_term}}", gender_term)
+            prompt = prompt.replace("{{age}}", str(age_val))
+            prompt = prompt.replace("{{ethnicity}}", ethnicity_term)
+            prompt = prompt.replace("{{role_context}}", "Corporate professional") # Placeholder for now
+            prompt = prompt.replace("{{style_modifiers}}", "high quality, 8k")
+            return prompt
+    except Exception as e:
+        print(f"WARNING: Could not load image prompt template: {e}")
+
+    # Fallback to hardcoded
     return (
-        f"Professional corporate headshot portrait of a {gender_text}, "
-        f"{age_range} years old, {ethnicity_text}"
+        f"Professional corporate headshot portrait of a {gender_term}, "
+        f"{age_val} years old, {ethnicity_term}, "
         f"business attire, neutral gray studio background, high quality photography, "
         f"LinkedIn profile photo style, soft studio lighting, sharp focus, "
         f"confident friendly expression, looking at camera, "
