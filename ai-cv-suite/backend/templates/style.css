@@ -1,0 +1,15 @@
+/* 
+ * AI CV Suite - PDF Stylesheet
+ * Optimized for WeasyPrint A4 rendering
+ */
+
+@page {
+    size: A4;
+    margin: 0;
+}
+
+body {
+    font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}

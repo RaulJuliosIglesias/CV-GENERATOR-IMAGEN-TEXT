@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated files
+backend/output/
+backend/assets/
+!backend/output/.gitkeep
+!backend/assets/.gitkeep
+
+# ============================================
+# SECURITY: API KEYS AND SECRETS
+# ============================================
+# NEVER commit these files - they contain sensitive API keys
+
+# Environment files with real keys
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+
+# Only .env.example should be committed (it has placeholder values)
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+.eggs/
