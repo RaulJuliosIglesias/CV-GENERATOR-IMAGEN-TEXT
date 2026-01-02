@@ -16,8 +16,8 @@ from typing import Optional
 
 from ..core.task_manager import task_manager, Task, TaskStatus
 from ..core.pdf_engine import render_cv_html
-from ..services.llm_service import generate_cv_content, get_available_models as get_llm_models
-from ..services.krea_service import generate_avatar, get_available_models as get_image_models
+from ..services.llm_service import generate_cv_content, get_available_models as get_llm_models, create_user_prompt
+from ..services.krea_service import generate_avatar, get_available_models as get_image_models, get_avatar_prompt
 
 # Get paths
 BACKEND_DIR = Path(__file__).parent.parent.parent
@@ -89,11 +89,48 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         # --- SUBTASK 1: Drafting Prompts ---
         task.current_subtask_index = 0
         task.subtasks[0].status = TaskStatus.RUNNING
-        task.subtasks[0].message = "Engineering expert prompts for AI..."
+        task.subtasks[0].message = "Generating and saving prompt artifacts..."
         await task_manager._save_batches()
         
-        # Simulate prompt creation (visibility step)
-        await asyncio.sleep(1.5)
+        # Safe age extraction (moved up for prompt gen)
+        try:
+            age = int(task.age_range.split('-')[0]) if '-' in task.age_range else int(task.age_range)
+        except:
+            age = 30
+
+        try:
+            # Generate Real Prompts
+            cv_prompt = create_user_prompt(
+                role=task.role,
+                expertise=task.expertise,
+                age=age,
+                gender=task.gender,
+                ethnicity=task.ethnicity,
+                origin=task.origin,
+                remote=task.remote
+            )
+            
+            img_prompt = get_avatar_prompt(
+                gender=task.gender,
+                ethnicity=task.ethnicity,
+                age_range=task.age_range
+            )
+            
+            # Save Artifacts
+            p_cv_path = OUTPUT_DIR / f"prompt_cv_{task.id}.txt"
+            p_img_path = OUTPUT_DIR / f"prompt_image_{task.id}.txt"
+            
+            with open(p_cv_path, "w", encoding="utf-8") as f:
+                f.write(cv_prompt)
+            with open(p_img_path, "w", encoding="utf-8") as f:
+                f.write(img_prompt)
+
+            task.subtasks[0].message = "Prompts exported to output folder"
+            await task_manager._save_batches()
+            await asyncio.sleep(1) 
+            
+        except Exception as e:
+            print(f"Warning saving prompts: {e}")
         
         task.subtasks[0].status = TaskStatus.COMPLETE
         task.subtasks[0].progress = 100
@@ -105,11 +142,7 @@ async def generate_single_cv(task: Task, llm_model: Optional[str], image_model: 
         task.subtasks[1].message = f"Generating premium content ({llm_model or 'Auto'})..."
         await task_manager._save_batches()
 
-        # Extract age safely
-        try:
-            age = int(task.age_range.split('-')[0]) if '-' in task.age_range else int(task.age_range)
-        except:
-            age = 30
+        # Age already extracted above
 
         cv_data = await generate_cv_content(
             role=task.role,

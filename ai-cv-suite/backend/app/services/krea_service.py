@@ -234,6 +234,20 @@ KREA_MODELS = {
 }
 
 
+def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
+    """Generate the prompt for the avatar."""
+    gender_text = gender if gender != "any" else "professional"
+    ethnicity_text = f"{ethnicity} " if ethnicity != "any" else ""
+    
+    return (
+        f"Professional corporate headshot portrait of a {age_range} year old "
+        f"{gender_text} {ethnicity_text}person, "
+        f"business attire, neutral studio background, high quality photography, "
+        f"LinkedIn profile photo style, well-lit, sharp focus, friendly expression, "
+        f"4k, highly detailed"
+    )
+
+
 def get_available_models() -> list[dict]:
     """Return list of available image models with their properties."""
     return [
@@ -274,16 +288,7 @@ async def generate_avatar(
     # Use provided model or default
     model_id = model or os.getenv("DEFAULT_IMAGE_MODEL", "flux")
     
-    # Build the prompt for professional headshot
-    gender_text = gender if gender != "any" else "professional"
-    ethnicity_text = f"{ethnicity} " if ethnicity != "any" else ""
-    
-    prompt = (
-        f"Professional corporate headshot portrait of a {age_range} year old "
-        f"{gender_text} {ethnicity_text}person, "
-        f"business attire, neutral studio background, high quality photography, "
-        f"LinkedIn profile photo style, well-lit, sharp focus, friendly expression"
-    )
+    prompt = get_avatar_prompt(gender, ethnicity, age_range)
     
     try:
         async with httpx.AsyncClient(timeout=120.0) as client:
@@ -300,6 +305,9 @@ async def generate_avatar(
                     "size": "1024x1024"
                 }
             )
+
+
+
             
             if response.status_code == 200:
                 result = response.json()
