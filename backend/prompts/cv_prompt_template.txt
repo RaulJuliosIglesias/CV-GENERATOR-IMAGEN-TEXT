@@ -2,7 +2,7 @@ You are an elite Resume Writer and Career Strategist.
 Your task is to generate a realistic, high-impact CV in pure JSON format for a candidate with the following profile:
 
 PROFILE PARAMETERS:
-- Name: {{name}} (Generate a UNIQUE, REALISTIC name consistent with ethnicity/origin. Do NOT use "Alexandra Chen", "John Doe" or common placeholders. Be creative with the name.)
+- Name: {% if name %}{{name}} (STRICTLY USE THIS NAME. Do not generate a new one.){% else %}Generate a UNIQUE, REALISTIC name consistent with ethnicity/origin{% endif %}
 - Role: {{role}}
 - Gender: {{gender}}
 - Age: {{age}}

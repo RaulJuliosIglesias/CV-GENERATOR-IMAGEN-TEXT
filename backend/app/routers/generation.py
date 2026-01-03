@@ -255,7 +255,12 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                     task.image_path = mock_path
                     task.subtasks[2].status = TaskStatus.COMPLETE
                     task.subtasks[2].progress = 100
-                    task.subtasks[2].message = "Generated (Fallback Mode)"
+                    # Show the original error in the message so user knows why fallback happened
+                    short_error = str(e)[:100] + "..." if len(str(e)) > 100 else str(e)
+                    task.subtasks[2].message = f"Fallback Mode. Error: {short_error}"
+                    # Also set the error field but keep status generally valid (or maybe Warning?)
+                    task.error = f"Krea Error (Handled): {e}" 
+                    
                     task.progress = 80
                     await task_manager._save_batches()
                     

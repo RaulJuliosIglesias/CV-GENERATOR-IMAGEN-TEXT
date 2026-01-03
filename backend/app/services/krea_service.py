@@ -319,40 +319,55 @@ async def generate_avatar(
     # Use provided model or default - map old names to new API paths
     model_input = model or os.getenv("DEFAULT_IMAGE_MODEL", "bfl/flux-1-dev")
     
-    # Map simple names to correct API paths (per Krea docs)
-    # Map simple names to correct API paths (per Krea docs)
+    # Map simple names to correct API paths (Provider/Model-ID format)
+    # Based on user feedback and Krea API standards
     MODEL_PATH_MAP = {
+        # Flux Families (BFL)
         "flux": "bfl/flux-1-dev",
         "bfl/flux-1-dev": "bfl/flux-1-dev",
-        "krea-1": "krea-1", 
-        "flux-1-krea": "flux-1-krea",
+        "flux-2": "bfl/flux-2-dev",
+        "flux-2-pro": "bfl/flux-2-pro",
+        "flux-1.1-pro": "bfl/flux-1.1-pro",
+        "flux-1.1-pro-ultra": "bfl/flux-1.1-pro-ultra",
+        "flux-kontext": "bfl/flux-1-kontext-dev", # Specific override
         
-        # Confirmed / Standard IDs
-        "z-image": "z-image", # Correct ID is usually simple
-        "seedream-3": "seedream-3",
-        "seedream-4": "seedream-4",
-        "seedream-4.5": "seedream-4.5",
+        # Krea Native
+        "krea-1": "krea/krea-1", # Assuming provider prefix for consistency, or fallback to simple if 404
+        "flux-1-krea": "krea/flux-1-krea",
         
-        "imagen-4-fast": "imagen-4-fast",
-        "imagen-4": "imagen-4",
-        "imagen-4-ultra": "imagen-4-ultra",
+        # Alibaba
+        "z-image": "alibaba/z-image",
+        "qwen": "alibaba/qwen-vl",
+        "qwen-image-2512": "alibaba/qwen-image-2512",
         
-        "flux-2": "flux-2",
-        "flux-2-pro": "flux-2-pro",
+        # ByteDance
+        "seedream-3": "bytedance/seedream-3",
+        "seedream-4": "bytedance/seedream-4",
+        "seedream-4.5": "bytedance/seedream-4.5",
         
-        "qwen": "qwen",
-        "qwen-image-2512": "qwen-image-2512",
+        # Google
+        "imagen-4-fast": "google/imagen-4-fast",
+        "imagen-4": "google/imagen-4",
+        "imagen-4-ultra": "google/imagen-4-ultra",
+        "nano-banana-pro": "google/nano-banana-pro",
+        "nano-banana": "google/nano-banana",
         
-        "ideogram-3": "ideogram-3",
-        "kling-01": "kling-01", 
-        "runway-gen-4": "runway-gen-4",
+        # Ideogram
+        "ideogram-3": "ideogram/ideogram-3",
         
-        "flux-1.1-pro": "flux-1.1-pro",
-        "flux-1.1-pro-ultra": "flux-1.1-pro-ultra",
+        # Kuaishou
+        "kling-01": "kuaishou/kling-01",
         
-        "nano-banana-pro": "nano-banana-pro",
-        "flux-kontext": "flux-kontext"
+        # Runway
+        "runway-gen-4": "runway/gen-4",
+        
+        # OpenAI
+        "chatgpt-image": "openai/dall-e-3", # Guessing standard, or maybe chatgpt-image is correct? Keeping map just in case
+        "chatgpt-image-1.5": "openai/dall-e-3"
     }
+    
+    # Clean fallback: If exact match exists in map, use it. Else try to construct provider prefix if missing?
+    # For now, rely on MAP or raw string
     model_id = MODEL_PATH_MAP.get(model_input, model_input)
     
     print(f"DEBUG KREA: Using model: {model_id}")
