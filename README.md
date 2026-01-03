@@ -1,5 +1,5 @@
 # AI CV Generator & Portfolio Suite
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://github.com/RaulJuliosIglesias)
+[![License: All Rights Reserved](https://img.shields.io/badge/License-All_Rights_Reserved-red.svg)](https://github.com/RaulJuliosIglesias)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-18-cyan.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg)](https://fastapi.tiangolo.com/)
@@ -14,23 +14,27 @@
 **Created by Raúl Iglesias Julio**
 
 - 🐙 **GitHub**: [RaulJuliosIglesias](https://github.com/RaulJuliosIglesias)
-- 💼 **LinkedIn**: [Raúl Iglesias Julio](https://www.linkedin.com/in/raul-iglesias-julio)
+- 💼 **LinkedIn**: [Raúl Iglesias Julios](https://www.linkedin.com/in/rauliglesiasjulios/)
 - 🌐 **Portfolio**: [Coming Soon](#)
 
 ---
 
-## ⛔ License & Usage Rights
+## ⚖️ License & usage
 
-**STRICTLY PROPRIETARY. ALL RIGHTS RESERVED.**
+**Copyright © 2024 Raúl Iglesias Julio. All Rights Reserved.**
 
-This software is published for **portfolio and demonstration purposes only**.
+This software is published exclusively for portfolio demonstration and educational evaluation.
 
-- ❌ **NO Redistribution**: You may not mirror, distribute, or share this code.
-- ❌ **NO Commercial Use**: You may not use this code for any commercial products.
-- ❌ **NO Modification**: You may not modify or create derivative works.
-- ✅ **View Only**: You are permitted to view this code to evaluate the technical skills of the author.
+The source code is provided for viewing purposes only. No part of this repository may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the copyright holder.
 
-*Any unauthorized use, reproduction, or distribution of this software is strictly prohibited.*
+**Permitted Use:**
+- ✅ Reviewing the code for hiring or technical evaluation.
+- ✅ Running the application locally for personal testing.
+
+**Prohibited Use:**
+- ❌ Commercial use or resale.
+- ❌ Redistribution or mirroring of the source code.
+- ❌ Modification or creation of derivative works.
 
 ---
 
