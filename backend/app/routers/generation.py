@@ -148,9 +148,9 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
         return
 
     # --- PHASE 2: GENERATE CV CONTENT ---
-    # Concurrency: 3 (Heavy LLM work)
+    # Concurrency: 5 (Increased from 3)
     print(f"=== STARTING PHASE 2: CV CONTENT ({len(active_tasks)} tasks) ===")
-    sem_phase2 = asyncio.Semaphore(3)
+    sem_phase2 = asyncio.Semaphore(5)
     
     async def run_phase2(task: Task):
         async with sem_phase2:
@@ -202,9 +202,9 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
     active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
     
     # --- PHASE 3: GENERATE IMAGES ---
-    # Concurrency: 2 (Rate limits often stricter here)
+    # Concurrency: 5 (Increased from 2)
     print(f"=== STARTING PHASE 3: IMAGES ({len(active_tasks)} tasks) ===")
-    sem_phase3 = asyncio.Semaphore(2)
+    sem_phase3 = asyncio.Semaphore(5)
     
     async def run_phase3(task: Task):
         async with sem_phase3:

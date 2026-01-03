@@ -314,6 +314,18 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     prompt = prompt.replace("{{role_context}}", context)
     prompt = prompt.replace("{{style_modifiers}}", style)
     
+    # DEBUG: Log what we're sending
+    print("="*60)
+    print("DEBUG IMAGE PROMPT PARAMETERS:")
+    print(f"  Gender: {gender} -> {gender_term}")
+    print(f"  Age: {age_range} -> {age_val}")
+    print(f"  Ethnicity: {ethnicity} -> {ethnicity_term}")
+    print(f"  Role: {role}")
+    print(f"  Context: {context}")
+    print(f"  Style: {style}")
+    print(f"  Prompt Length: {len(prompt)} chars")
+    print("="*60)
+    
     return prompt
 
 

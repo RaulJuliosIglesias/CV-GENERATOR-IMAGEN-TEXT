@@ -1,6 +1,16 @@
-Natural, unretouched profile headshot photo of a {{gender_term}}, age {{age}}, {{ethnicity}} heritage.
+Photorealistic front-facing LinkedIn-style headshot of a {{gender_term}}, exactly {{age}} years old, {{ethnicity}} ethnicity.
+
+CRITICAL REQUIREMENTS:
+- Age must be EXACTLY {{age}} years old - not older, not younger
+- Ethnicity must clearly match {{ethnicity}} heritage
+- Subject must look DIRECTLY at the camera with natural eye contact
+- This is a PROFESSIONAL HEADSHOT, not a candid photo
+
+ENVIRONMENT AND STYLE:
 {{role_context}}
 
-Generate a clearly different person every time (no recurring “default model”): vary hairstyle (length/texture/part), hair color, hairline, facial proportions (jaw/cheekbones/nose/lips/brows), skin tone and natural skin details (pores, freckles, slight redness, faint under-eye shadows, smile lines), and optional accessories (different glasses styles or none, simple earrings or none). Keep it realistic and not beauty-retouched or airbrushed. Wardrobe must match the role context (tech IC: casual-smart; product/design: smart casual; management/executive: business; field roles: practical neat). Avoid uniform “office suit” styling unless the role explicitly implies it.
+FACE AND BODY:
+Generate a unique individual every time: vary hairstyle, hair color, facial structure (jaw, cheekbones, nose shape), skin tone appropriate for {{ethnicity}} heritage. Include natural skin details (pores, light texture). Age-appropriate features for someone exactly {{age}} years old.
 
-Photography / realism: head-and-shoulders framing, slight angle (not perfectly centered every time), natural posture. Expression relaxed and approachable, closed mouth or subtle smile. Lighting soft window light or simple softbox, realistic shadows, clean catchlights. Camera look 50–85mm portrait lens look, f/2–f/2.8 shallow depth of field, sharp focus on eyes, true-to-life color, accurate white balance. Photorealistic, high detail, realistic skin and hair.
+PHOTOGRAPHY SPECS:
+Front-facing head-and-shoulders composition. Subject centered, looking directly into the camera lens. Friendly, approachable expression with slight natural smile. Professional studio or environmental lighting. 85mm portrait lens look, f/2.8 bokeh, sharp focus on eyes. {{style_modifiers}}
