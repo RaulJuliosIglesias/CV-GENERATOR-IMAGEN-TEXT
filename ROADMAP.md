@@ -1,65 +1,73 @@
-# 🗺️ Product Roadmap & Future Vision
+# 🗺️ Product Strategic Roadmap (2026-2027)
 
-> This document outlines the strategic plan for the evolution of the AI CV Generator. It focuses on scalability, user experience, and advanced AI integration.
-
----
-
-## 🚀 Phase 1: Core Stability & Portability (Q1 2026)
-Focus: Making the application robust and easy to deploy anywhere.
-
-- [ ] **Dockerization**:
-    - [ ] Create `Dockerfile` for Backend (Python).
-    - [ ] Create `Dockerfile` for Frontend (Node).
-    - [ ] Create `docker-compose.yml` for one-click orchestration.
-- [ ] **Cross-Platform Compatibility**:
-    - [ ] Verify PDF generation on Linux/Alpine (fix WeasyPrint dependencies).
-    - [ ] Windows Installer (.exe) for non-technical users.
-- [ ] **Unit & Integration Testing**:
-    - [ ] 80% Python Code Coverage (Pytest).
-    - [ ] E2E Testing with Playwright for the UI flow.
-
-## 🎨 Phase 2: Enhanced Personalization (Q2 2026)
-Focus: Giving users more control over the output design.
-
-- [ ] **Template Engine V2**:
-    - [ ] **"The Minimalist"**: Black & White, heavy typography focus.
-    - [ ] **"The Techie"**: Dark mode CV with code-block syntax highlighting for skills.
-    - [ ] **"The Creative"**: Colorful headers and asymmetric layout.
-- [ ] **Custom AI Tuning**:
-    - [ ] User-provided "Tone of Voice" slider (Formal <-> Casual).
-    - [ ] Upload existing CV to "remix" or "improve" instead of generating from scratch.
-- [ ] **Cover Letter Generator**:
-    - [ ] AI-agent that reads the generated CV and writes a matching Cover Letter.
-
-## 🔗 Phase 3: Integrations & Cloud (Q3 2026)
-Focus: Connecting the tool with the real world.
-
-- [ ] **Database Persistence (PostgreSQL)**:
-    - [ ] Save generated user profiles and CV history permanently.
-    - [ ] "My Library" view to browse past generations.
-- [ ] **LinkedIn Integration**:
-    - [ ] "Apply with AI": Generate a custom CV for a specific LinkedIn job URL.
-    - [ ] Export profile to JSON-LD (LinkedIn compatible format).
-- [ ] **Auth System**:
-    - [ ] User Accounts (Clerk / Auth0).
-    - [ ] Cloud Storage for PDFs (S3/Supabase Storage).
-
-## 🧠 Phase 4: AGI Features (Q4 2026)
-Focus: Next-generation AI capabilities.
-
-- [ ] **AI Interview Coach**:
-    - [ ] Chatbot that interviews you based on *your* generated CV to prepare you.
-    - [ ] TTS (Text-to-Speech) to simulate a real recruiter call.
-- [ ] **Video CV Generation**:
-    - [ ] Use HeyGen or D-ID API to animate the generated Avatar speaking the "About Me".
-- [ ] **Salary Estimator**:
-    - [ ] AI analysis of the generated profile to estimate market value salary.
+> **Vision**: Evolve from a powerful local generator to a fully integrated **B2C Career Acceleration SaaS**.
+> This roadmap outlines the transition from standalone software to a cloud-native platform with user persistence, monetization, and ecosystem connectivity.
 
 ---
 
-## 🛠️ Technical Debt & Refactoring
-Ongoing improvements to code quality.
+## 🏗️ Phase 1: Foundation & Cloud Architecture (Q1-Q2 2026)
+**Goal**: Transition from local execution to a robust, deployable web application.
 
-- [ ] **Migrate to Next.js**: For better SEO (if public) and Server Components.
-- [ ] **Type Safety**: strict `mypy` enforcement on backend.
-- [ ] **Microservices Split**: Separate PDF Engine into its own worker service (Celery/Redis) to handle high load.
+- [ ] **Dockerization & Containerization**
+    - [ ] Create optimized `Dockerfile` for Python Backend (Alpine based).
+    - [ ] Create `Dockerfile` for React Frontend (Nginx serving).
+    - [ ] **Orchestration**: `docker-compose` setup for one-click local deployment.
+- [ ] **Cloud Infrastructure Setup**
+    - [ ] Define **Infrastructure as Code (IaC)** using Terraform (AWS/GCP).
+    - [ ] Set up CI/CD pipelines (GitHub Actions) for automated testing and deployment.
+- [ ] **Core Engineering**
+    - [ ] Implement robust logging (ELK Stack or Datadog).
+    - [ ] Achieve 90% Code Coverage on logic services (`llm_service`, `krea_service`).
+
+## 🔐 Phase 2: User Identity & Persistence (Q3 2026)
+**Goal**: Enable users to save, manage, and evolve their career profiles over time.
+
+- [ ] **Authentication System**
+    - [ ] Integrate **Auth0** or **Clerk** for secure Email/Social Signup & Login.
+    - [ ] Implement JWT-based session management in FastAPI.
+- [ ] **Database Persistence (PostgreSQL)**
+    - [ ] Design schema for `Users`, `Profiles`, `CVs`, and `JobApplications`.
+    - [ ] "My Library": Dashboard to view and edit previously generated documents.
+- [ ] **Storage Layer (S3/R2)**
+    - [ ] Secure cloud storage for generated avatars and PDF artifacts.
+
+## 🎨 Phase 3: Advanced Customization & Personalization (Q4 2026)
+**Goal**: Provide deep value through hyper-personalization tools.
+
+- [ ] **"Digital Twin" Avatar Engine (Img2Img)**
+    - [ ] **Feature**: Users upload a real selfie.
+    - [ ] **Logic**: Use Krea's Image-to-Image capabilities to preserve facial identity while upgrading styling (e.g., "Put me in a suit", "Make me look more executive").
+- [ ] **Resume Parsing & Remixing**
+    - [ ] **Feature**: Upload existing PDF/Word CV.
+    - [ ] **Logic**: Extract text -> Structure usage -> Re-generate with AI optimization.
+- [ ] **Visual Template Marketplace**
+    - [ ] Expand from 1 template to 10+ (Minimal, Tech, Creative, Academic).
+
+## 💸 Phase 4: Monetization & SaaS tiering (Q1-Q2 2027)
+**Goal**: Sustainable revenue model through premium value.
+
+- [ ] **Payment Gateway Integration (Stripe)**
+    - [ ] Implement Subscription Models (Monthly/Yearly).
+    - [ ] "Pay-per-generation" micro-transactions for casual users.
+- [ ] **Tiered Architecture**
+    - [ ] **Free**: Watermarked PDFs, Standard Models (Gemini).
+    - [ ] **Pro**: Unlimited generations, Premium Models (Claude 3.5, GPT-4), "Digital Twin" Avatars.
+
+## 🔗 Phase 5: Ecosystem Connectivity (Q3-Q4 2027)
+**Goal**: Connect the user's optimized profile directly to the job market.
+
+- [ ] **Job Board Integrations**
+    - [ ] **LinkedIn API**: Enable "One-Click Export to Profile" (if API permits) or generate JSON-LD optimized for import.
+    - [ ] **InfoJobs / Indeed**: Generate application-specific cover letters tailored to pasted Job Descriptions.
+- [ ] **"Smart Apply" Agent**
+    - [ ] Allow users to paste a URL from a job board.
+    - [ ] System analyzes the Job Description keywords.
+    - [ ] System auto-tunes the CV content to maximize ATS (Applicant Tracking System) scores for that specific job.
+
+---
+
+## 📈 Long-Term Metrics for Success
+
+1.  **User Retention**: users returning to update CVs every 6 months.
+2.  **Conversion Rate**: Free -> Pro users.
+3.  **Success Rate**: Users reporting interviews grounded in provided materials.
