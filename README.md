@@ -10,6 +10,20 @@
 
 ---
 
+## 💡 Purpose & Motivation
+
+This project was engineered by **Raúl Iglesias Julio** as a high-fidelity technical demonstration of **advanced Full-Stack Engineering** and **Applied Artificial Intelligence**.
+
+It is not just a tool, but a showcase of:
+*   **Complex Orchestration**: Handling asynchronous communication between multiple AI providers (OpenRouter & Krea).
+*   **Code-First Logic**: Implementing strict business logic (Parametric Career Engine) to control and validate AI hallucinations.
+*   **System Architecture**: Designing a scalable, event-driven monolithic architecture that decouples UI from heavy computational logic.
+*   **Prompt Engineering**: Creating sophisticated anti-bias and context-injection algorithms to generate diverse, realistic personas.
+
+It serves as a tangible proof of capability in building production-grade, AI-integrated software solutions.
+
+---
+
 ## 👤 Author & Copyright
 
 <div align="center">
@@ -100,109 +114,6 @@ graph TD
 
 ---
 
-## 🚀 Key Innovation: The Logic Layers
-
-### 🧠 Parametric Career Engine
-We don't just ask AI to "write a CV". We enforce logic via code:
-*   **Historical Validation**: If the AI generates a "VP" role for a 25-year-old, the engine works backwards to sanitize the history to reality (e.g., forcing "Analyst" -> "Associate" -> "VP" progression).
-*   **Sanitization Algorithm**: Automatically strips "Senior", "Principal", and "Lead" prefixes from early-career entries.
-
-### 🎨 Anti-Bias Imaging Engine
-*   **Context Injection**: Dynamically injects "modern", "startup", or "tech" contexts based on the projected role.
-*   **Bias Stripping**: Actively filters out keywords like "Office", "Suit", and "Grey hair" to prevent the "Generic Corporate Stock Photo" look.
-
----
-
-## 📦 Installation & Kickstart Guide
-
-Follow these steps to deploy the application locally.
-
-### 🔑 Step 1: Obtain API Keys
-
-This application requires access to two AI service providers. You must obtain your own API keys:
-
-1.  **OpenRouter AI** (For Text/Content)
-    *   Sign up at: [openrouter.ai/keys](https://openrouter.ai/keys)
-    *   *Provides access to Gemini, GPT-4, Claude, etc.*
-
-2.  **Krea AI** (For Avatars)
-    *   Sign up at: [krea.ai](https://krea.ai)
-    *   *Provides access to Flux, Imagen-4 and Seedream.*
-
----
-
-### ⚙️ Step 2: Environment Configuration
-
-The project uses sensitive environment variables. **Never share your `.env` file.**
-
-1.  Navigate to the `backend` folder.
-2.  Locate the `.env.example` file.
-3.  **Duplicate it** and rename the copy to `.env`.
-
-```bash
-# Windows
-copy backend\.env.example backend\.env
-
-# Mac/Linux
-cp backend/.env.example backend/.env
-```
-
-4.  Open `.env` in your code editor and paste your keys:
-
-```ini
-# backend/.env
-KREA_API_KEY=your_krea_key_here_starting_with_krea_...
-OPENROUTER_API_KEY=your_openrouter_key_starting_with_sk_...
-```
-
----
-
-### 💻 Step 3: Backend Installation
-
-The backend runs on Python 3.10+ using FastAPI.
-
-```bash
-cd backend
-
-# 1. Create Virtual Environment
-python -m venv venv
-
-# 2. Activate Environment
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
-
-# 3. Install Dependencies
-pip install -r requirements.txt
-
-# 4. Install Browser Engine (for PDF rendering)
-playwright install chromium
-
-# 5. Start the Server
-uvicorn app.main:app --reload
-```
-*The server will start at `http://localhost:8000`*
-
----
-
-### 🎨 Step 4: Frontend Installation
-
-The frontend runs on Node.js v18+.
-
-```bash
-cd frontend
-
-# 1. Install Dependencies
-npm install
-
-# 2. Start Development Server
-npm run dev
-```
-*The application will open at `http://localhost:5173`*
-
----
-
 ## 📂 Project Structure
 
 A clean, modular monolithic architecture separating concerns between UI and logical services.
@@ -212,19 +123,41 @@ ai-cv-suite/
 ├── 📂 backend/                 # Python Server Layer
 │   ├── 📂 app/
 │   │   ├── 📜 main.py          # FastAPI Entry Point
-│   │   ├── 📂 core/            # Core Engines (TaskManager, PDF)
-│   │   ├── 📂 services/        # AI Integrations (LLM, Krea)
+│   │   ├── 📂 core/            # Core Engines
+│   │   ├── 📂 services/        # AI Integrations
+│   │   │   ├── 📜 llm_service.py   # + Parametric Career Logic
+│   │   │   └── 📜 krea_service.py  # + Anti-Bias Engine
 │   │   └── 📂 routers/         # API Endpoints
 │   ├── 📂 templates/           # Jinja2 HTML Templates
-│   ├── 📂 prompts/             # Engineered AI Prompts
-│   └── 📜 requirements.txt     # Python Dependencies
-│   └── 📜 .env.example         # Environment Template
+│   └── 📂 prompts/             # Engineered AI Prompts
 │
 └── 📂 frontend/                # React Client Layer
     ├── 📂 src/
     │   ├── 📂 components/      # UI Components
     │   ├── 📂 stores/          # State Management
     │   └── 📂 lib/             # API Connectors
-    ├── 📜 package.json
-    └── 📜 vite.config.js
+    └── 📜 package.json
 ```
+
+---
+
+## 🚀 Key Innovation: The Logic Layers
+
+### 🧠 Parametric Career Engine
+We don't just ask AI to "write a CV". We enforce logic via code:
+*   **Historical Validation**: If the AI generates a "VP" role for a 25-year-old, the engine works backwards to sanitize the history to reality (e.g., forcing "Analyst" -> "Associate" -> "VP" progression).
+*   **Sanitization Algorithm**: Automatically strips "Senior", "Principal", and "Lead" prefixes from early-career entries.
+
+### 🎨 Anti-Bias Imaging Engine
+*   **Context Injection**: Dynamically injects "modern", "startup", or "tech" contexts based on the projected role.
+*   **bias Stripping**: Actively filters out keywords like "Office", "Suit", and "Grey hair" to prevent the "Generic Corporate Stock Photo" look.
+
+---
+
+## 📦 Installation
+
+To deploy this application locally, please refer to the detailed **Kickstart Guide**:
+
+[![Read Quickstart Guide](https://img.shields.io/badge/📖_Read-Quickstart_Guide-success?style=for-the-badge&logo=readme)](./QUICKSTART.md)
+
+Or navigate directly to `QUICKSTART.md` in the file explorer.
