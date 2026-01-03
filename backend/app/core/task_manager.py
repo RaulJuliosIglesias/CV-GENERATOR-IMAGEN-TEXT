@@ -58,7 +58,7 @@ class Task:
         Subtask(id="2", name="Phase 2: Generating CV Content"),
         Subtask(id="3", name="Phase 3: Generating Visuals"),
         Subtask(id="4", name="Phase 4: Assembly & HTML"),
-        Subtask(id="5", name="Finalizing")
+        Subtask(id="5", name="Phase 5: PDF Generation")
     ])
     current_subtask_index: int = 0
 

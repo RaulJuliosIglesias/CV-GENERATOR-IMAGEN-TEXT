@@ -289,48 +289,69 @@ async def generate_profile_data(
     
     prompt = create_profile_prompt(role, gender, ethnicity, origin, age_range)
     
-    try:
-        request_payload = {
-            "model": model_id,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.9, # High temperature for variety
-            "max_tokens": 1000
-        }
+    request_payload = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.9, # High temperature for variety
+        "max_tokens": 1000
+    }
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                OPENROUTER_API_URL,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://ai-cv-suite.local",
-                },
-                json=request_payload
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                content = result["choices"][0]["message"]["content"]
+    # Retry loop for robustness
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    OPENROUTER_API_URL,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://ai-cv-suite.local",
+                    },
+                    json=request_payload
+                )
                 
-                # Cleanup and parse
-                content = content.replace("```json", "").replace("```", "").strip()
-                start = content.find('{')
-                end = content.rfind('}')
-                if start != -1 and end != -1:
-                    content = content[start:end+1]
+                if response.status_code == 200:
+                    result = response.json()
+                    try:
+                        content = result["choices"][0]["message"]["content"]
+                    except (KeyError, IndexError):
+                        raise RuntimeError(f"Unexpected API response format: {result}")
                     
-                profile_data = json.loads(content)
-                print(f"SUCCESS: Generated Profile: {profile_data.get('name')}")
-                return profile_data, prompt
-            else:
-                 raise RuntimeError(f"Profile Gen Failed: {response.text}")
-
-    except Exception as e:
-        print(f"ERROR Generating Profile: {e}")
-        raise RuntimeError(f"Profile Gen Error: {e}")
+                    # Cleanup and parse
+                    # Remove markdown code blocks if present
+                    if "```" in content:
+                        content = content.split("```json")[-1].split("```")[0].strip()
+                    
+                    # Find valid JSON bounds
+                    start = content.find('{')
+                    end = content.rfind('}')
+                    if start != -1 and end != -1:
+                        content = content[start:end+1]
+                        
+                    # Try to parse
+                    profile_data = json.loads(content)
+                    print(f"SUCCESS: Generated Profile: {profile_data.get('name')}")
+                    return profile_data, prompt
+                else:
+                    print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
+                    if attempt == max_retries - 1:
+                        raise RuntimeError(f"Profile Gen Failed: {response.text}")
+        
+        except json.JSONDecodeError as e:
+            print(f"WARNING: JSON Parse Error (Attempt {attempt+1}): {e}")
+            if attempt == max_retries - 1:
+                raise RuntimeError(f"Profile Gen JSON Error: {e} | Content: {content[:100]}...")
+            continue # Retry
+            
+        except Exception as e:
+            print(f"ERROR Generating Profile (Attempt {attempt+1}): {e}")
+            if attempt == max_retries - 1:
+                raise RuntimeError(f"Profile Gen Error: {e}")
+            continue
 
 
 def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnicity: str, origin: str, remote: bool, name: Optional[str] = None, profile_data: Optional[dict] = None) -> str:

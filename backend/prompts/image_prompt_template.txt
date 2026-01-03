@@ -1,29 +1,6 @@
-Unretouched corporate headshot photo of a {{gender_term}}, age {{age}}, {{ethnicity}} heritage.
+Natural, unretouched profile headshot photo of a {{gender_term}}, age {{age}}, {{ethnicity}} heritage.
 {{role_context}}
-{{style_modifiers}}
 
-IMPORTANT: depict a clearly different individual than previous generations; vary hairstyle, grooming/makeup, skin tone, facial proportions, and accessories. Avoid “default model” look.
+Generate a clearly different person every time (no recurring “default model”): vary hairstyle (length/texture/part), hair color, hairline, facial proportions (jaw/cheekbones/nose/lips/brows), skin tone and natural skin details (pores, freckles, slight redness, faint under-eye shadows, smile lines), and optional accessories (different glasses styles or none, simple earrings or none). Keep it realistic and not beauty-retouched or airbrushed. Wardrobe must match the role context (tech IC: casual-smart; product/design: smart casual; management/executive: business; field roles: practical neat). Avoid uniform “office suit” styling unless the role explicitly implies it.
 
-Identity / features (must vary):
-- Face: {{face_shape}}; {{distinct_feature_1}}; {{distinct_feature_2}}
-- Skin: {{skin_tone}} with {{skin_detail}} (natural pores, no beauty retouch)
-- Hair: {{hair_length}} {{hair_texture}} hair, {{hair_color}}, {{hair_style}}, {{hairline_detail}}
-- Grooming / makeup: {{grooming_makeup_style}} (natural, not glam)
-
-Wardrobe (vary within corporate):
-{{outfit}}; {{shirt_or_blouse}}; {{optional_tie_or_accessory}}
-
-Accessories (optional, vary):
-{{glasses_or_none}}, {{jewelry_or_none}}
-
-Photography:
-head-and-shoulders, centered, natural posture, closed-mouth slight smile or neutral-professional.
-soft studio key + gentle fill, realistic catchlights in both eyes.
-neutral seamless backdrop {{background_tone}}.
-true-to-life color, accurate white balance.
-85mm portrait lens look (or {{focal_length_variant}}), shallow depth of field, sharp focus on eyes.
-photorealistic, high detail.
-
-
-Negative prompt: cartoon, illustration, anime, CGI, 3d render, plastic skin, waxy skin, airbrushed, over-smoothed,
-blur, out of focus, lowres, jpeg artifacts, watermark, text, logo, distorted eyes, asymmetrical face
+Photography / realism: head-and-shoulders framing, slight angle (not perfectly centered every time), natural posture. Expression relaxed and approachable, closed mouth or subtle smile. Lighting soft window light or simple softbox, realistic shadows, clean catchlights. Camera look 50–85mm portrait lens look, f/2–f/2.8 shallow depth of field, sharp focus on eyes, true-to-life color, accurate white balance. Photorealistic, high detail, realistic skin and hair.

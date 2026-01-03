@@ -167,8 +167,8 @@ function TaskCard({ task }) {
                         variant="outline"
                         className="flex-1 border-green-500/50 text-green-400 hover:bg-green-500/10"
                     >
-                        <Download className="w-4 h-4 mr-1" />
-                        PDF
+                        <Eye className="w-4 h-4 mr-1" />
+                        View PDF
                     </Button>
                 </div>
             )}

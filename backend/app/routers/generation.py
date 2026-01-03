@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from ..core.task_manager import task_manager, Task, TaskStatus
-from ..core.pdf_engine import render_cv_pdf
+from ..core.pdf_engine import render_cv_pdf, generate_pdf_from_existing_html
 from ..services.llm_service import generate_cv_content_v2, generate_profile_data, get_available_models as get_llm_models, create_user_prompt
 from ..services.krea_service import generate_avatar, get_available_models as get_image_models, get_avatar_prompt
 
@@ -249,12 +249,12 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
     # Filter again
     active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
 
-    # --- PHASE 4: ASSEMBLY ---
-    # Concurrency: 10 (Fast local IO)
-    print(f"=== STARTING PHASE 4: ASSEMBLY ({len(active_tasks)} tasks) ===")
+    # --- PHASE 4: HTML ASSEMBLY ---
+    print(f"=== STARTING PHASE 4: HTML ASSEMBLY ({len(active_tasks)} tasks) ===")
     
     for task in active_tasks:
         try:
+            # --- Phase 4: HTML Assembly ---
             task.current_subtask_index = 3
             task.subtasks[3].status = TaskStatus.RUNNING
             task.subtasks[3].message = "Assembling HTML..."
@@ -270,27 +270,46 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             
             filename = f"{task.id[:8]}_{safe_name}_{safe_role}.html"
             
-            # Generate PDF (and HTML)
-            pdf_path_str = await render_cv_pdf(task.cv_data, task.image_path, filename)
+            # Phase 4: Generate HTML (handled inside render_cv_pdf)
+            # Phase 5: Generate PDF (also handled inside render_cv_pdf, but with image compression)
             
-            task.pdf_path = pdf_path_str
+            # Mark Phase 4 as running
+            task.subtasks[3].progress = 50
+            task.subtasks[3].message = "Rendering HTML template..."
+            await task_manager._save_batches()
             
-            # Derive HTML path safely
-            # We know safe pattern is swapping /pdf/ for /html/ and extenson
-            # Handle both separators for Windows safety
-            p_str = str(pdf_path_str)
-            if "\\pdf\\" in p_str:
-                task.html_path = p_str.replace("\\pdf\\", "\\html\\").replace(".pdf", ".html")
-            elif "/pdf/" in p_str:
-                task.html_path = p_str.replace("/pdf/", "/html/").replace(".pdf", ".html")
-            else:
-                 # Fallback for flat structure or unknown
-                 task.html_path = p_str.replace(".pdf", ".html")
+            # Generate HTML and PDF (returns tuple)
+            html_path, pdf_path = await render_cv_pdf(task.cv_data, task.image_path, filename)
             
+            task.html_path = html_path
+            
+            # Mark Phase 4 (HTML) complete
             task.subtasks[3].status = TaskStatus.COMPLETE
             task.subtasks[3].progress = 100
-            task.subtasks[4].status = TaskStatus.COMPLETE
-            task.subtasks[4].progress = 100
+            task.subtasks[3].message = "HTML generated"
+            
+            # --- Phase 5: PDF Generation ---
+            task.current_subtask_index = 4
+            task.subtasks[4].status = TaskStatus.RUNNING
+            task.subtasks[4].progress = 50
+            task.subtasks[4].message = "Generating PDF with selectable text..."
+            await task_manager._save_batches()
+            
+            # Strict Verification: Check if PDF was actually created
+            if pdf_path and pdf_path.endswith('.pdf') and Path(pdf_path).exists() and Path(pdf_path).stat().st_size > 0:
+                task.pdf_path = pdf_path
+                task.subtasks[4].status = TaskStatus.COMPLETE
+                task.subtasks[4].progress = 100
+                task.subtasks[4].message = "PDF Ready"
+            else:
+                # PDF Generation Failed
+                task.pdf_path = None # Do not link missing file
+                task.subtasks[4].status = TaskStatus.ERROR
+                error_msg = f"PDF Generation Failed: File not created at {pdf_path}"
+                task.subtasks[4].message = error_msg
+                task.error = error_msg  # Set main task error so it shows in UI
+                print(f"ERROR: {error_msg}")
+                # We do NOT fail the whole task, just Phase 5 runs in ERROR state
             
             task.status = TaskStatus.COMPLETE
             task.progress = 100
@@ -300,7 +319,9 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
         except Exception as e:
             task.error = str(e)
             task.status = TaskStatus.ERROR
-            print(f"Phase 4 Error Task {task.id}: {e}")
+            print(f"Phase 4/5 Error Task {task.id}: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 @router.get("/models", response_model=ModelsResponse)
@@ -462,4 +483,53 @@ async def health_check():
         "status": "healthy",
         "openrouter": bool(os.getenv("OPENROUTER_API_KEY")),
         "krea": bool(os.getenv("KREA_API_KEY"))
+    }
+
+
+@router.post("/regenerate-pdf/{html_filename}")
+async def regenerate_pdf(html_filename: str):
+    """
+    Regenerate PDF from an existing HTML file.
+    Creates a PDF with selectable text using Playwright.
+    """
+    try:
+        pdf_path = await generate_pdf_from_existing_html(html_filename)
+        pdf_filename = Path(pdf_path).name
+        return {
+            "success": True,
+            "pdf_filename": pdf_filename,
+            "pdf_url": f"/pdf/{pdf_filename}",
+            "message": "PDF generated with selectable text"
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+
+@router.post("/regenerate-all-pdfs")
+async def regenerate_all_pdfs(background_tasks: BackgroundTasks):
+    """
+    Regenerate PDFs for ALL existing HTML files.
+    Runs in background due to potentially long processing time.
+    """
+    html_files = list((OUTPUT_DIR / "html").glob("*.html"))
+    
+    async def process_all():
+        success = 0
+        failed = 0
+        for html_file in html_files:
+            try:
+                await generate_pdf_from_existing_html(html_file.name)
+                success += 1
+            except Exception as e:
+                print(f"Failed to generate PDF for {html_file.name}: {e}")
+                failed += 1
+        print(f"Batch PDF regeneration complete: {success} success, {failed} failed")
+    
+    background_tasks.add_task(lambda: asyncio.run(process_all()))
+    
+    return {
+        "message": f"Started regenerating PDFs for {len(html_files)} HTML files",
+        "count": len(html_files)
     }
