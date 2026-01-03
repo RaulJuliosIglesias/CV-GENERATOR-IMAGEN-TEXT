@@ -10,17 +10,26 @@
 
 ---
 
-## 💡 Purpose & Motivation
+## 💡 The Vision: From Prototype to Product
 
-This project was engineered by **Raúl Iglesias Julio** as a high-fidelity technical demonstration of **advanced Full-Stack Engineering** and **Applied Artificial Intelligence**.
+This project represents a journey of engineering excellence, evolving through three distinct phases:
 
-It is not just a tool, but a showcase of:
-*   **Complex Orchestration**: Handling asynchronous communication between multiple AI providers (OpenRouter & Krea).
-*   **Code-First Logic**: Implementing strict business logic (Parametric Career Engine) to control and validate AI hallucinations.
-*   **System Architecture**: Designing a scalable, event-driven monolithic architecture that decouples UI from heavy computational logic.
-*   **Prompt Engineering**: Creating sophisticated anti-bias and context-injection algorithms to generate diverse, realistic personas.
+### 1. The Genesis (Why)
+Originating as a high-fidelity **Technical Demonstration**, this project was architected by Raúl Iglesias Julio to bridge the gap between "Toy AI apps" and "Production-Grade Engineering". The goal was to prove that complex, multi-model AI orchestration could be tamed with strict business logic and clean architecture.
 
-It serves as a tangible proof of capability in building production-grade, AI-integrated software solutions.
+### 2. State of the Art (Where We Are)
+Today, the system is a **Fully Functional Monolith** capable of generating hyper-realistic professional assets. It stands as a testament to:
+*   **Orchestration**: Seamlessly managing Krea (Images) & OpenRouter (Text) async flows.
+*   **Control**: Implementing parametric engines that prevent AI hallucination and bias.
+*   **Quality**: Delivering PDF artifacts that rival human-made designs.
+
+### 3. The Horizon (Where We Are Going)
+We are now transitioning effectively into a **SaaS Ecosystem**. The roadmap focuses on:
+*   **Cloud Native**: Moving to Docker/K8s for unlimited scalability.
+*   **User Persistence**: Enabling long-term career tracking via PostgreSQL.
+*   **Intelligence**: From generating CVs to *coaching* users for interviews.
+
+> *This is not just code; it's a blueprint for the future of automated personal branding.*
 
 ---
 
