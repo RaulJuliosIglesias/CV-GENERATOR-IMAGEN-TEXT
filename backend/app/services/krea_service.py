@@ -320,27 +320,38 @@ async def generate_avatar(
     model_input = model or os.getenv("DEFAULT_IMAGE_MODEL", "bfl/flux-1-dev")
     
     # Map simple names to correct API paths (per Krea docs)
+    # Map simple names to correct API paths (per Krea docs)
     MODEL_PATH_MAP = {
         "flux": "bfl/flux-1-dev",
         "bfl/flux-1-dev": "bfl/flux-1-dev",
-        "krea-1": "krea-1",
-        "flux-1-krea": "flux-1-krea", 
-        "z-image": "alibaba/z-image",
-        "seedream-3": "bytedance/seedream-3",
-        "seedream-4": "bytedance/seedream-4",
-        "seedream-4.5": "bytedance/seedream-4.5",
-        "imagen-4-fast": "google/imagen-4-fast",
-        "imagen-4": "google/imagen-4",
-        "imagen-4-ultra": "google/imagen-4-ultra",
-        "flux-2": "bfl/flux-2-dev",
-        "flux-2-pro": "bfl/flux-2-pro",
-        "qwen": "alibaba/qwen-vl",
-        "ideogram-3": "ideogram/ideogram-3",
-        "kling-01": "kuaishou/kling-01",
-        "runway-gen-4": "runway/gen-4",
-        "flux-1.1-pro": "bfl/flux-1.1-pro",
-        "flux-1.1-pro-ultra": "bfl/flux-1.1-pro-ultra",
-        "nano-banana-pro": "google/nano-banana-pro"
+        "krea-1": "krea-1", 
+        "flux-1-krea": "flux-1-krea",
+        
+        # Confirmed / Standard IDs
+        "z-image": "z-image", # Correct ID is usually simple
+        "seedream-3": "seedream-3",
+        "seedream-4": "seedream-4",
+        "seedream-4.5": "seedream-4.5",
+        
+        "imagen-4-fast": "imagen-4-fast",
+        "imagen-4": "imagen-4",
+        "imagen-4-ultra": "imagen-4-ultra",
+        
+        "flux-2": "flux-2",
+        "flux-2-pro": "flux-2-pro",
+        
+        "qwen": "qwen",
+        "qwen-image-2512": "qwen-image-2512",
+        
+        "ideogram-3": "ideogram-3",
+        "kling-01": "kling-01", 
+        "runway-gen-4": "runway-gen-4",
+        
+        "flux-1.1-pro": "flux-1.1-pro",
+        "flux-1.1-pro-ultra": "flux-1.1-pro-ultra",
+        
+        "nano-banana-pro": "nano-banana-pro",
+        "flux-kontext": "flux-kontext"
     }
     model_id = MODEL_PATH_MAP.get(model_input, model_input)
     
