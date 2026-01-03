@@ -98,6 +98,9 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         elif 'profile_image' not in context:
             context['profile_image'] = ""
 
+        # Add PDF generation flag
+        context['is_pdf_generation'] = True
+
         # Render HTML
         html_content = template.render(**context)
         
