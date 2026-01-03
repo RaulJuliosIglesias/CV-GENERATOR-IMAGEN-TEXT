@@ -693,14 +693,13 @@ async def generate_cv_content_v2(
                 else:
                     print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
                     if attempt == max_retries - 1:
-                        if model_id != "google/gemini-2.0-flash-exp:free":
-                             model_id = "google/gemini-2.0-flash-exp:free"
-                             request_payload["model"] = model_id
-                             continue
-                        raise RuntimeError(f"CV Gen Failed: {response.text}")
+                        raise RuntimeError(f"CV Gen Failed after {max_retries} attempts. Last error: {response.text}")
         
         except Exception as e:
             print(f"ERROR Generating CV (Attempt {attempt+1}): {e}")
             if attempt == max_retries - 1:
                 raise RuntimeError(f"CV Gen Error: {e}")
             continue
+            
+    # Should not be reached if exceptions are raised correctly, but as safety:
+    raise RuntimeError("CV Generation failed - unexpected exit from retry loop")

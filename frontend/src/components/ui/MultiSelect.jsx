@@ -82,7 +82,7 @@ const MultiSelect = React.forwardRef(({
                                     className={cn(
                                         "relative flex cursor-pointer select-none items-center rounded-lg px-2 py-2 text-sm outline-none transition-colors duration-150",
                                         isSelected
-                                            ? "bg-primary/20 text-primary-foreground"
+                                            ? "bg-primary/20 text-primary"
                                             : "hover:bg-accent hover:text-accent-foreground"
                                     )}
                                 >

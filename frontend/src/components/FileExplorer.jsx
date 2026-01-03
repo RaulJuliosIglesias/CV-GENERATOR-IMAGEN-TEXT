@@ -69,11 +69,25 @@ export default function FileExplorer({ height }) {
             }
 
             // Fallback for legacy files (Simple underscore split)
+            // Fallback for legacy files (Simple underscore split)
             const parts = cleanName.split('_');
             if (parts.length >= 2) {
-                const id = parts[0];
-                const rest = cleanName.substring(id.length + 1).replace(/_/g, ' ');
-                return { id, name: rest, role: '-' };
+                const potentialId = parts[0];
+
+                // VALIDATION: Only accept as ID if it looks like a hash (hex/alphanumeric)
+                // and avoid common names which might start the filename in legacy formats.
+                // A valid ID should be relatively consistently formatted.
+                // If it's pure alphabetical and Title Case (e.g. "David"), assume it's a name, not an ID.
+                const isHashLike = /^[a-z0-9]+$/i.test(potentialId) && /\d/.test(potentialId);
+
+                if (isHashLike || potentialId.length >= 8) {
+                    const id = parts[0];
+                    const rest = cleanName.substring(id.length + 1).replace(/_/g, ' ');
+                    return { id, name: rest, role: '-' };
+                }
+
+                // If it looks like a Name (e.g. David_Smith), treat entire filename as Name with no ID
+                return { id: '', name: cleanName.replace(/_/g, ' '), role: '-' };
             }
         } catch (e) { console.error(e); }
 
