@@ -257,6 +257,44 @@ def normalize_cv_data(cv_data: dict) -> dict:
 
     # 4. Social
     cv_data = ensure_social_dict(cv_data)
+
+    # 5. Normalize Languages
+    # Ensure structure: [{"name": "English", "level": 5}, ...]
+    languages = cv_data.get("languages", [])
+    normalized_langs = []
+    
+    if isinstance(languages, list):
+        for lang in languages:
+            if isinstance(lang, str):
+                normalized_langs.append({"name": lang, "level": 4}) # Default
+            elif isinstance(lang, dict):
+                # Ensure name exists
+                if "name" not in lang and "language" in lang:
+                    lang["name"] = lang.pop("language")
+                
+                # Ensure level is int
+                level = lang.get("level", 3)
+                if isinstance(level, str):
+                    clean_level = level.lower()
+                    if "native" in clean_level or "c2" in clean_level: val = 5
+                    elif "fluent" in clean_level or "advanced" in clean_level or "c1" in clean_level: val = 4
+                    elif "intermediate" in clean_level or "b2" in clean_level or "b1" in clean_level: val = 3
+                    elif "basic" in clean_level or "beginner" in clean_level or "a2" in clean_level: val = 2
+                    else: val = 3 # Default for unknown string
+                    lang["level"] = val
+                elif isinstance(level, (int, float)):
+                    lang["level"] = min(max(int(level), 1), 5)
+                else:
+                    lang["level"] = 3
+                
+                if "name" in lang:
+                     normalized_langs.append(lang)
+    
+    # If no languages found/valid, default to English
+    if not normalized_langs:
+        normalized_langs = [{"name": "English", "level": 5}]
+        
+    cv_data["languages"] = normalized_langs
     
     return cv_data
 
