@@ -4,13 +4,13 @@ import { generateBatch, getStatus, getFiles, getModels, getBatchStatus } from '.
 const useGenerationStore = create((set, get) => ({
     // Configuration state
     config: {
-        qty: 3,
+        qty: 1,
         genders: ['any'],
         ethnicities: ['any'],
         origins: ['any'],
         roles: ['any'],
-        age_min: 25,
-        age_max: 35,
+        age_min: 18,
+        age_max: 70,
         expertise_levels: ['any'],
         remote: false,
         profile_model: null,
@@ -52,13 +52,25 @@ const useGenerationStore = create((set, get) => ({
 
             const { config } = get();
             if (response.llm_models?.length > 0) {
-                const defaultModel = response.llm_models[0].id;
+                // Find specific default models or fallback to first
+                const models = response.llm_models;
+
+                // Default Profile Model: Mistral Devstral 2 2512 (free)
+                const defaultProfileModel = models.find(m =>
+                    m.id.includes('mistral/devstral') || m.id.includes('devstral')
+                )?.id || models.find(m => m.cost === 'Free')?.id || models[0].id;
+
+                // Default CV Model: NVIDIA Nemotron 3 Nano 30B (free)
+                const defaultCvModel = models.find(m =>
+                    m.id.includes('nvidia/nemotron') || m.id.includes('nemotron')
+                )?.id || models.find(m => m.cost === 'Free')?.id || models[0].id;
+
                 set((state) => ({
                     config: {
                         ...state.config,
-                        llm_model: state.config.llm_model || defaultModel,
-                        profile_model: state.config.profile_model || defaultModel,
-                        cv_model: state.config.cv_model || defaultModel
+                        llm_model: state.config.llm_model || defaultProfileModel,
+                        profile_model: state.config.profile_model || defaultProfileModel,
+                        cv_model: state.config.cv_model || defaultCvModel
                     }
                 }));
             }
