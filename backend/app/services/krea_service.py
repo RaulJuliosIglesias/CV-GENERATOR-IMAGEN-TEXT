@@ -316,18 +316,33 @@ async def generate_avatar(
         
         async with httpx.AsyncClient(timeout=120.0) as client:
             # Step 1: Create generation job
+            # Build request body based on model requirements (from OpenAPI spec)
+            request_body = {
+                "prompt": prompt,
+                "width": 512,
+                "height": 512
+            }
+            
+            # Model-specific parameters from OpenAPI spec
+            if "seedream-3" in model_id:
+                # Seedream-3 requires specific model parameter
+                request_body["model"] = "seedream-3-0-t2i-250415"
+            elif "seedream-4" in model_id:
+                # Seedream-4 requires width and height (already included)
+                pass
+            elif "flux" in model_id.lower():
+                # Flux models support steps
+                request_body["steps"] = 25
+            # Other models use default prompt/width/height
+            
             response = await client.post(
                 api_url,
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
-                json={
-                    "prompt": prompt,
-                    "width": 512,
-                    "height": 512,
-                    "steps": 25
-                }
+                json=request_body
+
             )
             
             print(f"DEBUG KREA: Initial response status: {response.status_code}")

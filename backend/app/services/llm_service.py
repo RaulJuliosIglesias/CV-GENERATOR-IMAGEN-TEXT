@@ -6,6 +6,7 @@ Enhanced with detailed prompts for comprehensive CVs
 import os
 import json
 import random
+import asyncio
 from typing import Optional, Tuple
 import httpx
 from dotenv import load_dotenv
