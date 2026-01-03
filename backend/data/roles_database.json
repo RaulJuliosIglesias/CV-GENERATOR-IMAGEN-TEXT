@@ -1,0 +1,1673 @@
+{
+    "version": "2.0",
+    "description": "Comprehensive role database with expertise-level mapping for coherent CV generation",
+    "categories": {
+        "tech_engineering": {
+            "name": "Technology & Engineering",
+            "social_links": [
+                "linkedin",
+                "website",
+                "github"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Software Developer",
+                    "Junior Developer",
+                    "Junior Programmer",
+                    "Associate Software Engineer",
+                    "Graduate Developer",
+                    "Trainee Developer",
+                    "Junior Backend Developer",
+                    "Junior Frontend Developer",
+                    "Junior Web Developer",
+                    "Junior QA Engineer",
+                    "Junior Test Engineer",
+                    "QA Analyst",
+                    "IT Support Specialist",
+                    "Help Desk Technician",
+                    "Junior Systems Administrator",
+                    "Junior DevOps Engineer",
+                    "Junior Cloud Engineer"
+                ],
+                "mid": [
+                    "Software Developer",
+                    "Software Engineer",
+                    "Programmer",
+                    "Web Developer",
+                    "Backend Developer",
+                    "Frontend Developer",
+                    "Full Stack Developer",
+                    "DevOps Engineer",
+                    "Cloud Engineer",
+                    "Systems Engineer",
+                    "Platform Engineer",
+                    "QA Engineer",
+                    "Test Engineer",
+                    "Automation Engineer",
+                    "SDET",
+                    "Systems Administrator",
+                    "Network Engineer",
+                    "Database Administrator",
+                    "Security Engineer",
+                    "Infrastructure Engineer"
+                ],
+                "senior": [
+                    "Senior Software Engineer",
+                    "Senior Developer",
+                    "Senior Backend Developer",
+                    "Senior Frontend Developer",
+                    "Senior Full Stack Developer",
+                    "Staff Engineer",
+                    "Senior DevOps Engineer",
+                    "Senior Cloud Engineer",
+                    "Senior Platform Engineer",
+                    "Senior QA Engineer",
+                    "Senior Test Engineer",
+                    "QA Lead",
+                    "Senior Systems Administrator",
+                    "Senior Network Engineer",
+                    "Senior DBA",
+                    "Senior Security Engineer",
+                    "Solutions Architect",
+                    "Technical Architect",
+                    "Technical Lead",
+                    "Team Lead",
+                    "Engineering Lead"
+                ],
+                "expert": [
+                    "Principal Engineer",
+                    "Principal Software Engineer",
+                    "Staff Software Engineer",
+                    "Distinguished Engineer",
+                    "Fellow Engineer",
+                    "Chief Architect",
+                    "VP of Engineering",
+                    "Director of Engineering",
+                    "Head of Engineering",
+                    "CTO",
+                    "Chief Technology Officer",
+                    "Chief Information Officer",
+                    "CIO",
+                    "Engineering Manager",
+                    "Senior Engineering Manager",
+                    "Director of DevOps"
+                ]
+            }
+        },
+        "mobile_development": {
+            "name": "Mobile Development",
+            "social_links": [
+                "linkedin",
+                "website",
+                "github",
+                "google_play",
+                "app_store"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Mobile Developer",
+                    "Junior iOS Developer",
+                    "Junior Android Developer",
+                    "Associate Mobile Engineer",
+                    "Trainee App Developer"
+                ],
+                "mid": [
+                    "Mobile Developer",
+                    "iOS Developer",
+                    "Android Developer",
+                    "React Native Developer",
+                    "Flutter Developer",
+                    "Swift Developer",
+                    "Kotlin Developer",
+                    "Cross-Platform Developer"
+                ],
+                "senior": [
+                    "Senior Mobile Developer",
+                    "Senior iOS Developer",
+                    "Senior Android Developer",
+                    "Senior React Native Developer",
+                    "Senior Flutter Developer",
+                    "Mobile Architect",
+                    "Mobile Tech Lead",
+                    "Lead Mobile Engineer"
+                ],
+                "expert": [
+                    "Principal Mobile Engineer",
+                    "Head of Mobile",
+                    "Director of Mobile Engineering",
+                    "VP of Mobile Development",
+                    "Chief Mobile Officer"
+                ]
+            }
+        },
+        "game_development": {
+            "name": "Game Development",
+            "social_links": [
+                "linkedin",
+                "website",
+                "github",
+                "itch_io",
+                "steam"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Game Developer",
+                    "Junior Game Programmer",
+                    "Associate Game Developer",
+                    "Junior Unity Developer",
+                    "Junior Unreal Developer",
+                    "QA Tester",
+                    "Junior Level Designer",
+                    "Junior Game Designer"
+                ],
+                "mid": [
+                    "Game Developer",
+                    "Game Programmer",
+                    "Gameplay Programmer",
+                    "Engine Programmer",
+                    "Unity Developer",
+                    "Unreal Engine Developer",
+                    "Godot Developer",
+                    "Game Designer",
+                    "Level Designer",
+                    "Systems Designer",
+                    "Narrative Designer",
+                    "Technical Artist",
+                    "Game Artist"
+                ],
+                "senior": [
+                    "Senior Game Developer",
+                    "Senior Game Programmer",
+                    "Lead Programmer",
+                    "Senior Unity Developer",
+                    "Senior Unreal Developer",
+                    "Senior Game Designer",
+                    "Lead Game Designer",
+                    "Senior Level Designer",
+                    "Senior Technical Artist",
+                    "Lead Artist",
+                    "Art Director"
+                ],
+                "expert": [
+                    "Principal Game Engineer",
+                    "Game Director",
+                    "Creative Director",
+                    "Technical Director",
+                    "Studio Director",
+                    "Head of Game Development",
+                    "VP of Game Development",
+                    "Executive Producer"
+                ]
+            }
+        },
+        "data_ai": {
+            "name": "Data Science & AI",
+            "social_links": [
+                "linkedin",
+                "website",
+                "github",
+                "kaggle",
+                "huggingface"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Data Analyst",
+                    "Data Analyst I",
+                    "Associate Data Analyst",
+                    "Junior Data Scientist",
+                    "Associate Data Scientist",
+                    "Junior Data Engineer",
+                    "Associate BI Analyst",
+                    "Junior ML Engineer",
+                    "AI Trainee"
+                ],
+                "mid": [
+                    "Data Analyst",
+                    "Data Scientist",
+                    "Data Engineer",
+                    "Analytics Engineer",
+                    "Business Intelligence Analyst",
+                    "BI Developer",
+                    "Machine Learning Engineer",
+                    "ML Engineer",
+                    "AI Engineer",
+                    "NLP Engineer",
+                    "Computer Vision Engineer",
+                    "Deep Learning Engineer",
+                    "MLOps Engineer",
+                    "Data Platform Engineer"
+                ],
+                "senior": [
+                    "Senior Data Analyst",
+                    "Senior Data Scientist",
+                    "Lead Data Scientist",
+                    "Senior Data Engineer",
+                    "Lead Data Engineer",
+                    "Senior Analytics Engineer",
+                    "Senior ML Engineer",
+                    "Senior AI Engineer",
+                    "Staff ML Engineer",
+                    "Senior NLP Engineer",
+                    "Senior Computer Vision Engineer",
+                    "ML Architect",
+                    "Data Architect",
+                    "Senior MLOps Engineer"
+                ],
+                "expert": [
+                    "Principal Data Scientist",
+                    "Principal ML Engineer",
+                    "Distinguished ML Engineer",
+                    "Chief Data Scientist",
+                    "Chief Data Officer",
+                    "CDO",
+                    "VP of Data Science",
+                    "VP of AI",
+                    "Director of AI",
+                    "Head of Data Science",
+                    "Head of Machine Learning",
+                    "Research Director",
+                    "AI Research Director"
+                ]
+            }
+        },
+        "blockchain_web3": {
+            "name": "Blockchain & Web3",
+            "social_links": [
+                "linkedin",
+                "website",
+                "github",
+                "twitter"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Blockchain Developer",
+                    "Junior Smart Contract Developer",
+                    "Associate Web3 Developer",
+                    "Blockchain Trainee"
+                ],
+                "mid": [
+                    "Blockchain Developer",
+                    "Smart Contract Developer",
+                    "Solidity Developer",
+                    "Web3 Developer",
+                    "DeFi Developer",
+                    "Protocol Engineer",
+                    "Crypto Developer",
+                    "NFT Developer"
+                ],
+                "senior": [
+                    "Senior Blockchain Developer",
+                    "Senior Solidity Developer",
+                    "Senior Web3 Developer",
+                    "Lead Smart Contract Developer",
+                    "Blockchain Architect",
+                    "Senior Protocol Engineer"
+                ],
+                "expert": [
+                    "Principal Blockchain Engineer",
+                    "Head of Blockchain",
+                    "VP of Web3",
+                    "Chief Blockchain Officer",
+                    "Blockchain Research Director",
+                    "Crypto CTO"
+                ]
+            }
+        },
+        "research_academia": {
+            "name": "Research & Academia",
+            "social_links": [
+                "linkedin",
+                "website",
+                "researchgate",
+                "google_scholar",
+                "orcid"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Research Assistant",
+                    "Lab Assistant",
+                    "Graduate Researcher",
+                    "PhD Student",
+                    "Doctoral Candidate",
+                    "Research Intern",
+                    "Junior Researcher",
+                    "Research Associate I"
+                ],
+                "mid": [
+                    "Postdoctoral Researcher",
+                    "Postdoc Fellow",
+                    "Research Fellow",
+                    "Research Scientist",
+                    "Scientist",
+                    "Research Associate",
+                    "Lecturer",
+                    "Assistant Lecturer",
+                    "Instructor"
+                ],
+                "senior": [
+                    "Senior Research Scientist",
+                    "Senior Researcher",
+                    "Senior Postdoc",
+                    "Senior Lecturer",
+                    "Assistant Professor",
+                    "Associate Professor",
+                    "Lead Researcher",
+                    "Principal Scientist"
+                ],
+                "expert": [
+                    "Professor",
+                    "Full Professor",
+                    "Distinguished Professor",
+                    "Endowed Chair",
+                    "Research Director",
+                    "Lab Director",
+                    "Department Head",
+                    "Dean",
+                    "Chief Scientist",
+                    "VP of Research",
+                    "Chief Research Officer"
+                ]
+            }
+        },
+        "design_3d": {
+            "name": "3D Art & Animation",
+            "social_links": [
+                "linkedin",
+                "website",
+                "artstation",
+                "behance",
+                "vimeo",
+                "instagram"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior 3D Artist",
+                    "Junior 3D Modeler",
+                    "3D Artist Intern",
+                    "Junior Animator",
+                    "Animation Intern",
+                    "Junior VFX Artist",
+                    "Junior Rigger",
+                    "Junior Texture Artist"
+                ],
+                "mid": [
+                    "3D Artist",
+                    "3D Modeler",
+                    "Hard Surface Modeler",
+                    "Organic Modeler",
+                    "Animator",
+                    "3D Animator",
+                    "Character Animator",
+                    "VFX Artist",
+                    "Compositing Artist",
+                    "Motion Graphics Designer",
+                    "Rigger",
+                    "Texture Artist",
+                    "Look Dev Artist",
+                    "Lighting Artist"
+                ],
+                "senior": [
+                    "Senior 3D Artist",
+                    "Senior 3D Modeler",
+                    "Lead 3D Artist",
+                    "Senior Animator",
+                    "Lead Animator",
+                    "Animation Supervisor",
+                    "Senior VFX Artist",
+                    "VFX Supervisor",
+                    "Senior Compositor",
+                    "Senior Rigger",
+                    "Character TD",
+                    "Lead Look Dev Artist"
+                ],
+                "expert": [
+                    "Principal 3D Artist",
+                    "Art Director",
+                    "Animation Director",
+                    "VFX Supervisor",
+                    "CG Supervisor",
+                    "Visual Effects Director",
+                    "Head of 3D",
+                    "Director of Animation",
+                    "Chief Creative Officer"
+                ]
+            }
+        },
+        "design_2d": {
+            "name": "2D Art & Illustration",
+            "social_links": [
+                "linkedin",
+                "website",
+                "artstation",
+                "behance",
+                "instagram",
+                "deviantart"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Illustrator",
+                    "Junior 2D Artist",
+                    "Illustration Intern",
+                    "Junior Concept Artist",
+                    "Junior Character Designer",
+                    "Junior Graphic Artist",
+                    "Storyboard Assistant"
+                ],
+                "mid": [
+                    "Illustrator",
+                    "2D Artist",
+                    "Digital Artist",
+                    "Concept Artist",
+                    "Character Designer",
+                    "Creature Designer",
+                    "Environment Artist",
+                    "Prop Designer",
+                    "Storyboard Artist",
+                    "Visual Development Artist",
+                    "Comic Artist"
+                ],
+                "senior": [
+                    "Senior Illustrator",
+                    "Senior 2D Artist",
+                    "Lead Illustrator",
+                    "Senior Concept Artist",
+                    "Lead Concept Artist",
+                    "Senior Character Designer",
+                    "Senior Storyboard Artist"
+                ],
+                "expert": [
+                    "Principal Concept Artist",
+                    "Art Director",
+                    "Creative Director",
+                    "Head of Illustration",
+                    "Visual Development Director",
+                    "Chief Artistic Officer",
+                    "Studio Art Director"
+                ]
+            }
+        },
+        "design_uiux": {
+            "name": "UI/UX Design",
+            "social_links": [
+                "linkedin",
+                "website",
+                "dribbble",
+                "behance",
+                "figma"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior UX Designer",
+                    "Junior UI Designer",
+                    "UX/UI Design Intern",
+                    "Associate Product Designer",
+                    "Junior Visual Designer",
+                    "Junior Interaction Designer",
+                    "UX Research Assistant"
+                ],
+                "mid": [
+                    "UX Designer",
+                    "UI Designer",
+                    "UX/UI Designer",
+                    "Product Designer",
+                    "Interaction Designer",
+                    "Visual Designer",
+                    "Design System Designer",
+                    "UX Researcher",
+                    "User Researcher",
+                    "Service Designer"
+                ],
+                "senior": [
+                    "Senior UX Designer",
+                    "Senior UI Designer",
+                    "Senior Product Designer",
+                    "Lead UX Designer",
+                    "Lead Product Designer",
+                    "Staff Product Designer",
+                    "Senior UX Researcher",
+                    "UX Research Lead",
+                    "Design Lead"
+                ],
+                "expert": [
+                    "Principal Product Designer",
+                    "Design Director",
+                    "Head of Design",
+                    "VP of Design",
+                    "Chief Design Officer",
+                    "CDO",
+                    "Director of UX",
+                    "Director of Product Design"
+                ]
+            }
+        },
+        "design_graphic": {
+            "name": "Graphic Design",
+            "social_links": [
+                "linkedin",
+                "website",
+                "behance",
+                "dribbble",
+                "instagram"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Graphic Designer",
+                    "Graphic Design Intern",
+                    "Associate Designer",
+                    "Junior Visual Designer",
+                    "Junior Brand Designer",
+                    "Production Artist"
+                ],
+                "mid": [
+                    "Graphic Designer",
+                    "Visual Designer",
+                    "Brand Designer",
+                    "Print Designer",
+                    "Publication Designer",
+                    "Marketing Designer",
+                    "Packaging Designer",
+                    "Editorial Designer"
+                ],
+                "senior": [
+                    "Senior Graphic Designer",
+                    "Lead Graphic Designer",
+                    "Senior Visual Designer",
+                    "Senior Brand Designer",
+                    "Design Lead",
+                    "Associate Art Director"
+                ],
+                "expert": [
+                    "Art Director",
+                    "Creative Director",
+                    "Design Director",
+                    "Brand Director",
+                    "Head of Creative",
+                    "Chief Creative Officer"
+                ]
+            }
+        },
+        "music_audio": {
+            "name": "Music & Audio",
+            "social_links": [
+                "linkedin",
+                "website",
+                "spotify",
+                "soundcloud",
+                "bandcamp",
+                "youtube"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Audio Engineer",
+                    "Assistant Sound Designer",
+                    "Audio Intern",
+                    "Junior Music Producer",
+                    "Production Assistant",
+                    "Studio Assistant",
+                    "Junior Composer",
+                    "Composer Assistant"
+                ],
+                "mid": [
+                    "Music Producer",
+                    "Sound Designer",
+                    "Audio Engineer",
+                    "Composer",
+                    "Film Composer",
+                    "Game Composer",
+                    "Mix Engineer",
+                    "Recording Engineer",
+                    "Foley Artist",
+                    "Songwriter",
+                    "DJ",
+                    "Beatmaker"
+                ],
+                "senior": [
+                    "Senior Music Producer",
+                    "Senior Sound Designer",
+                    "Lead Audio Engineer",
+                    "Senior Composer",
+                    "Lead Composer",
+                    "Scoring Composer",
+                    "Senior Mix Engineer",
+                    "Mastering Engineer"
+                ],
+                "expert": [
+                    "Music Director",
+                    "Audio Director",
+                    "Head of Audio",
+                    "Chief Audio Officer",
+                    "Executive Music Producer",
+                    "Sound Supervisor",
+                    "Scoring Director"
+                ]
+            }
+        },
+        "video_film": {
+            "name": "Video & Film",
+            "social_links": [
+                "linkedin",
+                "website",
+                "youtube",
+                "vimeo",
+                "instagram"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Video Editor",
+                    "Assistant Editor",
+                    "Video Production Assistant",
+                    "Junior Videographer",
+                    "Camera Assistant",
+                    "Production Intern",
+                    "Junior Colorist",
+                    "Post-Production Assistant"
+                ],
+                "mid": [
+                    "Video Editor",
+                    "Editor",
+                    "Videographer",
+                    "Cinematographer",
+                    "Camera Operator",
+                    "Colorist",
+                    "Color Grader",
+                    "Photographer",
+                    "Commercial Photographer",
+                    "Portrait Photographer",
+                    "Director of Photography",
+                    "DIT"
+                ],
+                "senior": [
+                    "Senior Video Editor",
+                    "Lead Editor",
+                    "Senior Cinematographer",
+                    "Senior Colorist",
+                    "DI Colorist",
+                    "Post-Production Supervisor",
+                    "Senior Photographer",
+                    "Lead Videographer"
+                ],
+                "expert": [
+                    "Director",
+                    "Film Director",
+                    "Creative Director",
+                    "Producer",
+                    "Executive Producer",
+                    "Head of Production",
+                    "Post-Production Director",
+                    "Chief Content Officer"
+                ]
+            }
+        },
+        "content_creator": {
+            "name": "Content Creation & Streaming",
+            "social_links": [
+                "linkedin",
+                "website",
+                "youtube",
+                "twitch",
+                "instagram",
+                "tiktok"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Content Creator Intern",
+                    "Junior Content Creator",
+                    "Assistant Editor",
+                    "Social Media Assistant",
+                    "Junior Podcaster",
+                    "Podcast Assistant"
+                ],
+                "mid": [
+                    "Content Creator",
+                    "YouTuber",
+                    "Video Content Creator",
+                    "Streamer",
+                    "Twitch Streamer",
+                    "Live Streamer",
+                    "Podcaster",
+                    "Podcast Host",
+                    "TikTok Creator",
+                    "Influencer",
+                    "Social Media Influencer"
+                ],
+                "senior": [
+                    "Senior Content Creator",
+                    "Lead Content Creator",
+                    "Senior Podcaster",
+                    "Podcast Producer",
+                    "Senior Influencer",
+                    "Brand Ambassador",
+                    "Content Strategist"
+                ],
+                "expert": [
+                    "Head of Content",
+                    "Content Director",
+                    "Chief Content Officer",
+                    "Media Personality",
+                    "Principal Creator",
+                    "Executive Producer",
+                    "Network Partner"
+                ]
+            }
+        },
+        "writing_content": {
+            "name": "Writing & Editorial",
+            "social_links": [
+                "linkedin",
+                "website",
+                "medium",
+                "substack",
+                "twitter"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Content Writer",
+                    "Content Writing Intern",
+                    "Junior Copywriter",
+                    "Editorial Assistant",
+                    "Junior Editor",
+                    "Proofreader",
+                    "Junior Technical Writer",
+                    "Documentation Intern"
+                ],
+                "mid": [
+                    "Content Writer",
+                    "Copywriter",
+                    "Technical Writer",
+                    "Editor",
+                    "Copy Editor",
+                    "UX Writer",
+                    "Content Designer",
+                    "Journalist",
+                    "Reporter",
+                    "Staff Writer",
+                    "Blogger",
+                    "Author",
+                    "Screenwriter"
+                ],
+                "senior": [
+                    "Senior Content Writer",
+                    "Senior Copywriter",
+                    "Senior Technical Writer",
+                    "Senior Editor",
+                    "Managing Editor",
+                    "Senior UX Writer",
+                    "Senior Journalist",
+                    "Lead Writer",
+                    "Staff Senior Writer"
+                ],
+                "expert": [
+                    "Editor-in-Chief",
+                    "Editorial Director",
+                    "Head of Content",
+                    "Chief Content Officer",
+                    "VP of Content",
+                    "Creative Director",
+                    "Publishing Director"
+                ]
+            }
+        },
+        "product_management": {
+            "name": "Product & Project Management",
+            "social_links": [
+                "linkedin",
+                "website",
+                "twitter"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Associate Product Manager",
+                    "Junior Product Manager",
+                    "Product Analyst",
+                    "Associate Project Manager",
+                    "Junior Project Manager",
+                    "Project Coordinator",
+                    "Scrum Team Member"
+                ],
+                "mid": [
+                    "Product Manager",
+                    "Technical Product Manager",
+                    "Platform Product Manager",
+                    "Product Owner",
+                    "Project Manager",
+                    "IT Project Manager",
+                    "Scrum Master",
+                    "Agile Coach",
+                    "Delivery Manager",
+                    "Program Coordinator"
+                ],
+                "senior": [
+                    "Senior Product Manager",
+                    "Principal Product Manager",
+                    "Group PM",
+                    "Senior Project Manager",
+                    "Senior Scrum Master",
+                    "Senior Program Manager",
+                    "Technical Program Manager",
+                    "Product Lead",
+                    "Program Lead"
+                ],
+                "expert": [
+                    "Director of Product",
+                    "Head of Product",
+                    "VP of Product",
+                    "Chief Product Officer",
+                    "CPO",
+                    "Director of Program Management",
+                    "VP of Engineering Program",
+                    "General Manager"
+                ]
+            }
+        },
+        "marketing_growth": {
+            "name": "Marketing & Growth",
+            "social_links": [
+                "linkedin",
+                "website",
+                "twitter",
+                "instagram"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Marketing Coordinator",
+                    "Marketing Assistant",
+                    "Junior Marketer",
+                    "Junior Digital Marketer",
+                    "Social Media Coordinator",
+                    "SEO Specialist",
+                    "Content Marketing Intern",
+                    "Marketing Analyst I"
+                ],
+                "mid": [
+                    "Marketing Manager",
+                    "Digital Marketing Manager",
+                    "SEO Manager",
+                    "SEM Specialist",
+                    "PPC Specialist",
+                    "Social Media Manager",
+                    "Content Strategist",
+                    "Brand Manager",
+                    "Community Manager",
+                    "Growth Marketer",
+                    "Performance Marketer",
+                    "Email Marketing Specialist"
+                ],
+                "senior": [
+                    "Senior Marketing Manager",
+                    "Senior Digital Marketing Manager",
+                    "Senior Brand Manager",
+                    "Senior Growth Manager",
+                    "Marketing Lead",
+                    "Head of Social Media",
+                    "Senior Content Strategist",
+                    "Demand Generation Manager"
+                ],
+                "expert": [
+                    "Marketing Director",
+                    "VP of Marketing",
+                    "CMO",
+                    "Chief Marketing Officer",
+                    "Head of Marketing",
+                    "Director of Growth",
+                    "Chief Growth Officer",
+                    "Brand Director",
+                    "VP of Brand"
+                ]
+            }
+        },
+        "sales_business": {
+            "name": "Sales & Business Development",
+            "social_links": [
+                "linkedin",
+                "website"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Sales Development Representative",
+                    "SDR",
+                    "BDR",
+                    "Junior Sales Representative",
+                    "Sales Associate",
+                    "Inside Sales Rep",
+                    "Lead Generation Specialist",
+                    "Junior Account Executive"
+                ],
+                "mid": [
+                    "Sales Representative",
+                    "Account Executive",
+                    "Sales Executive",
+                    "Business Development Manager",
+                    "Account Manager",
+                    "Sales Engineer",
+                    "Solutions Consultant",
+                    "Pre-Sales Engineer",
+                    "Customer Success Manager",
+                    "CSM",
+                    "Partnership Manager"
+                ],
+                "senior": [
+                    "Senior Account Executive",
+                    "Enterprise Account Executive",
+                    "Senior Sales Manager",
+                    "Regional Sales Manager",
+                    "Senior Account Manager",
+                    "Key Account Manager",
+                    "Senior Customer Success Manager",
+                    "Senior Sales Engineer"
+                ],
+                "expert": [
+                    "Sales Director",
+                    "VP of Sales",
+                    "Chief Revenue Officer",
+                    "CRO",
+                    "Head of Sales",
+                    "SVP of Sales",
+                    "Head of Business Development",
+                    "VP of Partnerships",
+                    "Chief Commercial Officer"
+                ]
+            }
+        },
+        "business_finance": {
+            "name": "Business & Finance",
+            "social_links": [
+                "linkedin",
+                "website"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Business Analyst",
+                    "Business Analyst I",
+                    "Associate Analyst",
+                    "Junior Financial Analyst",
+                    "Financial Analyst I",
+                    "Junior Accountant",
+                    "Staff Accountant",
+                    "Accounting Clerk",
+                    "Junior Auditor",
+                    "Audit Associate",
+                    "Investment Banking Analyst"
+                ],
+                "mid": [
+                    "Business Analyst",
+                    "Senior Business Analyst",
+                    "Financial Analyst",
+                    "FP&A Analyst",
+                    "Credit Analyst",
+                    "Accountant",
+                    "Senior Accountant",
+                    "Tax Accountant",
+                    "Auditor",
+                    "Internal Auditor",
+                    "Consultant",
+                    "Management Consultant"
+                ],
+                "senior": [
+                    "Lead Business Analyst",
+                    "Principal Business Analyst",
+                    "Senior Financial Analyst",
+                    "Finance Manager",
+                    "Senior Accountant",
+                    "Accounting Manager",
+                    "Senior Auditor",
+                    "Audit Manager",
+                    "Senior Consultant",
+                    "Principal Consultant"
+                ],
+                "expert": [
+                    "Finance Director",
+                    "VP of Finance",
+                    "CFO",
+                    "Chief Financial Officer",
+                    "Controller",
+                    "VP Controller",
+                    "Chief Accounting Officer",
+                    "Partner",
+                    "Managing Director",
+                    "Chief Strategy Officer",
+                    "CSO"
+                ]
+            }
+        },
+        "hr_recruiting": {
+            "name": "HR & Recruiting",
+            "social_links": [
+                "linkedin",
+                "website"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "HR Coordinator",
+                    "HR Assistant",
+                    "Junior HR Specialist",
+                    "Recruiting Coordinator",
+                    "Junior Recruiter",
+                    "Talent Acquisition Coordinator",
+                    "HR Intern"
+                ],
+                "mid": [
+                    "HR Specialist",
+                    "HR Generalist",
+                    "HR Business Partner",
+                    "Recruiter",
+                    "Technical Recruiter",
+                    "Talent Acquisition Specialist",
+                    "Training Specialist",
+                    "Learning & Development Specialist",
+                    "Compensation Analyst",
+                    "Benefits Specialist"
+                ],
+                "senior": [
+                    "Senior HR Specialist",
+                    "Senior HR Business Partner",
+                    "Senior Recruiter",
+                    "Lead Recruiter",
+                    "Talent Acquisition Manager",
+                    "HR Manager",
+                    "L&D Manager",
+                    "Training Manager",
+                    "Total Rewards Manager"
+                ],
+                "expert": [
+                    "HR Director",
+                    "VP of HR",
+                    "CHRO",
+                    "Chief Human Resources Officer",
+                    "Chief People Officer",
+                    "CPO",
+                    "Head of People",
+                    "VP of Talent",
+                    "Head of Talent Acquisition"
+                ]
+            }
+        },
+        "executive": {
+            "name": "Executive & Leadership",
+            "social_links": [
+                "linkedin",
+                "website",
+                "twitter"
+            ],
+            "roles_by_level": {
+                "junior": [],
+                "mid": [
+                    "Team Lead",
+                    "Project Lead",
+                    "Supervisor",
+                    "Manager",
+                    "Operations Manager",
+                    "First-Line Manager"
+                ],
+                "senior": [
+                    "Senior Manager",
+                    "Director",
+                    "Senior Director",
+                    "General Manager",
+                    "Operations Director",
+                    "Managing Director",
+                    "Business Unit Leader"
+                ],
+                "expert": [
+                    "CEO",
+                    "Chief Executive Officer",
+                    "President",
+                    "COO",
+                    "Chief Operating Officer",
+                    "CTO",
+                    "CFO",
+                    "CMO",
+                    "CPO",
+                    "CHRO",
+                    "Founder",
+                    "Co-Founder",
+                    "Owner",
+                    "Executive Vice President",
+                    "SVP",
+                    "EVP",
+                    "Board Member",
+                    "Partner",
+                    "Principal"
+                ]
+            }
+        },
+        "education": {
+            "name": "Education & Training",
+            "social_links": [
+                "linkedin",
+                "website",
+                "youtube",
+                "udemy"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Teaching Assistant",
+                    "Teacher Aide",
+                    "Tutor",
+                    "Substitute Teacher",
+                    "Student Teacher",
+                    "Junior Trainer",
+                    "Training Coordinator"
+                ],
+                "mid": [
+                    "Teacher",
+                    "High School Teacher",
+                    "Elementary Teacher",
+                    "Special Education Teacher",
+                    "ESL Teacher",
+                    "Instructor",
+                    "Course Instructor",
+                    "Online Instructor",
+                    "Trainer",
+                    "Corporate Trainer",
+                    "Technical Trainer",
+                    "Coach",
+                    "Career Coach",
+                    "Academic Advisor"
+                ],
+                "senior": [
+                    "Senior Teacher",
+                    "Lead Teacher",
+                    "Master Teacher",
+                    "Senior Instructor",
+                    "Lead Trainer",
+                    "Senior Coach",
+                    "Executive Coach",
+                    "Curriculum Developer",
+                    "Instructional Designer"
+                ],
+                "expert": [
+                    "Professor",
+                    "Associate Professor",
+                    "Department Chair",
+                    "Dean",
+                    "Vice Dean",
+                    "Principal",
+                    "Headmaster",
+                    "L&D Director",
+                    "Head of Training",
+                    "Chief Learning Officer"
+                ]
+            }
+        },
+        "healthcare": {
+            "name": "Healthcare & Medical",
+            "social_links": [
+                "linkedin",
+                "website",
+                "doximity"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Medical Assistant",
+                    "Nursing Assistant",
+                    "CNA",
+                    "Medical Intern",
+                    "Resident",
+                    "Junior Nurse",
+                    "Lab Technician",
+                    "Pharmacy Technician",
+                    "Junior Research Coordinator"
+                ],
+                "mid": [
+                    "Registered Nurse",
+                    "RN",
+                    "Nurse",
+                    "LPN",
+                    "Physician Assistant",
+                    "PA",
+                    "Nurse Practitioner",
+                    "NP",
+                    "Pharmacist",
+                    "Physical Therapist",
+                    "Occupational Therapist",
+                    "Therapist",
+                    "Counselor",
+                    "Psychologist",
+                    "Medical Technologist",
+                    "Radiologic Technologist",
+                    "Clinical Research Coordinator"
+                ],
+                "senior": [
+                    "Senior Nurse",
+                    "Charge Nurse",
+                    "Nurse Manager",
+                    "Senior Physical Therapist",
+                    "Senior Psychologist",
+                    "Senior Pharmacist",
+                    "Clinical Pharmacist",
+                    "Attending Physician",
+                    "Staff Physician",
+                    "Senior Clinical Research Coordinator"
+                ],
+                "expert": [
+                    "Doctor",
+                    "Physician",
+                    "Surgeon",
+                    "Specialist",
+                    "Medical Director",
+                    "Chief Medical Officer",
+                    "CMO",
+                    "Chief Nursing Officer",
+                    "CNO",
+                    "VP of Nursing",
+                    "Hospital Administrator",
+                    "Healthcare Executive"
+                ]
+            }
+        },
+        "legal": {
+            "name": "Legal",
+            "social_links": [
+                "linkedin",
+                "website"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Paralegal",
+                    "Legal Assistant",
+                    "Legal Secretary",
+                    "Junior Associate",
+                    "Law Clerk",
+                    "Legal Intern",
+                    "Contracts Administrator",
+                    "Junior Compliance Analyst"
+                ],
+                "mid": [
+                    "Associate Attorney",
+                    "Associate Lawyer",
+                    "Attorney",
+                    "Lawyer",
+                    "Corporate Lawyer",
+                    "Litigation Associate",
+                    "Compliance Analyst",
+                    "Compliance Officer",
+                    "Contract Manager",
+                    "Legal Counsel"
+                ],
+                "senior": [
+                    "Senior Associate",
+                    "Senior Attorney",
+                    "Senior Counsel",
+                    "Senior Compliance Officer",
+                    "Compliance Manager",
+                    "Senior Contract Manager",
+                    "IP Counsel"
+                ],
+                "expert": [
+                    "Partner",
+                    "Equity Partner",
+                    "Managing Partner",
+                    "General Counsel",
+                    "Chief Legal Officer",
+                    "CLO",
+                    "Chief Compliance Officer",
+                    "CCO",
+                    "VP of Legal",
+                    "Head of Legal"
+                ]
+            }
+        },
+        "architecture": {
+            "name": "Architecture & Construction",
+            "social_links": [
+                "linkedin",
+                "website",
+                "behance",
+                "archdaily",
+                "instagram"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Architect",
+                    "Architectural Intern",
+                    "Design Intern",
+                    "Junior Interior Designer",
+                    "CAD Technician",
+                    "Junior Civil Engineer",
+                    "Junior Structural Engineer",
+                    "Project Engineer I",
+                    "Site Engineer"
+                ],
+                "mid": [
+                    "Architect",
+                    "Project Architect",
+                    "Interior Designer",
+                    "Urban Planner",
+                    "Landscape Architect",
+                    "Civil Engineer",
+                    "Structural Engineer",
+                    "MEP Engineer",
+                    "Construction Manager",
+                    "Project Manager",
+                    "Site Manager",
+                    "BIM Coordinator",
+                    "CAD Manager"
+                ],
+                "senior": [
+                    "Senior Architect",
+                    "Lead Architect",
+                    "Design Architect",
+                    "Senior Interior Designer",
+                    "Senior Urban Planner",
+                    "Senior Civil Engineer",
+                    "Senior Structural Engineer",
+                    "Senior Project Manager",
+                    "Senior Construction Manager",
+                    "BIM Manager"
+                ],
+                "expert": [
+                    "Principal Architect",
+                    "Design Principal",
+                    "Managing Principal",
+                    "Director of Architecture",
+                    "Head of Design",
+                    "Director of Construction",
+                    "VP of Construction",
+                    "Chief Architect"
+                ]
+            }
+        },
+        "fashion": {
+            "name": "Fashion & Beauty",
+            "social_links": [
+                "linkedin",
+                "website",
+                "instagram",
+                "pinterest"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Junior Fashion Designer",
+                    "Design Assistant",
+                    "Fashion Intern",
+                    "Junior Stylist",
+                    "Wardrobe Assistant",
+                    "Junior Makeup Artist",
+                    "Makeup Assistant",
+                    "Model",
+                    "Junior Buyer"
+                ],
+                "mid": [
+                    "Fashion Designer",
+                    "Apparel Designer",
+                    "Accessories Designer",
+                    "Stylist",
+                    "Fashion Stylist",
+                    "Wardrobe Stylist",
+                    "Makeup Artist",
+                    "Hair Stylist",
+                    "Colorist",
+                    "Fashion Photographer",
+                    "Buyer",
+                    "Merchandiser"
+                ],
+                "senior": [
+                    "Senior Fashion Designer",
+                    "Lead Designer",
+                    "Senior Stylist",
+                    "Celebrity Stylist",
+                    "Senior Makeup Artist",
+                    "Key Makeup Artist",
+                    "Senior Buyer",
+                    "Senior Merchandiser"
+                ],
+                "expert": [
+                    "Fashion Director",
+                    "Creative Director",
+                    "Design Director",
+                    "Head of Design",
+                    "Brand Director",
+                    "Chief Creative Officer",
+                    "VP of Design"
+                ]
+            }
+        },
+        "culinary": {
+            "name": "Culinary & Hospitality",
+            "social_links": [
+                "linkedin",
+                "website",
+                "instagram",
+                "youtube"
+            ],
+            "roles_by_level": {
+                "junior": [
+                    "Line Cook",
+                    "Prep Cook",
+                    "Commis Chef",
+                    "Junior Chef",
+                    "Kitchen Assistant",
+                    "Dishwasher",
+                    "Bartender",
+                    "Barista",
+                    "Server",
+                    "Host/Hostess",
+                    "Food Runner"
+                ],
+                "mid": [
+                    "Chef",
+                    "Cook",
+                    "Sous Chef",
+                    "Station Chef",
+                    "Pastry Chef",
+                    "Baker",
+                    "Pizza Chef",
+                    "Head Bartender",
+                    "Mixologist",
+                    "Sommelier",
+                    "Restaurant Manager",
+                    "Front of House Manager"
+                ],
+                "senior": [
+                    "Senior Sous Chef",
+                    "Senior Chef",
+                    "Executive Sous Chef",
+                    "Senior Pastry Chef",
+                    "Head Baker",
+                    "Bar Manager",
+                    "Wine Director",
+                    "Beverage Director",
+                    "General Manager"
+                ],
+                "expert": [
+                    "Executive Chef",
+                    "Head Chef",
+                    "Culinary Director",
+                    "F&B Director",
+                    "Director of Operations",
+                    "VP of Culinary",
+                    "Chief Culinary Officer",
+                    "Restaurant Owner",
+                    "Restaurateur"
+                ]
+            }
+        }
+    },
+    "genders": [
+        {
+            "value": "any",
+            "label": "Any Gender"
+        },
+        {
+            "value": "male",
+            "label": "Male"
+        },
+        {
+            "value": "female",
+            "label": "Female"
+        }
+    ],
+    "ethnicities": [
+        {
+            "value": "any",
+            "label": "Any Ethnicity"
+        },
+        {
+            "value": "asian",
+            "label": "Asian"
+        },
+        {
+            "value": "black",
+            "label": "Black / African"
+        },
+        {
+            "value": "caucasian",
+            "label": "White / Caucasian"
+        },
+        {
+            "value": "hispanic",
+            "label": "Hispanic / Latino"
+        },
+        {
+            "value": "middle-eastern",
+            "label": "Middle Eastern"
+        },
+        {
+            "value": "south-asian",
+            "label": "South Asian"
+        },
+        {
+            "value": "mixed",
+            "label": "Mixed Heritage"
+        }
+    ],
+    "origins": [
+        {
+            "value": "any",
+            "label": "🌍 Any Location",
+            "continent": null
+        },
+        {
+            "value": "United States",
+            "label": "🇺🇸 United States",
+            "continent": "North America"
+        },
+        {
+            "value": "United Kingdom",
+            "label": "🇬🇧 United Kingdom",
+            "continent": "Europe"
+        },
+        {
+            "value": "Germany",
+            "label": "🇩🇪 Germany",
+            "continent": "Europe"
+        },
+        {
+            "value": "France",
+            "label": "🇫🇷 France",
+            "continent": "Europe"
+        },
+        {
+            "value": "Spain",
+            "label": "🇪🇸 Spain",
+            "continent": "Europe"
+        },
+        {
+            "value": "Italy",
+            "label": "🇮🇹 Italy",
+            "continent": "Europe"
+        },
+        {
+            "value": "Netherlands",
+            "label": "🇳🇱 Netherlands",
+            "continent": "Europe"
+        },
+        {
+            "value": "Sweden",
+            "label": "🇸🇪 Sweden",
+            "continent": "Europe"
+        },
+        {
+            "value": "Canada",
+            "label": "🇨🇦 Canada",
+            "continent": "North America"
+        },
+        {
+            "value": "Australia",
+            "label": "🇦🇺 Australia",
+            "continent": "Oceania"
+        },
+        {
+            "value": "Japan",
+            "label": "🇯🇵 Japan",
+            "continent": "Asia"
+        },
+        {
+            "value": "China",
+            "label": "🇨🇳 China",
+            "continent": "Asia"
+        },
+        {
+            "value": "South Korea",
+            "label": "🇰🇷 South Korea",
+            "continent": "Asia"
+        },
+        {
+            "value": "India",
+            "label": "🇮🇳 India",
+            "continent": "Asia"
+        },
+        {
+            "value": "Singapore",
+            "label": "🇸🇬 Singapore",
+            "continent": "Asia"
+        },
+        {
+            "value": "Brazil",
+            "label": "🇧🇷 Brazil",
+            "continent": "South America"
+        },
+        {
+            "value": "Mexico",
+            "label": "🇲🇽 Mexico",
+            "continent": "North America"
+        },
+        {
+            "value": "Argentina",
+            "label": "🇦🇷 Argentina",
+            "continent": "South America"
+        },
+        {
+            "value": "South Africa",
+            "label": "🇿🇦 South Africa",
+            "continent": "Africa"
+        },
+        {
+            "value": "Nigeria",
+            "label": "🇳🇬 Nigeria",
+            "continent": "Africa"
+        },
+        {
+            "value": "UAE",
+            "label": "🇦🇪 UAE",
+            "continent": "Middle East"
+        },
+        {
+            "value": "Israel",
+            "label": "🇮🇱 Israel",
+            "continent": "Middle East"
+        }
+    ],
+    "expertise_levels": [
+        {
+            "value": "any",
+            "label": "Any Level"
+        },
+        {
+            "value": "junior",
+            "label": "Junior (0-2 years)"
+        },
+        {
+            "value": "mid",
+            "label": "Mid-Level (2-5 years)"
+        },
+        {
+            "value": "senior",
+            "label": "Senior (5-10 years)"
+        },
+        {
+            "value": "expert",
+            "label": "Expert (10+ years)"
+        }
+    ]
+}

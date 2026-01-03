@@ -82,23 +82,21 @@ def fetch_openrouter_models() -> dict:
 # Fetch live models from OpenRouter (runs once at module load)
 LLM_MODELS = fetch_openrouter_models()
 
-# Random tech roles for "any" selection
-RANDOM_TECH_ROLES = [
-    "Senior DevOps Engineer",
-    "AI Research Scientist",
-    "Blockchain Lead Developer",
-    "Full Stack Architect",
-    "Data Platform Engineer",
-    "Cloud Security Specialist",
-    "Machine Learning Engineer",
-    "Site Reliability Engineer",
-    "Principal Software Engineer",
-    "Backend Systems Architect",
-    "Mobile Development Lead",
-    "Cybersecurity Analyst",
-    "Quantum Computing Researcher",
-    "Platform Engineering Manager"
-]
+# Import roles from the database service
+from .roles_service import get_all_roles as get_roles_from_db, get_social_links_for_role as get_social_links_from_db
+
+def _get_random_roles() -> list[str]:
+    """Get roles from database with fallback."""
+    try:
+        roles = get_roles_from_db()
+        print(f"DEBUG LLM: Loaded {len(roles)} roles from database")
+        if roles:
+            return roles
+    except Exception as e:
+        print(f"ERROR LLM: Failed to load roles from database: {e}")
+    # Fallback - should rarely hit this
+    print("WARNING LLM: Using hardcoded fallback roles!")
+    return ["Software Engineer", "Product Manager", "UX Designer", "Data Scientist", "Marketing Manager"]
 
 
 def normalize_cv_data(cv_data: dict) -> dict:
@@ -576,8 +574,8 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
         display_gender = profile_data.get("gender", gender)
         # We can pass more profile data into the template if needed
 
-    # Get dynamic social keys based on role
-    social_keys = get_social_links_for_role(display_role)
+    # Get dynamic social keys based on role from database
+    social_keys = get_social_links_from_db(display_role)
     print(f"DEBUG: Selected social keys for role '{display_role}': {social_keys}")
 
     # 2. Load from external template - CRITICAL: FAIL FAST IF MISSING

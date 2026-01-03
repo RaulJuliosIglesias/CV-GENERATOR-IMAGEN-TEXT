@@ -112,6 +112,20 @@ app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 # Include routers
 app.include_router(generation.router)
 
+# Import config service
+from .services.roles_service import get_all_config
+
+@app.get("/api/config")
+async def get_config():
+    """Get all configuration options from centralized database.
+    
+    Returns roles, genders, ethnicities, origins, expertise_levels.
+    Frontend should fetch this on mount to populate dropdowns.
+    """
+    config = get_all_config()
+    print(f"DEBUG API: Serving config with {len(config.get('roles', []))} roles")
+    return JSONResponse(content=config)
+
 
 @app.get("/")
 async def root():

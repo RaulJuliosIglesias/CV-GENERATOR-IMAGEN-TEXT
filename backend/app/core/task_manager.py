@@ -12,6 +12,9 @@ from enum import Enum
 from typing import Optional
 from pathlib import Path
 
+# Import roles from the database service
+from ..services.roles_service import get_all_roles, get_random_role, get_roles_by_expertise
+
 class TaskStatus(str, Enum):
     PENDING = "pending"
     RUNNING = "running"
@@ -134,15 +137,51 @@ class Batch:
         }
 
 
-# Pools for randomization when "any" is selected
-ALL_GENDERS = ["Male", "Female"]
-ALL_ETHNICITIES = ["Asian", "Black/African", "White/Caucasian", "Hispanic/Latino", "Middle Eastern", "South Asian", "Mixed Heritage"]
-ALL_ORIGINS = ["United States", "United Kingdom", "Germany", "France", "Canada", "Australia", "Japan", "Brazil", "India", "Singapore", "Sweden", "Spain"]
-ALL_ROLES = [
-    "Full Stack Developer", "DevOps Engineer", "Data Scientist", "System Architect",
-    "Product Manager", "UX/UI Designer", "Mobile App Developer", "Cloud Solutions Architect",
-    "Cybersecurity Analyst", "Blockchain Developer", "AI Engineer", "Game Developer"
-]
+# Pools for randomization when "any" is selected - loaded from database
+from ..services.roles_service import get_gender_values, get_ethnicity_values, get_origin_values
+
+def _get_genders_pool() -> list[str]:
+    """Get genders from database with fallback."""
+    try:
+        genders = get_gender_values()
+        if genders:
+            return genders
+    except Exception as e:
+        print(f"WARNING: Failed to load genders from db: {e}")
+    return ["Male", "Female"]
+
+def _get_ethnicities_pool() -> list[str]:
+    """Get ethnicities from database with fallback."""
+    try:
+        ethnicities = get_ethnicity_values()
+        if ethnicities:
+            return ethnicities
+    except Exception as e:
+        print(f"WARNING: Failed to load ethnicities from db: {e}")
+    return ["Asian", "Black", "White", "Hispanic"]
+
+def _get_origins_pool() -> list[str]:
+    """Get origins from database with fallback."""
+    try:
+        origins = get_origin_values()
+        if origins:
+            return origins
+    except Exception as e:
+        print(f"WARNING: Failed to load origins from db: {e}")
+    return ["United States", "United Kingdom", "Germany"]
+
+# Load roles dynamically from the database
+def _get_roles_pool() -> list[str]:
+    """Get all roles from the database, with fallback."""
+    try:
+        roles = get_all_roles()
+        if roles:
+            return roles
+    except Exception as e:
+        print(f"WARNING: Failed to load roles from database: {e}")
+    
+    # Fallback if database fails
+    return ["Software Engineer", "Product Manager", "UX Designer", "Data Scientist"]
 
 class TaskManager:
     """
@@ -179,40 +218,46 @@ class TaskManager:
             # This ensures that we pass a SPECIFIC profile to the LLM, 
             # preventing it from defaulting to "Rafael Mendoza" every time.
             
-            # 1. Resolve Gender
+            # 1. Resolve Gender (from database)
             if not genders or "any" in [g.lower() for g in genders]:
-                selected_gender = random.choice(ALL_GENDERS)
+                selected_gender = random.choice(_get_genders_pool())
             else:
                 selected_gender = random.choice(genders)
                 
-            # 2. Resolve Ethnicity
+            # 2. Resolve Ethnicity (from database)
             if not ethnicities or "any" in [e.lower() for e in ethnicities]:
-                selected_ethnicity = random.choice(ALL_ETHNICITIES)
+                selected_ethnicity = random.choice(_get_ethnicities_pool())
             else:
                 selected_ethnicity = random.choice(ethnicities)
                 
-            # 3. Resolve Origin
+            # 3. Resolve Origin (from database)
             if not origins or "any" in [o.lower() for o in origins]:
-                selected_origin = random.choice(ALL_ORIGINS)
+                selected_origin = random.choice(_get_origins_pool())
             else:
                 selected_origin = random.choice(origins)
             
-            # 4. Resolve Role (if "any" logic needed, though less critical than demographic)
-            if not roles or "any" in [r.lower() for r in roles]:
-                 selected_role = random.choice(ALL_ROLES)
-            else:
-                 selected_role = random.choice(roles)
-            
-            # 5. Resolve Expertise
+            # 4. Resolve Expertise FIRST (needed for coherent role selection)
             selected_expertise = random.choice(expertise_levels) if expertise_levels else "mid"
+            
+            # 5. Resolve Role - MUST match expertise level for coherence
+            if not roles or "any" in [r.lower() for r in roles]:
+                # Get roles appropriate for this expertise level
+                expertise_roles = get_roles_by_expertise(selected_expertise)
+                print(f"DEBUG BATCH: Expertise '{selected_expertise}' -> {len(expertise_roles)} roles available")
+                if expertise_roles:
+                    selected_role = random.choice(expertise_roles)
+                else:
+                    print(f"WARNING BATCH: No roles for expertise '{selected_expertise}', using fallback pool")
+                    selected_role = random.choice(_get_roles_pool())
+            else:
+                selected_role = random.choice(roles)
             
             # Generate random age within the specified range
             selected_age = random.randint(age_min, age_max)
             age_range = f"{selected_age}"
             
-            print(f"DEBUG BATCH: Created Task {task_id} with Profile -> "
-                  f"Role: {selected_role}, Gender: {selected_gender}, "
-                  f"Ethnicity: {selected_ethnicity}, Origin: {selected_origin}")
+            print(f"DEBUG BATCH: Task {task_id} -> Role: {selected_role}, Expertise: {selected_expertise}, "
+                  f"Gender: {selected_gender}, Ethnicity: {selected_ethnicity}, Origin: {selected_origin}")
 
             task = Task(
                 id=task_id,

@@ -70,15 +70,37 @@ export default function ConfigPanel() {
         llmModels,
         imageModels,
         modelsLoaded,
-        loadModels
+        loadModels,
+        configOptions,
+        loadConfig
     } = useGenerationStore();
 
-    // Load models on mount
+    // Load models and config on mount
     useEffect(() => {
         if (!modelsLoaded) {
             loadModels();
         }
-    }, [modelsLoaded, loadModels]);
+        if (!configOptions.configLoaded) {
+            loadConfig();
+        }
+    }, [modelsLoaded, loadModels, configOptions.configLoaded, loadConfig]);
+
+    // Use database options if available, fallback to hardcoded
+    const ETHNICITY_OPTIONS_FINAL = configOptions.ethnicities.length > 0
+        ? configOptions.ethnicities
+        : ETHNICITY_OPTIONS;
+
+    const LOCATION_OPTIONS_FINAL = configOptions.origins.length > 0
+        ? configOptions.origins
+        : LOCATION_OPTIONS;
+
+    const EXPERTISE_OPTIONS_FINAL = configOptions.expertise_levels.length > 0
+        ? configOptions.expertise_levels
+        : EXPERTISE_OPTIONS;
+
+    const GENDER_OPTIONS_FINAL = configOptions.genders.length > 0
+        ? configOptions.genders
+        : GENDER_OPTIONS;
 
     const handleGenerate = () => {
         startGeneration();
@@ -189,7 +211,7 @@ export default function ConfigPanel() {
                         Gender
                     </Label>
                     <MultiSelect
-                        options={GENDER_OPTIONS}
+                        options={GENDER_OPTIONS_FINAL}
                         value={config.genders}
                         onChange={(value) => setConfig('genders', value)}
                         placeholder="Select genders..."
@@ -203,7 +225,7 @@ export default function ConfigPanel() {
                         Ethnicity
                     </Label>
                     <MultiSelect
-                        options={ETHNICITY_OPTIONS}
+                        options={ETHNICITY_OPTIONS_FINAL}
                         value={config.ethnicities}
                         onChange={(value) => setConfig('ethnicities', value)}
                         placeholder="Select ethnicities..."
@@ -217,7 +239,7 @@ export default function ConfigPanel() {
                         Location / Origin
                     </Label>
                     <MultiSelect
-                        options={LOCATION_OPTIONS}
+                        options={LOCATION_OPTIONS_FINAL}
                         value={config.origins}
                         onChange={(value) => setConfig('origins', value)}
                         placeholder="Select locations..."
@@ -259,7 +281,7 @@ export default function ConfigPanel() {
                         Expertise Level
                     </Label>
                     <MultiSelect
-                        options={EXPERTISE_OPTIONS}
+                        options={EXPERTISE_OPTIONS_FINAL}
                         value={config.expertise_levels}
                         onChange={(value) => setConfig('expertise_levels', value)}
                         placeholder="Select expertise levels..."
@@ -276,6 +298,7 @@ export default function ConfigPanel() {
                         value={config.roles}
                         onChange={(value) => setConfig('roles', value)}
                         placeholder="Type to search or add custom roles..."
+                        suggestions={configOptions.roles.length > 0 ? configOptions.roles : undefined}
                     />
                     <p className="text-xs text-muted-foreground">
                         Search suggestions or add any custom role

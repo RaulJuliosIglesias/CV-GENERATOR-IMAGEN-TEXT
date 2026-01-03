@@ -9,9 +9,13 @@ const api = axios.create({
     },
 });
 
-// API functions
 export const getModels = async () => {
     const response = await api.get('/api/models');
+    return response.data;
+};
+
+export const getConfig = async () => {
+    const response = await api.get('/api/config');
     return response.data;
 };
 

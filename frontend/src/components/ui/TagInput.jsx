@@ -4,8 +4,8 @@ import { cn } from '../../lib/utils';
 import { Badge } from './Badge';
 import { Input } from './Input';
 
-// Common role suggestions
-const ROLE_SUGGESTIONS = [
+// Default role suggestions (fallback if not provided from API)
+const DEFAULT_ROLE_SUGGESTIONS = [
     'Software Developer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer',
     'DevOps Engineer', 'Data Scientist', 'Machine Learning Engineer', 'Data Engineer',
     'Product Manager', 'Project Manager', 'Scrum Master', 'Agile Coach',
@@ -21,11 +21,14 @@ const ROLE_SUGGESTIONS = [
     'Financial Analyst', 'Accountant', 'Controller', 'CFO',
 ];
 
-export function TagInput({ value = [], onChange, placeholder = "Add roles..." }) {
+export function TagInput({ value = [], onChange, placeholder = "Add roles...", suggestions }) {
     const [inputValue, setInputValue] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const filteredSuggestions = ROLE_SUGGESTIONS.filter(role =>
+    // Use provided suggestions or fallback to defaults
+    const roleSuggestions = suggestions || DEFAULT_ROLE_SUGGESTIONS;
+
+    const filteredSuggestions = roleSuggestions.filter(role =>
         role.toLowerCase().includes(inputValue.toLowerCase()) &&
         !value.includes(role)
     ).slice(0, 8);

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { generateBatch, getStatus, getFiles, getModels, getBatchStatus } from '../lib/api';
+import { generateBatch, getStatus, getFiles, getModels, getBatchStatus, getConfig } from '../lib/api';
 
 const useGenerationStore = create((set, get) => ({
     // Configuration state
@@ -18,6 +18,16 @@ const useGenerationStore = create((set, get) => ({
         llm_model: null,
         image_model: null,
         llmSort: 'default',
+    },
+
+    // Available options from centralized database
+    configOptions: {
+        roles: [],
+        genders: [],
+        ethnicities: [],
+        origins: [],
+        expertise_levels: [],
+        configLoaded: false
     },
 
     // Available models
@@ -39,6 +49,26 @@ const useGenerationStore = create((set, get) => ({
 
     // Error state
     error: null,
+
+    // Load config options from backend database
+    loadConfig: async () => {
+        try {
+            const response = await getConfig();
+            console.log('Loaded config from API:', response);
+            set({
+                configOptions: {
+                    roles: response.roles || [],
+                    genders: response.genders || [],
+                    ethnicities: response.ethnicities || [],
+                    origins: response.origins || [],
+                    expertise_levels: response.expertise_levels || [],
+                    configLoaded: true
+                }
+            });
+        } catch (error) {
+            console.error('Failed to load config:', error);
+        }
+    },
 
     // Load available models
     loadModels: async () => {
