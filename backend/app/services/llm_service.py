@@ -333,9 +333,20 @@ async def generate_profile_data(
                         content = content[start:end+1]
                         
                     # Try to parse
-                    profile_data = json.loads(content)
-                    print(f"SUCCESS: Generated Profile: {profile_data.get('name')}")
-                    return profile_data, prompt
+                    try:
+                        profile_data = json.loads(content)
+                        print(f"SUCCESS: Generated Profile: {profile_data.get('name')}")
+                        return profile_data, prompt
+                    except json.JSONDecodeError:
+                        print(f"WARNING: Malformed JSON content: {content[:100]}...")
+                        raise # Re-raise to be caught by outer except
+                
+                elif response.status_code == 429:
+                    wait_time = (2 ** attempt) + 1  # Exponential backoff: 2s, 3s, 5s...
+                    print(f"WARNING: Rate Limit (429) - Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    continue
+                    
                 else:
                     print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
                     if attempt == max_retries - 1:

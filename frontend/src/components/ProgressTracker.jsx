@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, AlertCircle, Loader2, FileText, Image, Brain, Clock, Eye, Download } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, FileText, Image, Brain, Clock, Eye, Download, Trash2 } from 'lucide-react';
 import { Progress } from './ui/Progress';
 import { Button } from './ui/Button';
 import useGenerationStore from '../stores/useGenerationStore';
@@ -170,6 +170,26 @@ function TaskCard({ task }) {
                         <Eye className="w-4 h-4 mr-1" />
                         View PDF
                     </Button>
+                </div>
+            )}
+
+            {/* Delete Button for Failed Tasks */}
+            {task.status === 'error' && (
+                <div className="flex justify-end mt-3">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Delete this failed task?')) {
+                                import('../lib/api').then(api => {
+                                    api.deleteTask(task.id).catch(err => console.error(err));
+                                });
+                            }
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                        title="Delete failed task"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
                 </div>
             )}
         </div>

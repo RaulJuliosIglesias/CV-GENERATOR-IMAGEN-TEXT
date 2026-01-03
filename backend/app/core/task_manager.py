@@ -255,6 +255,18 @@ class TaskManager:
         """Get all batches."""
         return list(self.batches.values())
     
+
+    def delete_task(self, task_id: str) -> bool:
+        """Delete a task by ID from any batch."""
+        for batch in self.batches.values():
+            initial_len = len(batch.tasks)
+            batch.tasks = [t for t in batch.tasks if t.id != task_id]
+            if len(batch.tasks) < initial_len:
+                # If we had persistence, we would save here
+                self._save_batches() 
+                return True
+        return False
+
     def clear_batches(self):
         """Clear all completed batches."""
         self.batches = {

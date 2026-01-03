@@ -50,6 +50,11 @@ export const clearAll = async () => {
     return response.data;
 };
 
+export const deleteTask = async (taskId) => {
+    const response = await api.delete(`/api/task/${taskId}`);
+    return response.data;
+};
+
 export const healthCheck = async () => {
     const response = await api.get('/api/health');
     return response.data;

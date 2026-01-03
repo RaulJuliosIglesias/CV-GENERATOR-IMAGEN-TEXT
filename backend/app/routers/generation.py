@@ -239,10 +239,32 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 await task_manager._save_batches()
                 
             except Exception as e:
-                task.error = str(e)
-                task.status = TaskStatus.ERROR
-                task.subtasks[2].status = TaskStatus.ERROR
-                print(f"Phase 3 Error Task {task.id}: {e}")
+                # KREA FALLBACK: If API fails, use mock avatar so we don't block the whole CV
+                print(f"WARNING: Phase 3 (Krea) failed for Task {task.id}: {e}")
+                print("FALLBACK: generating mock avatar instead...")
+                
+                try:
+                    # Import internal mock function dynamically or assume it's available
+                    from ..services.krea_service import _generate_mock_avatar
+                    
+                    mock_path = await _generate_mock_avatar(
+                        gender=p.get('gender', task.gender),
+                        ethnicity=p.get('ethnicity', task.ethnicity)
+                    )
+                    
+                    task.image_path = mock_path
+                    task.subtasks[2].status = TaskStatus.COMPLETE
+                    task.subtasks[2].progress = 100
+                    task.subtasks[2].message = "Generated (Fallback Mode)"
+                    task.progress = 80
+                    await task_manager._save_batches()
+                    
+                except Exception as fallback_e:
+                    # If even fallback fails, then fail the task
+                    task.error = f"Image Gen Failed: {e} | Fallback Failed: {fallback_e}"
+                    task.status = TaskStatus.ERROR
+                    task.subtasks[2].status = TaskStatus.ERROR
+                    print(f"CRITICAL: Phase 3 completely failed Task {task.id}: {fallback_e}")
 
     await asyncio.gather(*[run_phase3(t) for t in active_tasks])
     
@@ -457,6 +479,14 @@ async def open_folder():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.delete("/task/{task_id}")
+async def delete_task(task_id: str):
+    """Delete a specific task by ID."""
+    success = task_manager.delete_task(task_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"message": f"Task {task_id} deleted"}
 
 @router.delete("/clear")
 async def clear_all():
