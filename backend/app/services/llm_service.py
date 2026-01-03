@@ -25,12 +25,13 @@ OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
 
 # Fallback models in case API fetch fails
 FALLBACK_LLM_MODELS = {
-    "openrouter/auto": {
-        "name": "Auto (Best Model)",
-        "description": "Automatically selects the best model for your prompt",
-        "provider": "OpenRouter",
-        "context": "Varies",
-        "cost": "Varies"
+    "google/gemini-2.0-flash-exp:free": {
+        "name": "Gemini 2.0 Flash (Free)",
+        "description": "Google's fast free model - fallback when API unavailable",
+        "provider": "Google",
+        "context": "1M tokens",
+        "cost": "✅ Free",
+        "is_free": True
     }
 }
 

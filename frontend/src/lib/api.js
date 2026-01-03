@@ -24,11 +24,6 @@ export const generateBatch = async (params) => {
     return response.data;
 };
 
-export const getStatus = async () => {
-    const response = await api.get('/api/status');
-    return response.data;
-};
-
 export const getBatchStatus = async (batchId) => {
     const response = await api.get(`/api/status/${batchId}`);
     return response.data;

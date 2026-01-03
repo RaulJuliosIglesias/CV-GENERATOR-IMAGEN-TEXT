@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { generateBatch, getStatus, getFiles, getModels, getBatchStatus, getConfig } from '../lib/api';
+import { generateBatch, getFiles, getModels, getBatchStatus, getConfig } from '../lib/api';
 
 const useGenerationStore = create((set, get) => ({
     // Configuration state
@@ -119,24 +119,6 @@ const useGenerationStore = create((set, get) => ({
     setConfig: (key, value) => {
         set((state) => ({
             config: { ...state.config, [key]: value },
-        }));
-    },
-
-    addRole: (role) => {
-        set((state) => ({
-            config: {
-                ...state.config,
-                roles: [...state.config.roles, role]
-            }
-        }));
-    },
-
-    removeRole: (index) => {
-        set((state) => ({
-            config: {
-                ...state.config,
-                roles: state.config.roles.filter((_, i) => i !== index)
-            }
         }));
     },
 
