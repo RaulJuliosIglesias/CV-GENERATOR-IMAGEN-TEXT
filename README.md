@@ -100,39 +100,6 @@ graph TD
 
 ---
 
-## 📂 Project Structure
-
-A clean, modular monolithic architecture separating concerns between UI and logical services.
-
-```text
-ai-cv-suite/
-├── 📂 backend/                 # Python Server Layer
-│   ├── 📂 app/
-│   │   ├── 📜 main.py          # FastAPI Entry Point
-│   │   ├── 📂 core/            # Core Engines
-│   │   │   ├── 📜 task_manager.py  # Async Orchestrator
-│   │   │   └── 📜 pdf_engine.py    # Rendering Logic
-│   │   ├── 📂 services/        # AI Integrations
-│   │   │   ├── 📜 llm_service.py   # + Parametric Career Logic
-│   │   │   └── 📜 krea_service.py  # + Anti-Bias Engine
-│   │   └── 📂 routers/         # API Endpoints
-│   ├── 📂 templates/           # Jinja2 HTML Templates
-│   ├── 📂 prompts/             # Engineered AI Prompts
-│   └── 📂 output/              # Generated Artifacts
-│
-└── 📂 frontend/                # React Client Layer
-    ├── 📂 src/
-    │   ├── 📂 components/      # UI Components
-    │   │   ├── 📜 ConfigPanel.jsx
-    │   │   └── 📜 ProgressTracker.jsx
-    │   ├── 📂 stores/          # State Management
-    │   └── 📂 lib/             # API Connectors
-    ├── 📜 package.json
-    └── 📜 vite.config.js
-```
-
----
-
 ## 🚀 Key Innovation: The Logic Layers
 
 ### 🧠 Parametric Career Engine
@@ -146,23 +113,118 @@ We don't just ask AI to "write a CV". We enforce logic via code:
 
 ---
 
-## 📦 Quick Start
+## 📦 Installation & Kickstart Guide
 
-### 1. Backend
+Follow these steps to deploy the application locally.
+
+### 🔑 Step 1: Obtain API Keys
+
+This application requires access to two AI service providers. You must obtain your own API keys:
+
+1.  **OpenRouter AI** (For Text/Content)
+    *   Sign up at: [openrouter.ai/keys](https://openrouter.ai/keys)
+    *   *Provides access to Gemini, GPT-4, Claude, etc.*
+
+2.  **Krea AI** (For Avatars)
+    *   Sign up at: [krea.ai](https://krea.ai)
+    *   *Provides access to Flux, Imagen-4 and Seedream.*
+
+---
+
+### ⚙️ Step 2: Environment Configuration
+
+The project uses sensitive environment variables. **Never share your `.env` file.**
+
+1.  Navigate to the `backend` folder.
+2.  Locate the `.env.example` file.
+3.  **Duplicate it** and rename the copy to `.env`.
+
+```bash
+# Windows
+copy backend\.env.example backend\.env
+
+# Mac/Linux
+cp backend/.env.example backend/.env
+```
+
+4.  Open `.env` in your code editor and paste your keys:
+
+```ini
+# backend/.env
+KREA_API_KEY=your_krea_key_here_starting_with_krea_...
+OPENROUTER_API_KEY=your_openrouter_key_starting_with_sk_...
+```
+
+---
+
+### 💻 Step 3: Backend Installation
+
+The backend runs on Python 3.10+ using FastAPI.
+
 ```bash
 cd backend
+
+# 1. Create Virtual Environment
 python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate
+
+# 2. Activate Environment
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
+# 3. Install Dependencies
 pip install -r requirements.txt
+
+# 4. Install Browser Engine (for PDF rendering)
 playwright install chromium
+
+# 5. Start the Server
 uvicorn app.main:app --reload
 ```
+*The server will start at `http://localhost:8000`*
 
-### 2. Frontend
+---
+
+### 🎨 Step 4: Frontend Installation
+
+The frontend runs on Node.js v18+.
+
 ```bash
 cd frontend
+
+# 1. Install Dependencies
 npm install
+
+# 2. Start Development Server
 npm run dev
 ```
+*The application will open at `http://localhost:5173`*
 
-Visit `http://localhost:5173` to start generating.
+---
+
+## 📂 Project Structure
+
+A clean, modular monolithic architecture separating concerns between UI and logical services.
+
+```text
+ai-cv-suite/
+├── 📂 backend/                 # Python Server Layer
+│   ├── 📂 app/
+│   │   ├── 📜 main.py          # FastAPI Entry Point
+│   │   ├── 📂 core/            # Core Engines (TaskManager, PDF)
+│   │   ├── 📂 services/        # AI Integrations (LLM, Krea)
+│   │   └── 📂 routers/         # API Endpoints
+│   ├── 📂 templates/           # Jinja2 HTML Templates
+│   ├── 📂 prompts/             # Engineered AI Prompts
+│   └── 📜 requirements.txt     # Python Dependencies
+│   └── 📜 .env.example         # Environment Template
+│
+└── 📂 frontend/                # React Client Layer
+    ├── 📂 src/
+    │   ├── 📂 components/      # UI Components
+    │   ├── 📂 stores/          # State Management
+    │   └── 📂 lib/             # API Connectors
+    ├── 📜 package.json
+    └── 📜 vite.config.js
+```
