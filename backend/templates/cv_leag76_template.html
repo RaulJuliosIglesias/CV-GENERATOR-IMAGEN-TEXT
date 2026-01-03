@@ -693,10 +693,42 @@
                             <i class="fa-solid fa-globe social_icon"></i>
                             {% elif key == 'researchgate' %}
                             <i class="fa-brands fa-researchgate social_icon"></i>
-                            {% elif key == 'google_scholar' %}
+                            {% elif key == 'google_scholar' or key == 'orcid' %}
                             <i class="fa-solid fa-graduation-cap social_icon"></i>
+                            {% elif key == 'itch_io' %}
+                            <i class="fa-brands fa-itch-io social_icon"></i>
+                            {% elif key == 'steam' %}
+                            <i class="fa-brands fa-steam social_icon"></i>
+                            {% elif key == 'google_play' %}
+                            <i class="fa-brands fa-google-play social_icon"></i>
+                            {% elif key == 'app_store' %}
+                            <i class="fa-brands fa-app-store social_icon"></i>
+                            {% elif key == 'huggingface' %}
+                            <i class="fa-solid fa-robot social_icon"></i>
+                            {% elif key == 'spotify' %}
+                            <i class="fa-brands fa-spotify social_icon"></i>
+                            {% elif key == 'soundcloud' %}
+                            <i class="fa-brands fa-soundcloud social_icon"></i>
+                            {% elif key == 'bandcamp' %}
+                            <i class="fa-brands fa-bandcamp social_icon"></i>
+                            {% elif key == 'twitch' %}
+                            <i class="fa-brands fa-twitch social_icon"></i>
+                            {% elif key == 'tiktok' %}
+                            <i class="fa-brands fa-tiktok social_icon"></i>
+                            {% elif key == 'medium' %}
+                            <i class="fa-brands fa-medium social_icon"></i>
+                            {% elif key == 'substack' %}
+                            <i class="fa-solid fa-newspaper social_icon"></i>
+                            {% elif key == 'pinterest' %}
+                            <i class="fa-brands fa-pinterest social_icon"></i>
+                            {% elif key == 'deviantart' %}
+                            <i class="fa-brands fa-deviantart social_icon"></i>
+                            {% elif key == 'figma' %}
+                            <i class="fa-brands fa-figma social_icon"></i>
+                            {% elif key == 'archdaily' or key == 'udemy' or key == 'doximity' %}
+                            <i class="fa-solid fa-building social_icon"></i>
                             {% else %}
-                            <i class="fa-brands fa-{{ key.lower() }} social_icon"></i>
+                            <i class="fa-brands fa-{{ key.lower().replace('_', '-') }} social_icon"></i>
                             {% endif %}
 
                             {{ val.split('/')[-1] if 'http' in val else val }}

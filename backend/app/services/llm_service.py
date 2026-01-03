@@ -242,52 +242,193 @@ def get_social_links_for_role(role: str) -> list[str]:
     # Base links for everyone
     links = ["linkedin", "website"]
     
-    # 1. Developers / Engineering
-    if any(k in role for k in ["developer", "engineer", "software", "programmer", "coder", "devops", "architect", "tech"]):
-        if "github" not in links: links.append("github")
+    # =====================================
+    # TECH & ENGINEERING
+    # =====================================
+    
+    # 1. Game Developers
+    if any(k in role for k in ["game", "unity", "unreal", "godot", "indie"]):
+        links.append("github")
+        links.append("itch_io")
+        links.append("steam")
+        if "mobile" in role:
+            links.append("google_play")
+            links.append("app_store")
+    
+    # 2. Mobile Developers
+    elif any(k in role for k in ["mobile", "ios", "android", "flutter", "react native"]):
+        links.append("github")
+        links.append("google_play")
+        links.append("app_store")
+    
+    # 3. General Developers / Engineers
+    elif any(k in role for k in ["developer", "engineer", "software", "programmer", "coder", "devops", "architect", "backend", "frontend", "fullstack", "tech lead", "sre"]):
+        links.append("github")
         if "data" in role or "science" in role:
             links.append("kaggle")
-            
-    # 2. Data & AI
-    elif any(k in role for k in ["data", "scientist", "analyst", "ai", "machine learning", "ml"]):
-        if "github" not in links: links.append("github")
+    
+    # 4. Data & AI / ML
+    elif any(k in role for k in ["data", "scientist", "analyst", "ai", "machine learning", "ml", "deep learning", "nlp"]):
+        links.append("github")
         links.append("kaggle")
-        
-    # 3. Research / Academia
-    elif any(k in role for k in ["research", "professor", "phd", "academic", "scientist", "lecturer"]):
+        links.append("huggingface")
+    
+    # 5. Blockchain / Web3 / Crypto
+    elif any(k in role for k in ["blockchain", "crypto", "web3", "solidity", "smart contract", "defi"]):
+        links.append("github")
+        links.append("twitter")
+    
+    # =====================================
+    # RESEARCH & ACADEMIA
+    # =====================================
+    
+    # 6. Researchers / Academics
+    elif any(k in role for k in ["research", "professor", "phd", "academic", "scientist", "lecturer", "postdoc"]):
         links.append("researchgate")
         links.append("google_scholar")
-        # Researchers might have github too if tech-related
-        if "ai" in role or "computer" in role or "bio" in role:
+        links.append("orcid")
+        if any(k in role for k in ["ai", "computer", "bio", "physics", "math"]):
             links.append("github")
-            
-    # 4. Design (Visual / 3D)
-    elif any(k in role for k in ["3d", "artist", "animator", "vfx", "motion", "illustrator", "concept"]):
+    
+    # =====================================
+    # DESIGN & CREATIVE
+    # =====================================
+    
+    # 7. 3D Artists / VFX / Animation
+    elif any(k in role for k in ["3d", "animator", "vfx", "motion", "cgi", "rigger", "modeler", "texture"]):
+        links.append("artstation")
+        links.append("behance")
+        links.append("vimeo")
+        links.append("instagram")
+    
+    # 8. 2D Artists / Illustrators / Concept Art
+    elif any(k in role for k in ["2d", "illustrator", "concept", "character artist", "comic", "storyboard"]):
         links.append("artstation")
         links.append("behance")
         links.append("instagram")
-        
-    # 5. Design (UI/UX)
-    elif any(k in role for k in ["ui", "ux", "product design", "interface", "interaction"]):
+        links.append("deviantart")
+    
+    # 9. UI/UX / Product Design
+    elif any(k in role for k in ["ui", "ux", "product design", "interface", "interaction", "user experience"]):
         links.append("dribbble")
         links.append("behance")
-        
-    # 6. Marketing / Content
-    elif any(k in role for k in ["marketing", "social media", "content", "writer", "seo", "brand"]):
-        links.append("twitter")
+        links.append("figma")
+    
+    # 10. Graphic Design
+    elif any(k in role for k in ["graphic", "visual design", "brand design", "logo"]):
+        links.append("behance")
+        links.append("dribbble")
         links.append("instagram")
-        
-    # 7. Creative / Media
-    elif any(k in role for k in ["video", "photographer", "film", "youtube", "creator", "editor"]):
+    
+    # =====================================
+    # MUSIC & AUDIO
+    # =====================================
+    
+    # 11. Musicians / Composers / Sound Design
+    elif any(k in role for k in ["music", "composer", "sound design", "audio", "producer", "dj", "songwriter"]):
+        links.append("spotify")
+        links.append("soundcloud")
+        links.append("bandcamp")
         links.append("youtube")
-        links.append("instagram")
+    
+    # =====================================
+    # VIDEO & MEDIA
+    # =====================================
+    
+    # 12. Video / Film / Photography
+    elif any(k in role for k in ["video", "photographer", "film", "cinematographer", "director", "editor"]):
+        links.append("youtube")
         links.append("vimeo")
-        
-    # 8. Crypto / Web3
-    elif any(k in role for k in ["blockchain", "crypto", "web3", "solidity", "rust"]):
-        links.append("github")
+        links.append("instagram")
+    
+    # 13. Content Creators / Streamers / Influencers
+    elif any(k in role for k in ["creator", "youtuber", "streamer", "influencer", "tiktoker", "podcaster"]):
+        links.append("youtube")
+        links.append("twitch")
+        links.append("instagram")
+        links.append("tiktok")
+    
+    # =====================================
+    # WRITING & CONTENT
+    # =====================================
+    
+    # 14. Writers / Journalists / Authors
+    elif any(k in role for k in ["writer", "author", "journalist", "copywriter", "blogger", "editor", "novelist"]):
+        links.append("medium")
+        links.append("substack")
         links.append("twitter")
-        
+    
+    # 15. Marketing / SEO / Social Media
+    elif any(k in role for k in ["marketing", "social media", "seo", "growth", "brand", "community", "pr"]):
+        links.append("twitter")
+        links.append("instagram")
+    
+    # =====================================
+    # ARCHITECTURE & ENGINEERING (Physical)
+    # =====================================
+    
+    # 16. Architects / Interior Design
+    elif any(k in role for k in ["architect", "interior", "urban", "landscape"]):
+        links.append("behance")
+        links.append("archdaily")
+        links.append("instagram")
+    
+    # =====================================
+    # EDUCATION & TRAINING
+    # =====================================
+    
+    # 17. Teachers / Trainers / Coaches
+    elif any(k in role for k in ["teacher", "trainer", "instructor", "coach", "tutor", "educator"]):
+        links.append("youtube")
+        links.append("udemy")
+    
+    # =====================================
+    # BUSINESS & MANAGEMENT
+    # =====================================
+    
+    # 18. Executives / Management / Consulting
+    elif any(k in role for k in ["ceo", "cto", "cfo", "director", "manager", "consultant", "executive", "founder", "entrepreneur"]):
+        # Just LinkedIn + Website is fine
+        links.append("twitter")
+    
+    # 19. Sales / Business Development
+    elif any(k in role for k in ["sales", "account", "business development", "partnership"]):
+        # LinkedIn + Website
+        pass
+    
+    # =====================================
+    # SPECIALTY FIELDS
+    # =====================================
+    
+    # 20. Healthcare / Medical
+    elif any(k in role for k in ["doctor", "nurse", "medical", "healthcare", "physician", "surgeon", "therapist"]):
+        links.append("doximity")
+    
+    # 21. Legal
+    elif any(k in role for k in ["lawyer", "attorney", "legal", "paralegal", "counsel"]):
+        # LinkedIn + Website
+        pass
+    
+    # 22. Finance / Accounting
+    elif any(k in role for k in ["finance", "accountant", "auditor", "controller", "investment", "trading"]):
+        # LinkedIn + Website
+        pass
+    
+    # 23. HR / Recruiting
+    elif any(k in role for k in ["hr", "recruiter", "talent", "people"]):
+        # LinkedIn + Website
+        pass
+    
+    # 24. Fashion / Modeling
+    elif any(k in role for k in ["fashion", "model", "stylist", "makeup"]):
+        links.append("instagram")
+        links.append("pinterest")
+    
+    # 25. Culinary / Chef
+    elif any(k in role for k in ["chef", "culinary", "cook", "baker", "restaur"]):
+        links.append("instagram")
+        links.append("youtube")
+    
     return links
 
 # Enhanced system prompt for detailed CVs
