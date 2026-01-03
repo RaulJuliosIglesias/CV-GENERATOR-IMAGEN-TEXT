@@ -424,10 +424,11 @@
                 <ul class="languages-list">
                     {% for lang in languages %}
                     <li class="language-item">
-                        <span>{{ lang.name }}</span>
+                        <span>{{ lang.name | replace('(Native)', '') | replace('(Professional)', '') |
+                            replace('(Bilingual)', '') | trim }}</span>
                         <div style="display: flex; align-items: center;">
                             <span class="language-stars">
-                                {% for i in range(5) %}
+                                {% for i in range(6) %}
                                 {% if i < lang.level %} <i class="fas fa-star"></i>
                                     {% else %}
                                     <i class="fas fa-star empty"></i>
@@ -435,9 +436,10 @@
                                     {% endfor %}
                             </span>
                             <span style="font-size: 8px; opacity: 0.7; margin-left: 6px; font-weight: 500;">
-                                {% if lang.level >= 5 %}C2 (Native)
-                                {% elif lang.level == 4 %}C1 (Advanced)
-                                {% elif lang.level == 3 %}B2 (Intermediate)
+                                {% if lang.level >= 6 %}C2 (Native)
+                                {% elif lang.level == 5 %}C1 (Professional)
+                                {% elif lang.level == 4 %}B2 (Upper-Intermediate)
+                                {% elif lang.level == 3 %}B1 (Intermediate)
                                 {% elif lang.level == 2 %}A2 (Elementary)
                                 {% else %}A1 (Beginner){% endif %}
                             </span>

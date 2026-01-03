@@ -258,44 +258,236 @@ def normalize_cv_data(cv_data: dict) -> dict:
     # 4. Social
     cv_data = ensure_social_dict(cv_data)
 
-    # 5. Normalize Languages
-    # Ensure structure: [{"name": "English", "level": 5}, ...]
+    # 5. Normalize Languages with Origin-Based Native Language Enforcement
+    cv_data = normalize_languages_with_native(cv_data)
+    
+    return cv_data
+
+
+# ============================================================================
+# ORIGIN TO NATIVE LANGUAGE MAPPING
+# Maps countries/regions to their primary native language(s)
+# ============================================================================
+ORIGIN_TO_NATIVE_LANGUAGE = {
+    # English-speaking countries
+    "United States": "English",
+    "United Kingdom": "English",
+    "Canada": "English",  # Also French in Quebec
+    "Australia": "English",
+    "New Zealand": "English",
+    "Ireland": "English",
+    "South Africa": "English",  # Also Afrikaans, Zulu
+    
+    # Spanish-speaking countries
+    "Spain": "Spanish",
+    "Mexico": "Spanish",
+    "Argentina": "Spanish",
+    "Colombia": "Spanish",
+    "Chile": "Spanish",
+    "Peru": "Spanish",
+    "Venezuela": "Spanish",
+    "Ecuador": "Spanish",
+    "Cuba": "Spanish",
+    "Dominican Republic": "Spanish",
+    "Guatemala": "Spanish",
+    "Costa Rica": "Spanish",
+    
+    # Portuguese-speaking countries
+    "Brazil": "Portuguese",
+    "Portugal": "Portuguese",
+    
+    # French-speaking countries
+    "France": "French",
+    "Belgium": "French",  # Also Dutch/Flemish
+    "Switzerland": "French",  # Also German, Italian
+    
+    # German-speaking countries
+    "Germany": "German",
+    "Austria": "German",
+    
+    # Italian
+    "Italy": "Italian",
+    
+    # Dutch
+    "Netherlands": "Dutch",
+    
+    # Nordic countries
+    "Sweden": "Swedish",
+    "Norway": "Norwegian",
+    "Denmark": "Danish",
+    "Finland": "Finnish",
+    
+    # Eastern Europe
+    "Poland": "Polish",
+    "Russia": "Russian",
+    "Ukraine": "Ukrainian",
+    "Czech Republic": "Czech",
+    "Romania": "Romanian",
+    "Hungary": "Hungarian",
+    "Greece": "Greek",
+    
+    # Asian countries
+    "China": "Mandarin",
+    "Japan": "Japanese",
+    "South Korea": "Korean",
+    "India": "Hindi",  # Also English widely spoken
+    "Indonesia": "Indonesian",
+    "Thailand": "Thai",
+    "Vietnam": "Vietnamese",
+    "Philippines": "Filipino",  # Also English
+    "Malaysia": "Malay",  # Also English
+    "Singapore": "English",  # Also Mandarin, Malay, Tamil
+    
+    # Middle East
+    "Saudi Arabia": "Arabic",
+    "United Arab Emirates": "Arabic",
+    "Egypt": "Arabic",
+    "Israel": "Hebrew",
+    "Turkey": "Turkish",
+    "Iran": "Persian",
+    
+    # Africa
+    "Nigeria": "English",  # Official language
+    "Kenya": "Swahili",  # Also English
+    "Morocco": "Arabic",  # Also French, Berber
+    "Ethiopia": "Amharic",
+}
+
+def get_native_language_for_origin(origin: str) -> str:
+    """Get the native language for a given origin/country."""
+    if not origin:
+        return "English"
+    
+    # Direct match
+    if origin in ORIGIN_TO_NATIVE_LANGUAGE:
+        return ORIGIN_TO_NATIVE_LANGUAGE[origin]
+    
+    # Partial match (for "Paris, France" -> "France")
+    for country, language in ORIGIN_TO_NATIVE_LANGUAGE.items():
+        if country.lower() in origin.lower():
+            return language
+    
+    # Default to English for unknown origins
+    return "English"
+
+
+def normalize_languages_with_native(cv_data: dict) -> dict:
+    """
+    Normalize languages and ensure at least one native language exists
+    based on the candidate's origin/location.
+    
+    Uses 6-level CEFR scale:
+    - 6 = C2 (Native/Bilingual)
+    - 5 = C1 (Professional/Advanced)
+    - 4 = B2 (Upper-Intermediate)
+    - 3 = B1 (Intermediate)
+    - 2 = A2 (Elementary)
+    - 1 = A1 (Beginner)
+    """
+    # Get origin from CV data (location field typically contains city, country)
+    origin = cv_data.get("location", "") or cv_data.get("origin", "")
+    native_language = get_native_language_for_origin(origin)
+    
     languages = cv_data.get("languages", [])
     normalized_langs = []
+    has_native = False
     
     if isinstance(languages, list):
         for lang in languages:
             if isinstance(lang, str):
-                normalized_langs.append({"name": lang, "level": 4}) # Default
+                # Simple string format - clean redundant text
+                clean_name = lang.replace("(Native)", "").replace("(Professional)", "").replace("(Bilingual)", "").strip()
+                level = 6 if clean_name.lower() == native_language.lower() else 5
+                normalized_langs.append({"name": clean_name, "level": level})
+                if level == 6:
+                    has_native = True
             elif isinstance(lang, dict):
                 # Ensure name exists
                 if "name" not in lang and "language" in lang:
                     lang["name"] = lang.pop("language")
                 
-                # Ensure level is int
-                level = lang.get("level", 3)
-                if isinstance(level, str):
-                    clean_level = level.lower()
-                    if "native" in clean_level or "c2" in clean_level: val = 5
-                    elif "fluent" in clean_level or "advanced" in clean_level or "c1" in clean_level: val = 4
-                    elif "intermediate" in clean_level or "b2" in clean_level or "b1" in clean_level: val = 3
-                    elif "basic" in clean_level or "beginner" in clean_level or "a2" in clean_level: val = 2
-                    else: val = 3 # Default for unknown string
+                # Clean redundant text from name
+                if "name" in lang:
+                    lang["name"] = lang["name"].replace("(Native)", "").replace("(Professional)", "").replace("(Bilingual)", "").strip()
+                
+                # Handle level_num (from prompt) vs level vs level_text
+                level = lang.get("level_num") or lang.get("level", 3)
+                level_text = lang.get("level_text", "").lower()
+                
+                # Convert string levels to numeric (6-level CEFR)
+                if isinstance(level, str) or level_text:
+                    clean_level = (level.lower() if isinstance(level, str) else "") + " " + level_text
+                    if "native" in clean_level or "bilingual" in clean_level or "c2" in clean_level: 
+                        val = 6
+                    elif "professional" in clean_level or "fluent" in clean_level or "advanced" in clean_level or "c1" in clean_level: 
+                        val = 5
+                    elif "upper" in clean_level or "b2" in clean_level: 
+                        val = 4
+                    elif "intermediate" in clean_level or "b1" in clean_level: 
+                        val = 3
+                    elif "elementary" in clean_level or "basic" in clean_level or "a2" in clean_level: 
+                        val = 2
+                    elif "beginner" in clean_level or "a1" in clean_level:
+                        val = 1
+                    else: 
+                        val = 3  # Default to B1
                     lang["level"] = val
                 elif isinstance(level, (int, float)):
-                    lang["level"] = min(max(int(level), 1), 5)
+                    # Scale old 5-level values to new 6-level
+                    old_level = int(level)
+                    if old_level >= 5:
+                        lang["level"] = 6  # Was "native" in old scale
+                    elif old_level == 4:
+                        lang["level"] = 5  # Professional
+                    elif old_level == 3:
+                        lang["level"] = 4  # B2
+                    elif old_level == 2:
+                        lang["level"] = 2  # A2
+                    else:
+                        lang["level"] = 1  # A1
                 else:
-                    lang["level"] = 3
+                    lang["level"] = 3  # Default B1
+                
+                # Check if this is the native language based on origin
+                lang_name = lang.get("name", "").lower()
+                if native_language.lower() in lang_name or lang_name in native_language.lower():
+                    # Force native level (C2) for origin's language
+                    lang["level"] = 6
+                    has_native = True
+                elif lang["level"] >= 6:
+                    has_native = True
                 
                 if "name" in lang:
-                     normalized_langs.append(lang)
+                    normalized_langs.append(lang)
     
-    # If no languages found/valid, default to English
-    if not normalized_langs:
-        normalized_langs = [{"name": "English", "level": 5}]
+    # CRITICAL: Ensure at least one native language exists
+    if not has_native:
+        # Check if native language already in list but not marked as native
+        native_exists = False
+        for lang in normalized_langs:
+            if native_language.lower() in lang.get("name", "").lower():
+                lang["level"] = 6  # Upgrade to native (C2)
+                native_exists = True
+                has_native = True
+                break
         
-    cv_data["languages"] = normalized_langs
+        # If native language not in list, add it
+        if not native_exists:
+            normalized_langs.insert(0, {"name": native_language, "level": 6})
+            has_native = True
     
+    # If still no languages, add English as native
+    if not normalized_langs:
+        normalized_langs = [{"name": "English", "level": 6}]
+    
+    # Ensure levels are clamped to 1-6
+    for lang in normalized_langs:
+        lang["level"] = min(max(lang.get("level", 3), 1), 6)
+    
+    # Sort: native languages first, then by level descending
+    normalized_langs.sort(key=lambda x: (-x.get("level", 0), x.get("name", "")))
+    
+    cv_data["languages"] = normalized_langs
     return cv_data
 
 

@@ -33,6 +33,10 @@ INSTRUCTIONS:
     - Example for a VP: Oldest job should be "Senior Manager" or "Director", NOT "VP". 
     - Example for a Senior Dev: Oldest job should be "Junior Dev" or "Associate".
     - **REALISM**: A 22-year-old cannot be a "Senior Manager". A "VP" cannot have started as "VP" 10 years ago.
+7. **Native Language Authenticity**:
+    - The candidate **MUST** have a native language (Level 5 / Native) consistent with their `Origin/Location`.
+    - Example: If Origin is "Paris, France", French MUST be Native. If "South Africa", English or Afrikaans should be Native.
+    - NEVER generate a candidate without a Native language.
 
 JSON STRUCTURE:
 {
@@ -56,8 +60,9 @@ JSON STRUCTURE:
     ]
   },
   "languages": [
-    {"name": "English", "level_num": 5, "level_text": "Native"},
-    {"name": "Spanish", "level_num": 4, "level_text": "Professional"}
+    {"name": "Native Language (must match Origin)", "level_num": 6, "level_text": "Native"},
+    {"name": "Second Language", "level_num": 5, "level_text": "Professional"},
+    {"name": "Third Language (optional)", "level_num": 3, "level_text": "Intermediate"}
   ],
   "education": [
     {
