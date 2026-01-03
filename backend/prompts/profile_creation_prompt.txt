@@ -13,17 +13,16 @@ CRITICAL RULES:
    - NEVER generate ages outside the specified range
 2. **Name**: Match the Ethnicity + Origin perfectly (e.g., "Yuki Tanaka" for Japanese, "Carlos Garcia" for Hispanic/Mexico).
 3. **Ethnicity Accuracy**: The ethnicity you output MUST match the input ethnicity exactly.
-4. **Management Level**: Match to age appropriately:
-   - Age 22-28: Junior or Mid
-   - Age 29-38: Mid or Senior
-   - Age 39-50: Senior or Lead
-   - Age 51+: Expert or Executive
-
-EXAMPLE for age range 25-35:
-{"name": "Maria Santos", "age": 28, "management_level": "Mid", ...}
-
-EXAMPLE for age range 35-45:
-{"name": "David Chen", "age": 38, "management_level": "Senior", ...}
+4. **Role Title**: 
+   - NEVER add "Senior", "Lead", "Principal", "Executive", "Chief" to the role title
+   - Use the role AS-IS without seniority prefixes
+   - Example: "Software Engineer" NOT "Senior Software Engineer"
+   - Example: "Designer" NOT "Lead Designer"
+5. **Experience Level**: Use experience_years to show seniority, NOT the title
+   - Age 22-28: 1-5 years experience
+   - Age 29-38: 5-12 years experience
+   - Age 39-50: 12-20 years experience
+   - Age 51+: 20+ years experience
 
 OUTPUT JSON ONLY (no markdown, no explanation):
 {
@@ -32,8 +31,7 @@ OUTPUT JSON ONLY (no markdown, no explanation):
   "ethnicity": "EXACT ethnicity from input",
   "origin": "Country/City",
   "age": 28,
-  "role": "Specific Job Title based on input role",
-  "management_level": "Junior/Mid/Senior based on age",
+  "role": "Job Title WITHOUT seniority prefix",
   "expertise_years": 5,
   "key_skills": ["Skill1", "Skill2", "Skill3"],
   "personality_traits": ["Trait1", "Trait2", "Trait3"]

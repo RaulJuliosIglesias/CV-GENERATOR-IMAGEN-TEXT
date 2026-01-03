@@ -26,6 +26,13 @@ INSTRUCTIONS:
    - Focus on skills and execution.
     {% endif %}
 5. **Dates**: Ensure chronological consistency based on age {{age}}.
+6. **Career Progression (CRITICAL)**:
+    - The career history MUST show logical growth over time.
+    - **DO NOT** start the career (oldest job) with a Senior/Executive title.
+    - **MUST** show the rise: Intern/Associate -> Junior -> Senior -> Lead -> Manager -> Director -> VP -> CXO.
+    - Example for a VP: Oldest job should be "Senior Manager" or "Director", NOT "VP". 
+    - Example for a Senior Dev: Oldest job should be "Junior Dev" or "Associate".
+    - **REALISM**: A 22-year-old cannot be a "Senior Manager". A "VP" cannot have started as "VP" 10 years ago.
 
 JSON STRUCTURE:
 {

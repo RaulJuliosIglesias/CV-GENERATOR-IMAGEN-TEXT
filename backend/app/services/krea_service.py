@@ -146,7 +146,7 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     elif gender.lower() == "male":
         gender_term = "man"
     else:
-        gender_term = "professional person"
+        gender_term = "person"
         
     ethnicity_term = ethnicity if ethnicity != "any" else "mixed heritage"
     
@@ -160,39 +160,55 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     else:
         age_val = age_range
         
-    # --- DYNAMIC STYLE LOGIC ---
-    # Determine context based on role keywords to avoid generic "Corporate" look
-    role_lower = role.lower()
+    # --- CLEAN ROLE LOGIC ---
+    # AGGRESSIVELY remove ALL age-biasing words from role
+    # This is CRITICAL to prevent "Senior Software Engineer" from making the image look old
+    import re
+    forbidden_patterns = [
+        r'\bsenior\b', r'\blead\b', r'\bprincipal\b', r'\bchief\b', 
+        r'\bhead\s*of\b', r'\bexecutive\b', r'\bvp\b', r'\bdirector\b',
+        r'\bmanager\b', r'\bsr\.?\b', r'\bjr\.?\b'
+    ]
     
-    context = "Professional portrait, neutral background"
+    cleaned_role = role
+    for pattern in forbidden_patterns:
+        cleaned_role = re.sub(pattern, '', cleaned_role, flags=re.IGNORECASE)
+    
+    # Clean up extra spaces and capitalize
+    cleaned_role = ' '.join(cleaned_role.split()).strip()
+    
+    # If role becomes empty/too short after cleaning, use generic
+    if len(cleaned_role) < 3:
+        cleaned_role = "Professional"
+    else:
+        cleaned_role = cleaned_role.title()
+        
+    # --- DYNAMIC STYLE LOGIC ---
+    # Use CLEANED role for context matching (not raw role!)
+    # STRICTLY AVOID "OFFICE", "CORPORATE", "EXECUTIVE"
+    role_lower = cleaned_role.lower()
+    
+    # Default context - neutral and modern
+    context = "modern casual-professional style"
     style = "high quality, 8k, photorealistic"
     
-    if any(k in role_lower for k in ["designer", "creative", "artist", "ux", "ui", "art director", "architect"]):
-        context = "Creative professional in a modern bright studio environment, smart-casual stylish attire"
+    if any(k in role_lower for k in ["designer", "creative", "artist", "ux", "ui", "art", "architect"]):
+        context = "creative professional, stylish modern attire"
         style = "artistic lighting, 8k, sharp focus, modern vibe"
         
-    elif any(k in role_lower for k in ["developer", "engineer", "software", "tech", "data", "programmer", "it "]):
-        context = "Tech professional in a modern open-plan tech office, casual-smart attire (t-shirt and blazer or smart shirt)"
-        style = "clean lighting, 8k, modern tech aesthetic"
-        
-    elif any(k in role_lower for k in ["manager", "director", "executive", "chief", "head of", "vp", "president"]):
-        # Executive but keep it modern, not "stiff old corporate"
-        context = "Modern business executive in a contemporary glass office, modern business attire"
-        style = "cinematic lighting, 8k, depth of field, premium look"
+    elif any(k in role_lower for k in ["developer", "engineer", "software", "tech", "data", "programmer"]):
+        context = "tech professional, smart-casual attire"
+        style = "clean lighting, 8k, modern aesthetic"
         
     elif any(k in role_lower for k in ["teacher", "educator", "professor", "trainer"]):
-        context = "Education professional in a modern academic setting, smart professional attire"
+        context = "educator, smart professional attire"
             
     elif any(k in role_lower for k in ["medical", "doctor", "nurse", "health", "clinical"]):
-        context = "Healthcare professional in a clean medical setting, professional medical attire or scrubs"
+        context = "healthcare professional, medical attire"
     
-    else:
-        # Fallback for general roles
-        context = f"Professional {role} in a modern work environment, appropriate professional attire"
+    # NO FALLBACK that adds role name - keep it pure
+    # The role is already in the CV, the image just needs age/ethnicity/gender
 
-    # CRITICAL: Prevent "Senior" in title from aging the face
-    # We add a negative prompt instruction implicit in the positive description
-    
     # Load from template file
     template_path = BACKEND_DIR / "prompts" / "image_prompt_template.txt"
     
@@ -208,6 +224,7 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     prompt = template.replace("{{gender_term}}", gender_term)
     prompt = prompt.replace("{{age}}", str(age_val))
     prompt = prompt.replace("{{ethnicity}}", ethnicity_term)
+    # Use context + cleaned_role implied context
     prompt = prompt.replace("{{role_context}}", context)
     prompt = prompt.replace("{{style_modifiers}}", style)
     
@@ -217,7 +234,8 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     print(f"  Gender: {gender} -> {gender_term}")
     print(f"  Age: {age_range} -> {age_val}")
     print(f"  Ethnicity: {ethnicity} -> {ethnicity_term}")
-    print(f"  Role: {role}")
+    print(f"  Role (Raw): {role}")
+    print(f"  Role (Cleaned): {cleaned_role}")
     print(f"  Context: {context}")
     print(f"  Style: {style}")
     print(f"  Prompt Length: {len(prompt)} chars")

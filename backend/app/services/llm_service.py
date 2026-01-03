@@ -100,6 +100,53 @@ def _get_random_roles() -> list[str]:
     return ["Software Engineer", "Product Manager", "UX Designer", "Data Scientist", "Marketing Manager"]
 
 
+def enforce_career_progression(cv_data: dict) -> dict:
+    """
+    Parametrically enforce logical career progression.
+    Ensures simplest roles are at the past, senior roles at present.
+    """
+    experience = cv_data.get("experience", [])
+    if not isinstance(experience, list) or len(experience) < 2:
+        return cv_data
+
+    # Iterate from oldest (end of list) to 2nd newest (index 1)
+    # We leave index 0 (current role) as is.
+    
+    forbidden_prefixes = ["Senior ", "Lead ", "Principal ", "Chief ", "Head of ", "Executive ", "Sr. ", "Snr. "]
+    
+    # Process all past roles (index 1 to end)
+    for i in range(1, len(experience)):
+        role = experience[i]
+        if not isinstance(role, dict): continue
+        
+        title = role.get("title", "")
+        original_title = title
+        
+        # 1. Strip high-level seniority prefixes from ALL past roles
+        for prefix in forbidden_prefixes:
+            # Case insensitive check
+            if title.lower().startswith(prefix.lower()):
+                title = title[len(prefix):] # Remove prefix
+        
+        # 2. Special handling for the OLDEST job (entry/mid point)
+        if i == len(experience) - 1:
+            # Downgrade C-Level/VP/Director for the very first job history
+            if "Vice President" in title or "VP" in title:
+                title = "Director"
+            elif "Director" in title:
+                title = "Senior Manager"
+            elif "Manager" in title and "Senior" not in title:
+                # Optional: Downgrade Manager to Specialist/Lead? 
+                # Let's keep Manager as it might be plausible for a mid-career entry
+                pass
+                
+        # Update if changed
+        if title != original_title:
+            role["title"] = title.strip()
+            # print(f"DEBUG PROGRESSION: Downgraded '{original_title}' to '{title.strip()}'")
+            
+    return cv_data
+
 def normalize_cv_data(cv_data: dict) -> dict:
     """Ensure consistency of CV data keys for HTML template."""
     print(f"DEBUG NORMALIZE: Input CV keys: {list(cv_data.keys())}")
@@ -132,6 +179,9 @@ def normalize_cv_data(cv_data: dict) -> dict:
         normalized_exp.append(exp)
         
     cv_data["experience"] = normalized_exp
+    
+    # ENFORCE LOGICAL CAREER PROGRESSION
+    cv_data = enforce_career_progression(cv_data)
     
     # CRITICAL FALLBACK: If experience empty, inject dummy to prove HTML works
     if not cv_data.get("experience"):
@@ -506,6 +556,7 @@ async def generate_profile_data(
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
                         "HTTP-Referer": "https://ai-cv-suite.local",
+                        "X-Title": "AI CV Suite", # Required for some free models
                     },
                     json=request_payload
                 )
@@ -537,6 +588,14 @@ async def generate_profile_data(
                         print(f"WARNING: Malformed JSON content: {content[:100]}...")
                         raise # Re-raise to be caught by outer except
                 
+                elif response.status_code == 404 or response.status_code == 403:
+                    # Model not found or restricted policy
+                    print(f"WARNING: Model {model_id} returned {response.status_code}. Switching to Google Gemini fallback...")
+                    model_id = "google/gemini-2.0-flash-exp:free"
+                    request_payload["model"] = model_id
+                    await asyncio.sleep(1)
+                    continue
+
                 elif response.status_code == 429:
                     wait_time = (2 ** attempt) + 1  # Exponential backoff: 2s, 3s, 5s...
                     print(f"WARNING: Rate Limit (429) - Retrying in {wait_time}s...")
@@ -546,6 +605,11 @@ async def generate_profile_data(
                 else:
                     print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
                     if attempt == max_retries - 1:
+                        # Final attempt fallback
+                        if model_id != "google/gemini-2.0-flash-exp:free":
+                             model_id = "google/gemini-2.0-flash-exp:free"
+                             request_payload["model"] = model_id
+                             continue
                         raise RuntimeError(f"Profile Gen Failed: {response.text}")
         
         except json.JSONDecodeError as e:
@@ -672,125 +736,152 @@ async def generate_cv_content_v2(
         'any': 6000
     }.get(expertise, 6000)
     
-    try:
-        # Build request payload
-        request_payload = {
-            "model": model_id,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            "temperature": 0.8,
-            "max_tokens": max_tokens
-        }
-        
-        request_headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://ai-cv-suite.local",
-            "X-Title": "AI CV Suite"
-        }
-        
-        # LOG REQUEST
-        print("="*60)
-        print(f"DEBUG REQUEST - URL: {OPENROUTER_API_URL}")
-        print(f"DEBUG REQUEST - Model: {model_id}")
-        print(f"DEBUG REQUEST - Headers: Authorization=Bearer {api_key[:20]}..., Content-Type=application/json")
-        print(f"DEBUG REQUEST - Payload keys: {list(request_payload.keys())}")
-        print(f"DEBUG REQUEST - Messages count: {len(request_payload['messages'])}")
-        print(f"DEBUG REQUEST - System prompt length: {len(SYSTEM_PROMPT)} chars")
-        print(f"DEBUG REQUEST - User prompt length: {len(user_prompt)} chars")
-        print("="*60)
-        
-        async with httpx.AsyncClient(timeout=90.0) as client:
-            response = await client.post(
-                OPENROUTER_API_URL,
-                headers=request_headers,
-                json=request_payload
-            )
-            
-            # LOG RESPONSE (Safe print for Windows consoles)
-            try:
-                print("="*60)
-                print(f"DEBUG RESPONSE - Status: {response.status_code}")
-                # Sanitize headers and body for printing
-                safe_body = response.text[:1000].encode('ascii', 'replace').decode('ascii')
-                print(f"DEBUG RESPONSE - Body: {safe_body}")
-                print("="*60)
-            except Exception:
-                print("DEBUG RESPONSE - (Content could not be printed due to encoding)")
-            
-            if response.status_code == 200:
-                result = response.json()
-                
-                if "choices" in result and len(result["choices"]) > 0:
-                    content = result["choices"][0]["message"]["content"]
-                    
-                    # Clean up the response
-                    content = content.strip()
-                    
-                    # Remove markdown code blocks if present
-                    if content.startswith("```"):
-                        lines = content.split("\n")
-                        content = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
-                        content = content.strip()
-                    
-                    if content.startswith("json"):
-                        content = content[4:].strip()
-                    
-                    # Robust JSON extraction: Find first { and last }
-                    try:
-                        start_idx = content.find('{')
-                        end_idx = content.rfind('}')
-                        if start_idx != -1 and end_idx != -1:
-                            content = content[start_idx:end_idx+1]
-                    except Exception:
-                        pass
-                    
-                    try:
-                        cv_data = json.loads(content)
-                        # Ensure data structure safety and HTML compatibility
-                        cv_data = normalize_cv_data(cv_data)
-                        print(f"SUCCESS: CV content generated with {model_id}")
-                        return cv_data, user_prompt
-                    except json.JSONDecodeError as e:
-                        print(f"JSON Parse Error: {e}")
-                        # Safe print for raw content
-                        try:
-                            print(f"Raw content sample: {content[:200].encode('ascii', 'replace').decode('ascii')}")
-                        except:
-                            pass
-                        # Fallback: raise error but with safe logging
-                        raise RuntimeError(f"JSON Decode Error: {e}")
-            
-            # Log full response for debugging (Safe print)
-            error_details = "Unknown error"
-            try:
-                if response.text:
-                    error_details = response.text[:200].encode('ascii', 'replace').decode('ascii')
-            except:
-                pass
-                
-            error_msg = f"OpenRouter API returned status {response.status_code}: {error_details}"
-            print(f"ERROR: {error_msg}")
-            raise RuntimeError(error_msg)
-            
-    except Exception as e:
-        # Safe exception printing
+    # Retry loop for robustness
+    max_retries = 3
+    for attempt in range(max_retries):
         try:
-            safe_e = str(e).encode('ascii', 'replace').decode('ascii')
-        except:
-            safe_e = "Encoding error in exception message"
+            # Build request payload
+            request_payload = {
+                "model": model_id,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": SYSTEM_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt
+                    }
+                ],
+                "temperature": 0.8,
+                "max_tokens": max_tokens
+            }
             
-        error_msg = f"OpenRouter API exception: {safe_e}"
-        print(f"ERROR: {error_msg}")
-        raise RuntimeError(error_msg)
+            request_headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://ai-cv-suite.local",
+                "X-Title": "AI CV Suite"
+            }
+            
+            # LOG REQUEST
+            print("="*60)
+            print(f"DEBUG REQUEST - URL: {OPENROUTER_API_URL}")
+            print(f"DEBUG REQUEST - Model: {model_id}")
+            print(f"DEBUG REQUEST - Headers: Authorization=Bearer {api_key[:20]}..., Content-Type=application/json")
+            print(f"DEBUG REQUEST - Payload keys: {list(request_payload.keys())}")
+            print(f"DEBUG REQUEST - Messages count: {len(request_payload['messages'])}")
+            print(f"DEBUG REQUEST - System prompt length: {len(SYSTEM_PROMPT)} chars")
+            print(f"DEBUG REQUEST - User prompt length: {len(user_prompt)} chars")
+            print("="*60)
+            
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                response = await client.post(
+                    OPENROUTER_API_URL,
+                    headers=request_headers,
+                    json=request_payload
+                )
+                
+                # LOG RESPONSE (Safe print for Windows consoles)
+                try:
+                    print("="*60)
+                    print(f"DEBUG RESPONSE - Status: {response.status_code}")
+                    # Sanitize headers and body for printing
+                    safe_body = response.text[:1000].encode('ascii', 'replace').decode('ascii')
+                    print(f"DEBUG RESPONSE - Body: {safe_body}")
+                    print("="*60)
+                except Exception:
+                    print("DEBUG RESPONSE - (Content could not be printed due to encoding)")
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    if "choices" in result and len(result["choices"]) > 0:
+                        content = result["choices"][0]["message"]["content"]
+                        
+                        # Clean up the response
+                        content = content.strip()
+                        
+                        # Remove markdown code blocks if present
+                        if content.startswith("```"):
+                            lines = content.split("\n")
+                            content = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+                            content = content.strip()
+                        
+                        if content.startswith("json"):
+                            content = content[4:].strip()
+                        
+                        # Robust JSON extraction: Find first { and last }
+                        try:
+                            start_idx = content.find('{')
+                            end_idx = content.rfind('}')
+                            if start_idx != -1 and end_idx != -1:
+                                content = content[start_idx:end_idx+1]
+                        except Exception:
+                            pass
+                        
+                        try:
+                            cv_data = json.loads(content)
+                            # Ensure data structure safety and HTML compatibility
+                            cv_data = normalize_cv_data(cv_data)
+                            print(f"SUCCESS: CV content generated with {model_id}")
+                            return cv_data, user_prompt
+                        except json.JSONDecodeError as e:
+                            print(f"JSON Parse Error: {e}")
+                            # Safe print for raw content
+                            try:
+                                print(f"Raw content sample: {content[:200].encode('ascii', 'replace').decode('ascii')}")
+                            except:
+                                pass
+                            # Fallback: raise error but with safe logging
+                            if attempt == max_retries - 1:
+                                raise RuntimeError(f"JSON Decode Error: {e}")
+                            continue
+                            
+                elif response.status_code == 404 or response.status_code == 403:
+                    # Model not found or restricted policy
+                    print(f"WARNING: Model {model_id} returned {response.status_code}. Switching to Google Gemini fallback...")
+                    model_id = "google/gemini-2.0-flash-exp:free"
+                    await asyncio.sleep(1)
+                    continue
+
+                elif response.status_code == 429:
+                    wait_time = (2 ** attempt) + 1
+                    print(f"WARNING: Rate Limit (429) - Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    continue
+                
+                # Log full response for debugging (Safe print)
+                error_details = "Unknown error"
+                try:
+                    if response.text:
+                        error_details = response.text[:200].encode('ascii', 'replace').decode('ascii')
+                except:
+                    pass
+                    
+                error_msg = f"OpenRouter API returned status {response.status_code}: {error_details}"
+                print(f"ERROR: {error_msg}")
+                
+                if attempt == max_retries - 1:
+                    # Final attempt fallback
+                    if model_id != "google/gemini-2.0-flash-exp:free":
+                         model_id = "google/gemini-2.0-flash-exp:free"
+                         continue
+                    raise RuntimeError(error_msg)
+            
+        except Exception as e:
+            # Safe exception printing
+            try:
+                print(f"ERROR generating CV content (Attempt {attempt+1}): {str(e)[:200]}")
+            except:
+                print("ERROR generating CV content (encoding error)")
+            
+            if attempt == max_retries - 1:
+                raise
+            
+            # Wait before retry
+            await asyncio.sleep(2)
+            continue
 
 
 def _generate_mock_cv(role: str, origin: str, gender: str, expertise: str = "mid") -> dict:
