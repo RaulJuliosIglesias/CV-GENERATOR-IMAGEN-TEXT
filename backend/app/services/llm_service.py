@@ -61,13 +61,25 @@ def fetch_openrouter_models() -> dict:
                 if model_id and model_id not in models:
                     pricing = model.get("pricing", {})
                     prompt_cost = float(pricing.get("prompt", 0)) * 1000000 if pricing.get("prompt") else 0
+                    completion_cost = float(pricing.get("completion", 0)) * 1000000 if pricing.get("completion") else 0
+                    
+                    # Determine if truly free: must have :free suffix OR both costs are exactly 0
+                    is_truly_free = model_id.endswith(":free") or (prompt_cost == 0 and completion_cost == 0)
+                    
+                    if is_truly_free:
+                        cost_display = "✅ Free"
+                    elif prompt_cost < 0.01:
+                        cost_display = f"~${prompt_cost:.4f}/1M"  # Very cheap but not free
+                    else:
+                        cost_display = f"${prompt_cost:.2f}/1M"
                     
                     models[model_id] = {
                         "name": model.get("name", model_id),
                         "description": model.get("description", "")[:100] if model.get("description") else "",
                         "provider": model_id.split("/")[0].title() if "/" in model_id else "Unknown",
                         "context": f"{model.get('context_length', 0)//1000}K tokens",
-                        "cost": f"${prompt_cost:.2f}/1M" if prompt_cost else "Free"
+                        "cost": cost_display,
+                        "is_free": is_truly_free  # Add flag for frontend filtering
                     }
             
             print(f"DEBUG: Fetched {len(models)} models from OpenRouter")

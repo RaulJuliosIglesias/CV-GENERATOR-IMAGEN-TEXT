@@ -215,20 +215,13 @@ export default function FileExplorer({ height }) {
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
-                                                {file.filename.endsWith('.pdf') ? (
-                                                    <FileText className="w-4 h-4 text-red-400 shrink-0" />
-                                                ) : (
-                                                    <ExternalLink className="w-4 h-4 text-blue-400 shrink-0" />
-                                                )}
-                                                <a
-                                                    href={getPdfUrl(file.filename)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-sm font-medium text-foreground truncate max-w-[200px] hover:underline"
+                                                <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                                                <span
+                                                    className="text-sm font-medium text-foreground truncate max-w-[200px]"
                                                     title={meta.name}
                                                 >
                                                     {meta.name}
-                                                </a>
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">
@@ -245,22 +238,22 @@ export default function FileExplorer({ height }) {
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                                 <Button
-                                                    onClick={() => handleOpenPdf(file.filename)}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 hover:bg-red-500/10 hover:text-red-400"
-                                                    title="View PDF"
-                                                >
-                                                    <FileText className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
                                                     onClick={() => handleOpenHtml(file.filename)}
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-7 w-7 hover:bg-blue-500/10 hover:text-blue-400"
-                                                    title="View HTML"
+                                                    title="View HTML (Web)"
                                                 >
                                                     <ExternalLink className="w-3.5 h-3.5" />
+                                                </Button>
+                                                <Button
+                                                    onClick={() => handleOpenPdf(file.filename)}
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 hover:bg-red-500/10 hover:text-red-400"
+                                                    title="View PDF (Document)"
+                                                >
+                                                    <FileText className="w-3.5 h-3.5" />
                                                 </Button>
                                                 <Button
                                                     onClick={() => handleDeleteFile(file.filename)}

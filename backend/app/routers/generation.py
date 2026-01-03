@@ -439,23 +439,13 @@ async def get_batch_status(batch_id: str):
 
 @router.get("/files", response_model=FilesResponse)
 async def list_files():
-    """List all generated files (PDF and HTML) from their respective directories."""
+    """List generated CVs - one entry per CV (HTML files only, frontend derives PDF)."""
     files = []
     
-    # List HTML files from HTML_DIR
+    # Only list HTML files - each HTML represents one CV
+    # Frontend will use the filename to construct PDF URL
     if HTML_DIR.exists():
         for filepath in sorted(HTML_DIR.glob("*.html"), key=lambda x: x.stat().st_mtime, reverse=True):
-            stat = filepath.stat()
-            files.append(FileInfo(
-                filename=filepath.name,
-                path=str(filepath),
-                created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                size_kb=round(stat.st_size / 1024, 2)
-            ))
-    
-    # List PDF files from PDFS_DIR (output/pdf)
-    if PDFS_DIR.exists():
-        for filepath in sorted(PDFS_DIR.glob("*.pdf"), key=lambda x: x.stat().st_mtime, reverse=True):
             stat = filepath.stat()
             files.append(FileInfo(
                 filename=filepath.name,
