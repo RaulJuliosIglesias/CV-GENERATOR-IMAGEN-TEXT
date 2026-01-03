@@ -91,6 +91,7 @@ export default function ConfigPanel() {
     // Local state for performant sliders
     const [localQty, setLocalQty] = useState(config.qty);
     const [localAgeRange, setLocalAgeRange] = useState([config.age_min, config.age_max]);
+    const [isAdded, setIsAdded] = useState(false);
 
     // Sync local state when config changes externally (e.g. loaded from DB or reset)
     useEffect(() => {
@@ -130,6 +131,8 @@ export default function ConfigPanel() {
     const handleGenerate = () => {
         startGeneration();
         if (isGenerating) {
+            setIsAdded(true);
+            setTimeout(() => setIsAdded(false), 2000);
             toast.info('Added to queue', {
                 description: `${config.qty} more profiles will be generated.`
             });
@@ -495,8 +498,19 @@ export default function ConfigPanel() {
                 >
                     {isGenerating ? (
                         <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                            <span>Add to Queue</span>
+                            {isAdded ? (
+                                <>
+                                    <div className="bg-white/20 text-white rounded-full p-0.5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </div>
+                                    <span className="font-bold">Added to Queue!</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                    <span>Add to Queue</span>
+                                </>
+                            )}
                             {/* Subtle progress indicator background */}
                             <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full">
                                 <div className="h-full bg-primary/50 animate-pulse w-full"></div>

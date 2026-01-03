@@ -12,6 +12,7 @@ import datetime
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from PIL import Image
+import random
 
 # Get paths
 BACKEND_DIR = Path(__file__).parent.parent.parent
@@ -100,6 +101,17 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
 
         # Add PDF generation flag
         context['is_pdf_generation'] = True
+        
+        # Inject random sidebar color for visual variety (DARKER professional tones for visibility)
+        sidebar_colors = [
+            '#E0E0E0', # Medium Light Gray
+            '#D8DFE6', # Visible Blue-Gray
+            '#E6E0D6', # Visible Warm Beige
+            '#DCE6D9', # Visible Sage
+            '#E6DCE2', # Visible Lavender
+            '#DEE1E6', # Visible Slate
+        ]
+        context['sidebar_color'] = random.choice(sidebar_colors)
 
         # Render HTML
         html_content = template.render(**context)

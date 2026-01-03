@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -18,9 +18,11 @@
             --text-color: #403A3A;
             --text-color-light: #707070;
             --container-color: #FAFAFA;
-            --container-color-alt: #F0EFEF;
+
+            --container-color-alt: {{ sidebar_color | default('#F0EFEF') }};
             --body-color: #FCFCFC;
-            --body-font: 'Poppins', sans-serif;
+            --body-font: 'Poppins',
+            sans-serif;
             --h1-font-size: 1.5rem;
             --h2-font-size: 1.25rem;
             --h3-font-size: 1rem;
@@ -591,10 +593,17 @@
                 display: grid;
                 grid-template-columns: .4fr 1fr;
                 box-shadow: none;
-                page-break-after: avoid;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
-            .resume_left,
+            .resume_left {
+                background-color: var(--container-color-alt) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                padding: 0.5rem 1rem;
+            }
+
             .resume_right {
                 padding: 0.5rem 1rem;
             }
