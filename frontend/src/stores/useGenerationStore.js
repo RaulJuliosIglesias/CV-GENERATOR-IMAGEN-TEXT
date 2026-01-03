@@ -88,12 +88,12 @@ const useGenerationStore = create((set, get) => ({
                 // Default Profile Model: Mistral Devstral 2 2512 (free)
                 const defaultProfileModel = models.find(m =>
                     m.id.includes('mistral/devstral') || m.id.includes('devstral')
-                )?.id || models.find(m => m.cost === 'Free')?.id || models[0].id;
+                )?.id || models.find(m => m.is_free === true)?.id || models.find(m => m.id.endsWith(':free'))?.id || models[0].id;
 
                 // Default CV Model: NVIDIA Nemotron 3 Nano 30B (free)
                 const defaultCvModel = models.find(m =>
                     m.id.includes('nvidia/nemotron') || m.id.includes('nemotron')
-                )?.id || models.find(m => m.cost === 'Free')?.id || models[0].id;
+                )?.id || models.find(m => m.is_free === true)?.id || models.find(m => m.id.endsWith(':free'))?.id || models[0].id;
 
                 set((state) => ({
                     config: {

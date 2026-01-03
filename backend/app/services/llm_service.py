@@ -46,14 +46,8 @@ def fetch_openrouter_models() -> dict:
             data = response.json()
             models = {}
             
-            # Always include auto first
-            models["openrouter/auto"] = {
-                "name": "Auto (Best Model)",
-                "description": "Automatically selects the best model for your prompt",
-                "provider": "OpenRouter",
-                "context": "Varies",
-                "cost": "Varies"
-            }
+            # NOTE: Removed openrouter/auto - it selects paid models automatically
+            # and caused unexpected billing charges
             
             # Add ALL models from API response (removed limit)
             for model in data.get("data", []):
@@ -447,10 +441,13 @@ async def generate_profile_data(
                         raise # Re-raise to be caught by outer except
                 
                 elif response.status_code == 404 or response.status_code == 403:
-                    # Model not found or restricted - FAIL EXPLICITLY, no silent switch
-                    error_msg = f"Model '{model_id}' returned {response.status_code} (Not Found/Forbidden). Please select a different model."
-                    print(f"ERROR: {error_msg}")
-                    raise RuntimeError(error_msg)
+                    # Model not found or restricted - switch to guaranteed FREE model with notification
+                    fallback_model = "google/gemini-2.0-flash-exp:free"
+                    print(f"⚠️ WARNING: Model '{model_id}' returned {response.status_code}. Switching to FREE fallback: {fallback_model}")
+                    model_id = fallback_model
+                    request_payload["model"] = model_id
+                    await asyncio.sleep(1)
+                    continue
 
                 elif response.status_code == 429:
                     wait_time = (2 ** attempt) + 1  # Exponential backoff: 2s, 3s, 5s...
@@ -461,7 +458,13 @@ async def generate_profile_data(
                 else:
                     print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
                     if attempt == max_retries - 1:
-                        # NO FALLBACK - fail with clear error
+                        # On final failure, try FREE fallback once before giving up
+                        fallback_model = "google/gemini-2.0-flash-exp:free"
+                        if model_id != fallback_model:
+                            print(f"⚠️ FALLBACK: Trying FREE model {fallback_model} after failures")
+                            model_id = fallback_model
+                            request_payload["model"] = model_id
+                            continue
                         raise RuntimeError(f"Profile Gen Failed after {max_retries} attempts: {response.text}")
         
         except json.JSONDecodeError as e:
