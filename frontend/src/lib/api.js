@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-    baseURL: 'http://localhost:8001',
+    // baseURL intentionally left empty to use relative paths (proxied by Vite)
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json',
@@ -72,12 +72,12 @@ export const getPdfUrl = (filename) => {
 
     // Safety check: ensure we ask for .pdf extension from /pdf endpoint
     const base = filename.replace(/\.(html|pdf)$/, '');
-    return `http://localhost:8001/pdf/${base}.pdf`;
+    return `/pdf/${base}.pdf`;
 };
 
 export const getHtmlUrl = (filename) => {
     const base = filename.replace(/\.(html|pdf)$/, '');
-    return `http://localhost:8001/html/${base}.html`;
+    return `/html/${base}.html`;
 };
 
 export default api;
