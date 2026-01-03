@@ -27,7 +27,7 @@ ASSETS_DIR = BACKEND_DIR / "assets"
 # Organized output subdirectories
 PROMPTS_DIR = OUTPUT_DIR / "prompts"
 HTML_DIR = OUTPUT_DIR / "html"
-PDFS_DIR = OUTPUT_DIR / "pdfs"
+PDFS_DIR = OUTPUT_DIR / "pdf"  # Must match pdf_engine.py
 AVATARS_DIR = OUTPUT_DIR / "avatars"
 
 # Ensure all directories exist
@@ -296,7 +296,7 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             safe_role = p.get("role", "Role").replace(" ", "_").replace("/", "-")
             safe_role = "".join([c for c in safe_role if c.isalnum() or c in ('_','-')])
             
-            filename = f"{task.id[:8]}_{safe_name}_{safe_role}.html"
+            filename = f"{task.id[:8]}__{safe_name}__{safe_role}.html"
             
             # Phase 4: Generate HTML (handled inside render_cv_pdf)
             # Phase 5: Generate PDF (also handled inside render_cv_pdf, but with image compression)
@@ -306,9 +306,14 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             task.subtasks[3].message = "Rendering HTML template..."
             await task_manager._save_batches()
             
-            # Generate HTML and PDF (returns tuple)
-            html_path, pdf_path = await render_cv_pdf(task.cv_data, task.image_path, filename)
+            # Generate HTML and PDF (returns tuple or may raise)
+            result = await render_cv_pdf(task.cv_data, task.image_path, filename)
             
+            # Handle case where render_cv_pdf returns None (critical failure)
+            if result is None:
+                raise RuntimeError("render_cv_pdf returned None - critical failure")
+            
+            html_path, pdf_path = result
             task.html_path = html_path
             
             # Mark Phase 4 (HTML) complete
@@ -434,30 +439,54 @@ async def get_batch_status(batch_id: str):
 
 @router.get("/files", response_model=FilesResponse)
 async def list_files():
-    """List all generated files (PDF and HTML)."""
+    """List all generated files (PDF and HTML) from their respective directories."""
     files = []
-    if OUTPUT_DIR.exists():
-        for pattern in ["*.pdf", "*.html"]:
-            for filepath in sorted(HTML_DIR.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True):
-                stat = filepath.stat()
-                files.append(FileInfo(
-                    filename=filepath.name,
-                    path=str(filepath),
-                    created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    size_kb=round(stat.st_size / 1024, 2)
-                ))
+    
+    # List HTML files from HTML_DIR
+    if HTML_DIR.exists():
+        for filepath in sorted(HTML_DIR.glob("*.html"), key=lambda x: x.stat().st_mtime, reverse=True):
+            stat = filepath.stat()
+            files.append(FileInfo(
+                filename=filepath.name,
+                path=str(filepath),
+                created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                size_kb=round(stat.st_size / 1024, 2)
+            ))
+    
+    # List PDF files from PDFS_DIR (output/pdf)
+    if PDFS_DIR.exists():
+        for filepath in sorted(PDFS_DIR.glob("*.pdf"), key=lambda x: x.stat().st_mtime, reverse=True):
+            stat = filepath.stat()
+            files.append(FileInfo(
+                filename=filepath.name,
+                path=str(filepath),
+                created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                size_kb=round(stat.st_size / 1024, 2)
+            ))
+    
     return FilesResponse(files=files, total=len(files))
 
 
-@router.get("/files/{filename}")
-async def get_file(filename: str):
-    """Download/view a specific file."""
+@router.get("/files/html/{filename}")
+async def get_html_file(filename: str):
+    """Download/view a specific HTML file."""
     filepath = HTML_DIR / filename
     if not filepath.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    media_type = "text/html" if filename.endswith('.html') else "application/pdf"
-    return FileResponse(path=str(filepath), media_type=media_type, filename=filename)
+        raise HTTPException(status_code=404, detail="HTML File not found")
+    return FileResponse(path=str(filepath), media_type="text/html")  # No filename = opens inline
+
+
+@router.get("/files/pdf/{filename}")
+async def get_pdf_file(filename: str):
+    """Download/view a specific PDF file."""
+    filepath = PDFS_DIR / filename
+    if not filepath.exists():
+        # Fallback: Check if it exists in HTML_DIR (legacy behavior) or if PDF hasn't been moved yet
+        filepath = HTML_DIR / filename
+        if not filepath.exists():
+             raise HTTPException(status_code=404, detail="PDF File not found")
+
+    return FileResponse(path=str(filepath), media_type="application/pdf")  # No filename = opens inline
 
 
 @router.delete("/files/{filename}")

@@ -85,7 +85,7 @@ function TaskCard({ task }) {
     };
 
     return (
-        <div className={`relative rounded-xl border ${statusConfig.borderColor} ${statusConfig.bgColor} p-4 transition-all duration-300`}>
+        <div className={`relative rounded-xl border ${statusConfig.borderColor} ${statusConfig.bgColor} p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/5 group`}>
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">

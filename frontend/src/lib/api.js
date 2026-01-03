@@ -66,18 +66,18 @@ export const healthCheck = async () => {
 
 // Get PDF/HTML URL for viewing - files are now in /html/ subdirectory
 // Get PDF/HTML URL for viewing
+// Get PDF/HTML URL for viewing
 export const getPdfUrl = (filename) => {
-    // Filename usually ends in .html or .pdf in the task object
-    // but the backend stores them in separate folders /html/ and /pdf/
-
-    // Safety check: ensure we ask for .pdf extension from /pdf endpoint
+    // The filename from the API is likely the HTML filename (e.g. ID__Name__Role.html)
+    // We need to serve the PDF version from /api/files/pdf/ID__Name__Role.pdf
     const base = filename.replace(/\.(html|pdf)$/, '');
-    return `/pdf/${base}.pdf`;
+    return `/api/files/pdf/${base}.pdf`;
 };
 
 export const getHtmlUrl = (filename) => {
     const base = filename.replace(/\.(html|pdf)$/, '');
-    return `/html/${base}.html`;
+    // Serve HTML from /api/files/html/ID__Name__Role.html
+    return `/api/files/html/${base}.html`;
 };
 
 export default api;

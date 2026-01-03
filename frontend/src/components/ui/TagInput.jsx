@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Check } from 'lucide-react';
+import * as PopoverPrimitive from "@radix-ui/react-popover"
 import { cn } from '../../lib/utils';
 import { Badge } from './Badge';
 import { Input } from './Input';
@@ -23,7 +24,7 @@ const DEFAULT_ROLE_SUGGESTIONS = [
 
 export function TagInput({ value = [], onChange, placeholder = "Add roles...", suggestions }) {
     const [inputValue, setInputValue] = useState('');
-    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [open, setOpen] = useState(false);
 
     // Use provided suggestions or fallback to defaults
     const roleSuggestions = suggestions || DEFAULT_ROLE_SUGGESTIONS;
@@ -37,7 +38,7 @@ export function TagInput({ value = [], onChange, placeholder = "Add roles...", s
         if (role.trim() && !value.includes(role.trim())) {
             onChange([...value, role.trim()]);
             setInputValue('');
-            setShowSuggestions(false);
+            setOpen(false);
         }
     };
 
@@ -52,15 +53,25 @@ export function TagInput({ value = [], onChange, placeholder = "Add roles...", s
         }
     };
 
+    const handleInputChange = (e) => {
+        const val = e.target.value;
+        setInputValue(val);
+        if (val.length > 0) {
+            setOpen(true);
+        } else {
+            setOpen(false); // Can keep open if you want default suggestions
+        }
+    };
+
     return (
-        <div className="relative w-full">
+        <div className="relative w-full space-y-2">
             {/* Tags Display */}
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-2">
                 {value.map((role, index) => (
                     <Badge
                         key={index}
                         variant="secondary"
-                        className="gap-1 pl-3 pr-1 py-1"
+                        className="gap-1 pl-3 pr-1 py-1 bg-secondary/80 backdrop-blur-md"
                     >
                         <span className="text-xs">{role}</span>
                         <button
@@ -74,50 +85,63 @@ export function TagInput({ value = [], onChange, placeholder = "Add roles...", s
                 ))}
             </div>
 
-            {/* Input */}
-            <div className="relative">
-                <Input
-                    value={inputValue}
-                    onChange={(e) => {
-                        setInputValue(e.target.value);
-                        setShowSuggestions(true);
-                    }}
-                    onKeyDown={handleKeyDown}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    placeholder={placeholder}
-                    className="pr-10"
-                />
-                <button
-                    type="button"
-                    onClick={() => addRole(inputValue)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent rounded-md transition-colors"
-                >
-                    <Plus className="h-4 w-4" />
-                </button>
-            </div>
-
-            {/* Suggestions Dropdown */}
-            {showSuggestions && inputValue && filteredSuggestions.length > 0 && (
-                <div className="absolute z-50 mt-1 w-full rounded-lg border bg-card shadow-xl max-h-60 overflow-auto">
-                    <div className="p-1">
-                        {filteredSuggestions.map((role, index) => (
-                            <div
-                                key={index}
-                                onClick={() => addRole(role)}
-                                className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-accent transition-colors"
-                            >
-                                {role}
-                            </div>
-                        ))}
+            {/* Input with Popover Suggestions */}
+            <PopoverPrimitive.Root open={open && filteredSuggestions.length > 0} onOpenChange={setOpen}>
+                <PopoverPrimitive.Anchor asChild>
+                    <div className="relative">
+                        <Input
+                            value={inputValue}
+                            onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
+                            onFocus={() => inputValue && setOpen(true)}
+                            onBlur={() => {
+                                // Delay closing to allow clicking suggestions
+                                setTimeout(() => setOpen(false), 200)
+                            }}
+                            placeholder={placeholder}
+                            className="pr-10 bg-background/50 backdrop-blur-sm border-input/50 focus:ring-primary/50"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => addRole(inputValue)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                            <Plus className="h-4 w-4" />
+                        </button>
                     </div>
-                </div>
-            )}
+                </PopoverPrimitive.Anchor>
 
-            {/* Add custom hint */}
-            {inputValue && !filteredSuggestions.some(s => s.toLowerCase() === inputValue.toLowerCase()) && (
-                <p className="text-xs text-muted-foreground mt-1">
-                    Press Enter to add "{inputValue}" as custom role
+                <PopoverPrimitive.Portal>
+                    <PopoverPrimitive.Content
+                        className="z-50 w-[var(--radix-popover-anchor-width)] rounded-xl border border-white/10 bg-card/95 p-1 text-card-foreground shadow-2xl backdrop-blur-xl outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                        align="start"
+                        sideOffset={5}
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                    >
+                        <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">
+                            {filteredSuggestions.map((role, index) => (
+                                <div
+                                    key={index}
+                                    onMouseDown={(e) => {
+                                        // Use onMouseDown instead of onClick to fire before blur
+                                        e.preventDefault();
+                                        addRole(role);
+                                    }}
+                                    className="px-3 py-2 text-sm rounded-lg cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between group"
+                                >
+                                    <span>{role}</span>
+                                    <Plus className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
+                                </div>
+                            ))}
+                        </div>
+                    </PopoverPrimitive.Content>
+                </PopoverPrimitive.Portal>
+            </PopoverPrimitive.Root>
+
+            {/* Custom hint */}
+            {inputValue && !filteredSuggestions.some(s => s.toLowerCase() === inputValue.toLowerCase()) && !open && (
+                <p className="text-[10px] text-muted-foreground pl-1 animate-pulse">
+                    Press Enter to add "{inputValue}"
                 </p>
             )}
         </div>

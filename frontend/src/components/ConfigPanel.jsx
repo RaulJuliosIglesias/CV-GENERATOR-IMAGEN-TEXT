@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play } from 'lucide-react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
 import { RangeSlider } from './ui/RangeSlider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
+import { ModelSelector } from './ui/ModelSelector';
 import { Label } from './ui/Label';
 import { MultiSelect } from './ui/MultiSelect';
 import { TagInput } from './ui/TagInput';
@@ -72,7 +74,8 @@ export default function ConfigPanel() {
         modelsLoaded,
         loadModels,
         configOptions,
-        loadConfig
+        loadConfig,
+        error
     } = useGenerationStore();
 
     // Load models and config on mount
@@ -84,6 +87,28 @@ export default function ConfigPanel() {
             loadConfig();
         }
     }, [modelsLoaded, loadModels, configOptions.configLoaded, loadConfig]);
+
+    // Local state for performant sliders
+    const [localQty, setLocalQty] = useState(config.qty);
+    const [localAgeRange, setLocalAgeRange] = useState([config.age_min, config.age_max]);
+
+    // Sync local state when config changes externally (e.g. loaded from DB or reset)
+    useEffect(() => {
+        setLocalQty(config.qty);
+    }, [config.qty]);
+
+    useEffect(() => {
+        setLocalAgeRange([config.age_min, config.age_max]);
+    }, [config.age_min, config.age_max]);
+
+    // Error handling
+    useEffect(() => {
+        if (error) {
+            toast.error('Generation Failed', {
+                description: error
+            });
+        }
+    }, [error]);
 
     // Use database options if available, fallback to hardcoded
     const ETHNICITY_OPTIONS_FINAL = configOptions.ethnicities.length > 0
@@ -104,6 +129,15 @@ export default function ConfigPanel() {
 
     const handleGenerate = () => {
         startGeneration();
+        if (isGenerating) {
+            toast.info('Added to queue', {
+                description: `${config.qty} more profiles will be generated.`
+            });
+        } else {
+            toast.success('Generation started', {
+                description: `Creating ${config.qty} unique profiles...`
+            });
+        }
     };
 
     // Get selected model info for display
@@ -184,11 +218,12 @@ export default function ConfigPanel() {
                             <Zap className="w-4 h-4 text-yellow-400" />
                             Quantity
                         </Label>
-                        <span className="text-2xl font-bold gradient-text">{config.qty}</span>
+                        <span className="text-2xl font-bold gradient-text">{localQty}</span>
                     </div>
                     <Slider
-                        value={[config.qty]}
-                        onValueChange={([value]) => setConfig('qty', value)}
+                        value={[localQty]}
+                        onValueChange={([value]) => setLocalQty(value)}
+                        onValueCommit={([value]) => setConfig('qty', value)}
                         min={1}
                         max={50}
                         step={1}
@@ -255,12 +290,13 @@ export default function ConfigPanel() {
                             Age Range
                         </Label>
                         <span className="text-sm font-semibold text-primary">
-                            {config.age_min} - {config.age_max} years
+                            {localAgeRange[0]} - {localAgeRange[1]} years
                         </span>
                     </div>
                     <RangeSlider
-                        value={[config.age_min, config.age_max]}
-                        onValueChange={([min, max]) => {
+                        value={localAgeRange}
+                        onValueChange={(value) => setLocalAgeRange(value)}
+                        onValueCommit={([min, max]) => {
                             setConfig('age_min', min);
                             setConfig('age_max', max);
                         }}
@@ -396,66 +432,34 @@ export default function ConfigPanel() {
                     </div>
 
                     {/* Profile Model Selector */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">1. Profile Generator (Phase 1)</Label>
-                        <Select
-                            value={config.profile_model || ''}
-                            onValueChange={(value) => setConfig('profile_model', value)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Profile Model" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-80">
-                                {filteredLlmModels.map((model) => (
-                                    <SelectItem key={model.id} value={model.id}>
-                                        <div className="flex flex-col py-1">
-                                            <span className="font-medium">{model.name}</span>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <span className="text-blue-400">{model.provider}</span>
-                                                <span>•</span>
-                                                <span className={model.cost?.toLowerCase().includes('free') ? 'text-green-400' : ''}>{model.cost}</span>
-                                            </div>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <ModelSelector
+                            models={filteredLlmModels}
+                            selectedId={config.profile_model}
+                            onSelect={(id) => setConfig('profile_model', id)}
+                            type="llm"
+                        />
                         {selectedProfileModel && (
-                            <p className="text-[10px] text-muted-foreground truncate">{selectedProfileModel.description}</p>
+                            <p className="text-[10px] text-muted-foreground truncate px-1">{selectedProfileModel.description}</p>
                         )}
                     </div>
 
                     {/* CV Content Model Selector */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">2. CV Content Writer (Phase 2)</Label>
-                        <Select
-                            value={config.cv_model || ''}
-                            onValueChange={(value) => setConfig('cv_model', value)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Content Model" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-80">
-                                {filteredLlmModels.map((model) => (
-                                    <SelectItem key={model.id} value={model.id}>
-                                        <div className="flex flex-col py-1">
-                                            <span className="font-medium">{model.name}</span>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <span className="text-blue-400">{model.provider}</span>
-                                                <span>•</span>
-                                                <span className={model.cost?.toLowerCase().includes('free') ? 'text-green-400' : ''}>{model.cost}</span>
-                                            </div>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <ModelSelector
+                            models={filteredLlmModels}
+                            selectedId={config.cv_model}
+                            onSelect={(id) => setConfig('cv_model', id)}
+                            type="llm"
+                        />
                         {selectedCvModel && (
-                            <p className="text-[10px] text-muted-foreground truncate">{selectedCvModel.description}</p>
+                            <p className="text-[10px] text-muted-foreground truncate px-1">{selectedCvModel.description}</p>
                         )}
                     </div>
 
-                    <p className="text-xs text-muted-foreground text-center">
+                    <p className="text-xs text-muted-foreground text-center pt-2">
                         {filteredLlmModels.length} models available
                     </p>
                 </div>
@@ -466,31 +470,14 @@ export default function ConfigPanel() {
                         <Image className="w-4 h-4 text-cyan-400" />
                         Image Model (Krea)
                     </Label>
-                    <Select
-                        value={config.image_model || ''}
-                        onValueChange={(value) => setConfig('image_model', value)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select image model" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-80">
-                            {imageModels.map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                    <div className="flex items-center justify-between w-full gap-4 py-1">
-                                        <span className="font-medium">{model.name}</span>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                                            <Clock className="w-3 h-3" />
-                                            <span>{model.time}</span>
-                                            <Coins className="w-3 h-3 ml-1" />
-                                            <span>{model.compute_units}</span>
-                                        </div>
-                                    </div>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <ModelSelector
+                        models={imageModels}
+                        selectedId={config.image_model}
+                        onSelect={(id) => setConfig('image_model', id)}
+                        type="image"
+                    />
                     {selectedImageModel && (
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground px-1">
                             <span>{selectedImageModel.description}</span>
                         </div>
                     )}
@@ -502,15 +489,15 @@ export default function ConfigPanel() {
                 <Button
                     onClick={handleGenerate}
                     disabled={false}
-                    variant={isGenerating ? "outline" : "gradient"} // Visual distinction
+                    variant={isGenerating ? "outline" : "gradient"}
                     size="lg"
-                    className="w-full relative overflow-hidden"
+                    className="w-full relative overflow-hidden transition-all duration-300"
                 >
                     {isGenerating ? (
                         <div className="flex items-center justify-center gap-2">
-                            <PlusCircle className="w-5 h-5" />
+                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
                             <span>Add to Queue</span>
-                            {/* Subtle progress indicator background could go here */}
+                            {/* Subtle progress indicator background */}
                             <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full">
                                 <div className="h-full bg-primary/50 animate-pulse w-full"></div>
                             </div>
