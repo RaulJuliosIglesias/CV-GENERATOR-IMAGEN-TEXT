@@ -146,7 +146,7 @@ const useGenerationStore = create((set, get) => ({
         const request = {
             ...config,
             ages: [ageRange],
-            roles: config.roles.length > 0 ? config.roles : ['Software Developer']
+            roles: config.roles.length > 0 ? config.roles : ['any']
         };
 
         set({ isGenerating: true, error: null });

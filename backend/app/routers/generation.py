@@ -220,8 +220,9 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 image_path, used_prompt = await generate_avatar(
                     gender=p.get('gender', task.gender),
                     ethnicity=p.get('ethnicity', task.ethnicity),
-                    age_range=task.age_range,
+                    age_range=str(p.get('age', task.age_range)), # Use specific age if available
                     origin=p.get('origin', task.origin),
+                    role=p.get('role', task.role), # Pass specific role for context
                     model=image_model,
                     filename=f"{task.id}_avatar.jpg"
                 )

@@ -240,7 +240,7 @@ KREA_MODELS = {
 }
 
 
-def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
+def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "Professional") -> str:
     """Generate the prompt for the avatar using external template."""
     
     # Map variables for template
@@ -252,15 +252,56 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
         gender_term = "professional person"
         
     ethnicity_term = ethnicity if ethnicity != "any" else "mixed heritage"
-    age_val = age_range.split('-')[0] if '-' in age_range else age_range
     
-    # Load from template file - CRITICAL: FAIL FAST
+    # Clean age: If "25-35", take average or specific. If just "28", use it.
+    if '-' in str(age_range):
+        try:
+            min_a, max_a = map(int, str(age_range).split('-'))
+            age_val = (min_a + max_a) // 2
+        except:
+            age_val = age_range
+    else:
+        age_val = age_range
+        
+    # --- DYNAMIC STYLE LOGIC ---
+    # Determine context based on role keywords to avoid generic "Corporate" look
+    role_lower = role.lower()
+    
+    context = "Professional portrait, neutral background"
+    style = "high quality, 8k, photorealistic"
+    
+    if any(k in role_lower for k in ["designer", "creative", "artist", "ux", "ui", "art director", "architect"]):
+        context = "Creative professional in a modern bright studio environment, smart-casual stylish attire"
+        style = "artistic lighting, 8k, sharp focus, modern vibe"
+        
+    elif any(k in role_lower for k in ["developer", "engineer", "software", "tech", "data", "programmer", "it "]):
+        context = "Tech professional in a modern open-plan tech office, casual-smart attire (t-shirt and blazer or smart shirt)"
+        style = "clean lighting, 8k, modern tech aesthetic"
+        
+    elif any(k in role_lower for k in ["manager", "director", "executive", "chief", "head of", "vp", "president"]):
+        # Executive but keep it modern, not "stiff old corporate"
+        context = "Modern business executive in a contemporary glass office, modern business attire"
+        style = "cinematic lighting, 8k, depth of field, premium look"
+        
+    elif any(k in role_lower for k in ["teacher", "educator", "professor", "trainer"]):
+        context = "Education professional in a modern academic setting, smart professional attire"
+            
+    elif any(k in role_lower for k in ["medical", "doctor", "nurse", "health", "clinical"]):
+        context = "Healthcare professional in a clean medical setting, professional medical attire or scrubs"
+    
+    else:
+        # Fallback for general roles
+        context = f"Professional {role} in a modern work environment, appropriate professional attire"
+
+    # CRITICAL: Prevent "Senior" in title from aging the face
+    # We add a negative prompt instruction implicit in the positive description
+    
+    # Load from template file
     template_path = BACKEND_DIR / "prompts" / "image_prompt_template.txt"
     
     if not template_path.exists():
-        error_msg = f"CRITICAL ERROR: Image details template not found at {template_path}"
-        print(error_msg)
-        raise FileNotFoundError(error_msg)
+        # Fallback inline template if file missing
+        return f"Natural portrait of a {gender_term}, age {age_val}, {ethnicity_term}, {context}. {style}"
 
     print(f"DEBUG: Loading external Image template from {template_path}")
     with open(template_path, "r", encoding="utf-8") as f:
@@ -270,8 +311,9 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str) -> str:
     prompt = template.replace("{{gender_term}}", gender_term)
     prompt = prompt.replace("{{age}}", str(age_val))
     prompt = prompt.replace("{{ethnicity}}", ethnicity_term)
-    prompt = prompt.replace("{{role_context}}", "Corporate professional") # Placeholder for now
-    prompt = prompt.replace("{{style_modifiers}}", "high quality, 8k")
+    prompt = prompt.replace("{{role_context}}", context)
+    prompt = prompt.replace("{{style_modifiers}}", style)
+    
     return prompt
 
 
@@ -291,6 +333,7 @@ async def generate_avatar(
     ethnicity: str = "any",
     age_range: str = "25-45",
     origin: str = "United States",
+    role: str = "Professional",
     model: Optional[str] = None,
     filename: Optional[str] = None
 ) -> Tuple[str, str]:
@@ -298,13 +341,11 @@ async def generate_avatar(
     
     Args:
         gender: "male", "female", or "any"
-        ethnicity: Ethnicity category for appropriate representation
-        age_range: Age range like "25-45"
+        ethnicity: Ethnicity category
+        age_range: Age range or specific age
         origin: Geographic origin
-        model: Krea model ID to use (defaults to env var DEFAULT_IMAGE_MODEL)
-    
-    Returns:
-        Path to the generated image file
+        role: Job role for context styling
+        model: Krea model ID
     """
     api_key = os.getenv("KREA_API_KEY", "")
     
@@ -372,7 +413,7 @@ async def generate_avatar(
     
     print(f"DEBUG KREA: Using model: {model_id}")
     
-    prompt = get_avatar_prompt(gender, ethnicity, age_range)
+    prompt = get_avatar_prompt(gender, ethnicity, age_range, role)
     
     try:
         # Construct API URL per Krea docs

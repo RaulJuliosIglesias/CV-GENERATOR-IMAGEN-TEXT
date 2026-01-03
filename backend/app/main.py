@@ -109,9 +109,6 @@ app.mount("/prompts", StaticFiles(directory=str(OUTPUT_DIR / "prompts")), name="
 app.mount("/avatars", StaticFiles(directory=str(OUTPUT_DIR / "avatars")), name="avatars")
 app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
-# Include routers
-app.include_router(generation.router)
-
 # Import config service
 from .services.roles_service import get_all_config
 
@@ -122,9 +119,21 @@ async def get_config():
     Returns roles, genders, ethnicities, origins, expertise_levels.
     Frontend should fetch this on mount to populate dropdowns.
     """
+    print("DEBUG API: /api/config endpoint called")
     config = get_all_config()
     print(f"DEBUG API: Serving config with {len(config.get('roles', []))} roles")
+    print(f"DEBUG API: Serving config with {len(config.get('roles', []))} roles")
     return JSONResponse(content=config)
+
+@app.get("/ping")
+async def ping():
+    return {"message": "pong"}
+
+# Include routers - Load generation router AFTER config just in case
+print("DEBUG MAIN: Loading generation router...")
+app.include_router(generation.router)
+
+
 
 
 @app.get("/")
