@@ -5,8 +5,10 @@ Phase 5: Generates PDF using Playwright with image optimization.
 """
 
 import os
+import sys
 import base64
 import io
+import datetime
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from PIL import Image
@@ -147,49 +149,45 @@ async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str) 
     temp_html_path = await render_cv_html(data_dict, image_path, f"temp_{filename}", temp_html_dir, compress_images=True)
     
     try:
-        async with async_playwright() as p:
-            # Launch browser
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            
-            # Load the compressed HTML
-            file_uri = Path(temp_html_path).absolute().as_uri()
-            await page.goto(file_uri, wait_until="domcontentloaded", timeout=60000)
-            
-            # Wait for content to settle
-            await page.wait_for_timeout(1000)
-            
-            # Generate PDF with A4 format and proper margins
-            await page.pdf(
-                path=str(pdf_path),
-                format="A4",
-                print_background=True,
-                prefer_css_page_size=True,
-                margin={
-                    "top": "10mm",
-                    "bottom": "10mm",
-                    "left": "8mm",
-                    "right": "8mm"
-                }
-            )
-            
-            await browser.close()
-            
-        print(f"SUCCESS: Phase 5 - PDF generated with selectable text: {pdf_path.name}")
+        # Use subprocess to run standalone script
+        # This prevents asyncio loop conflicts with Uvicorn/FastAPI
+        import subprocess
         
-        # Clean up temp file
+        script_path = BACKEND_DIR / "generate_pdf_script.py"
+        
+        # Run the script consistently
+        process = subprocess.run(
+            [sys.executable, str(script_path), "--html", str(temp_html_path), "--out", str(pdf_path)],
+            capture_output=True,
+            text=True,
+            check=False # We handle return code manually
+        )
+        
+        if process.returncode == 0 and "PDF Generation Complete" in process.stdout:
+            print(f"SUCCESS: Phase 5 - PDF generated: {pdf_path.name}")
+            
+            # Clean up temp file
+            try:
+                os.remove(temp_html_path)
+            except:
+                pass
+                
+            return str(html_path), str(pdf_path)
+        else:
+            raise RuntimeError(f"Subprocess failed. Stderr: {process.stderr}\nStdout: {process.stdout}")
+        
+    except Exception as e:
+        error_msg = f"ERROR: Phase 5 PDF generation failed: {e}"
+        print(error_msg)
+        
+        # Log to file for debugging
         try:
-            os.remove(temp_html_path)
+            with open("error.log", "a") as f:
+                f.write(f"\n--- {datetime.datetime.now()} ---\n")
+                f.write(f"{error_msg}\n")
         except:
             pass
             
-        return str(html_path), str(pdf_path)
-        
-    except Exception as e:
-        print(f"ERROR: Phase 5 PDF generation failed: {e}")
-        import traceback
-        traceback.print_exc()
-        
         # Clean up temp file
         try:
             os.remove(temp_html_path)
