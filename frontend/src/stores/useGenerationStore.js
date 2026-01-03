@@ -15,9 +15,12 @@ const useGenerationStore = create((set, get) => ({
         remote: false,
         profile_model: null,
         cv_model: null,
-        llm_model: null,
         image_model: null,
+        // Model filtering options
         llmSort: 'default',
+        llmSearch: '',
+        llmProvider: 'all',
+        llmFreeOnly: false,
     },
 
     // Available options from centralized database
@@ -98,7 +101,6 @@ const useGenerationStore = create((set, get) => ({
                 set((state) => ({
                     config: {
                         ...state.config,
-                        llm_model: state.config.llm_model || defaultProfileModel,
                         profile_model: state.config.profile_model || defaultProfileModel,
                         cv_model: state.config.cv_model || defaultCvModel
                     }
@@ -145,7 +147,7 @@ const useGenerationStore = create((set, get) => ({
 
         const request = {
             ...config,
-            ages: [ageRange],
+            // Note: age_min and age_max are already in config, no need for ages
             roles: config.roles.length > 0 ? config.roles : ['any']
         };
 
