@@ -7,6 +7,7 @@
 
 ## 🏗️ Phase 1: Foundation & Cloud Architecture (Q1-Q2 2026)
 **Goal**: Transition from local execution to a robust, deployable web application.
+> **💡 Technical Rationale**: Containerization (Docker) ensures environment parity between Dev and Prod, eliminating "it works on my machine" issues. IaC (Terraform) guarantees reproducible infrastructure for disaster recovery. CI/CD reduces deployment risk and accelerates release velocity.
 
 - [ ] **Dockerization & Containerization**
     - [ ] Create optimized `Dockerfile` for Python Backend (Alpine based).
@@ -21,6 +22,7 @@
 
 ## 🔐 Phase 2: User Identity & Persistence (Q3 2026)
 **Goal**: Enable users to save, manage, and evolve their career profiles over time.
+> **💡 Technical Rationale**: Offloading Identity Management (Auth0) ensures GDPR compliance and security standards without reinventing the wheel. PostgreSQL provides necessary relational integrity (ACID) for user data that simple JSON storage cannot offers. Object Storage (S3) decouples state from compute, allowing the backend to remain stateless and horizontally scalable.
 
 - [ ] **Authentication System**
     - [ ] Integrate **Auth0** or **Clerk** for secure Email/Social Signup & Login.
