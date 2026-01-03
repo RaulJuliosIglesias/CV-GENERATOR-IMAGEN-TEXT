@@ -414,29 +414,52 @@
             margin-bottom: .25rem;
         }
 
-        /* THEME BUTTONS */
-        .change-theme {
+        /* THEME & DOWNLOAD BUTTONS */
+        .nav-buttons {
             position: absolute;
-            right: 1rem;
-            top: 2.2rem;
+            top: 2rem;
+            left: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: var(--z-fixed);
+        }
+
+        .change-theme {
             font-size: 1.5rem;
-            cursor: pointer;
             color: var(--text-color);
+            cursor: pointer;
+            transition: .3s;
+        }
+
+        .change-theme:hover {
+            color: var(--title-color);
         }
 
         .generate-pdf {
             display: none;
-            position: absolute;
-            left: 1rem;
-            top: 2.2rem;
-            font-size: 1.5rem;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--title-color);
+            color: var(--container-color) !important;
+            padding: 0.75rem 1.5rem;
+            border-radius: 3rem;
             cursor: pointer;
-            color: var(--text-color);
+            font-size: var(--normal-font-size);
+            font-weight: var(--font-medium);
+            transition: .3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .change-theme:hover,
         .generate-pdf:hover {
-            color: var(--title-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Update Dark Theme colors for container/text contrast if needed */
+        body.dark-theme .generate-pdf {
+            color: #212121 !important;
+            /* Force dark text on light button in dark mode */
         }
 
         /* DARK THEME */
@@ -482,7 +505,7 @@
             }
 
             .generate-pdf {
-                display: inline-block;
+                display: flex;
             }
 
             .section-title,
@@ -602,8 +625,7 @@
 
             /* Hide interactive elements */
             .l-header,
-            .change-theme,
-            .generate-pdf {
+            .nav-buttons {
                 display: none !important;
             }
 
@@ -618,8 +640,14 @@
 
 <body>
     <!-- BUTTONS -->
-    <i class="fa-solid fa-moon change-theme" title="Theme" id="theme-button"></i>
-    <i class="fa-solid fa-download generate-pdf" title="Generate PDF" id="resume-button"></i>
+    <!-- BUTTONS -->
+    <div class="nav-buttons">
+        <div class="generate-pdf" id="resume-button" title="Download CV as Image">
+            <i class="fa-solid fa-download"></i>
+            <span>Save as Image</span>
+        </div>
+        <i class="fa-solid fa-moon change-theme" title="Toggle Theme" id="theme-button"></i>
+    </div>
 
     <main class="l-main bd-container">
         <div class="resume" id="area-cv">
