@@ -102,14 +102,33 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         # Add PDF generation flag
         context['is_pdf_generation'] = True
         
-        # Inject random sidebar color for visual variety (DARKER professional tones for visibility)
+        # Inject random sidebar color for visual variety (Creative Professional Palette)
         sidebar_colors = [
-            '#E0E0E0', # Medium Light Gray
-            '#D8DFE6', # Visible Blue-Gray
-            '#E6E0D6', # Visible Warm Beige
-            '#DCE6D9', # Visible Sage
-            '#E6DCE2', # Visible Lavender
-            '#DEE1E6', # Visible Slate
+            # Cool Blues & Teals
+            '#E3F2FD', # Light Blue
+            '#D1EAED', # Soft Teal
+            '#D4E6F1', # Pale Sky
+            '#EBF5FB', # Ice Blue
+            
+            # Fresh Greens
+            '#E8F5E9', # Mint Green
+            '#DCE6D9', # Sage
+            '#EAFAF1', # Soft Emerald
+            
+            # Warm & Earthy
+            '#FAF2D3', # Cream Gold
+            '#FDEBD0', # Champagne
+            '#E6DDCF', # Sand
+            '#F4ECF7', # Pale Lilac
+            '#E8DAEF', # Soft Lavender
+            '#FADBD8', # Blush Rose
+            
+            # Professional Neutrals
+            '#E5E7E9', # Cool Gray
+            '#EAEDED', # Platinum
+            '#F2F3F4', # Anti-Flash White
+            '#D7DBDD', # Silver
+            '#E0E0E0', # Medium Gray
         ]
         context['sidebar_color'] = random.choice(sidebar_colors)
 

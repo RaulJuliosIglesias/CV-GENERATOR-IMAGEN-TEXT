@@ -19,7 +19,13 @@
             --text-color-light: #707070;
             --container-color: #FAFAFA;
 
-            --container-color-alt: {{ sidebar_color | default('#F0EFEF') }};
+            --container-color-alt: {
+                    {
+                    sidebar_color | default('#F0EFEF')
+                }
+            }
+
+            ;
             --body-color: #FCFCFC;
             --body-font: 'Poppins',
             sans-serif;
@@ -584,9 +590,9 @@
             }
 
             .bd-container {
-                max-width: 100%;
-                width: 100%;
-                margin: 0;
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
             }
 
             .resume {
