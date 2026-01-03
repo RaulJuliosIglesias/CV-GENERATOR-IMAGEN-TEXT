@@ -447,12 +447,10 @@ async def generate_profile_data(
                         raise # Re-raise to be caught by outer except
                 
                 elif response.status_code == 404 or response.status_code == 403:
-                    # Model not found or restricted policy
-                    print(f"WARNING: Model {model_id} returned {response.status_code}. Switching to Google Gemini fallback...")
-                    model_id = "google/gemini-2.0-flash-exp:free"
-                    request_payload["model"] = model_id
-                    await asyncio.sleep(1)
-                    continue
+                    # Model not found or restricted - FAIL EXPLICITLY, no silent switch
+                    error_msg = f"Model '{model_id}' returned {response.status_code} (Not Found/Forbidden). Please select a different model."
+                    print(f"ERROR: {error_msg}")
+                    raise RuntimeError(error_msg)
 
                 elif response.status_code == 429:
                     wait_time = (2 ** attempt) + 1  # Exponential backoff: 2s, 3s, 5s...
@@ -463,12 +461,8 @@ async def generate_profile_data(
                 else:
                     print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
                     if attempt == max_retries - 1:
-                        # Final attempt fallback
-                        if model_id != "google/gemini-2.0-flash-exp:free":
-                             model_id = "google/gemini-2.0-flash-exp:free"
-                             request_payload["model"] = model_id
-                             continue
-                        raise RuntimeError(f"Profile Gen Failed: {response.text}")
+                        # NO FALLBACK - fail with clear error
+                        raise RuntimeError(f"Profile Gen Failed after {max_retries} attempts: {response.text}")
         
         except json.JSONDecodeError as e:
             print(f"WARNING: JSON Parse Error (Attempt {attempt+1}): {e}")
