@@ -160,4 +160,11 @@ To deploy this application locally, please refer to the detailed **Kickstart Gui
 
 [![Read Quickstart Guide](https://img.shields.io/badge/📖_Read-Quickstart_Guide-success?style=for-the-badge&logo=readme)](./QUICKSTART.md)
 
-Or navigate directly to `QUICKSTART.md` in the file explorer.
+---
+
+## 🗺️ Roadmap & Vision
+
+This project is evolving. From **Dockerization** to **AI Interview Coaching**, explore our strategic vision:
+
+[![View Full Roadmap](https://img.shields.io/badge/🚀_View-Project_Roadmap-blueviolet?style=for-the-badge)](./ROADMAP.md)
+
