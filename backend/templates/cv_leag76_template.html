@@ -689,8 +689,17 @@
                         {% for key, val in (social|default({})).items() %}
                         {% if val %}
                         <a href="{{ val if 'http' in val else '#' }}" target="_blank" class="social_link">
-                            <i class="fa-brands fa-{{ key.lower() }} social_icon"></i> {{ val.split('/')[-1] if 'http'
-                            in val else val }}
+                            {% if key == 'website' or key == 'portfolio' %}
+                            <i class="fa-solid fa-globe social_icon"></i>
+                            {% elif key == 'researchgate' %}
+                            <i class="fa-brands fa-researchgate social_icon"></i>
+                            {% elif key == 'google_scholar' %}
+                            <i class="fa-solid fa-graduation-cap social_icon"></i>
+                            {% else %}
+                            <i class="fa-brands fa-{{ key.lower() }} social_icon"></i>
+                            {% endif %}
+
+                            {{ val.split('/')[-1] if 'http' in val else val }}
                         </a>
                         {% endif %}
                         {% endfor %}

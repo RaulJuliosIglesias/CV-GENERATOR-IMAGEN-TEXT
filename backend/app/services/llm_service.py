@@ -233,6 +233,62 @@ def resolve_role(role: str) -> str:
         print(f"DEBUG: Resolved 'any' role to: {resolved}")
         return resolved
     return role
+    
+    
+def get_social_links_for_role(role: str) -> list[str]:
+    """Return relevant social media keys based on role."""
+    role = role.lower()
+    
+    # Base links for everyone
+    links = ["linkedin", "website"]
+    
+    # 1. Developers / Engineering
+    if any(k in role for k in ["developer", "engineer", "software", "programmer", "coder", "devops", "architect", "tech"]):
+        if "github" not in links: links.append("github")
+        if "data" in role or "science" in role:
+            links.append("kaggle")
+            
+    # 2. Data & AI
+    elif any(k in role for k in ["data", "scientist", "analyst", "ai", "machine learning", "ml"]):
+        if "github" not in links: links.append("github")
+        links.append("kaggle")
+        
+    # 3. Research / Academia
+    elif any(k in role for k in ["research", "professor", "phd", "academic", "scientist", "lecturer"]):
+        links.append("researchgate")
+        links.append("google_scholar")
+        # Researchers might have github too if tech-related
+        if "ai" in role or "computer" in role or "bio" in role:
+            links.append("github")
+            
+    # 4. Design (Visual / 3D)
+    elif any(k in role for k in ["3d", "artist", "animator", "vfx", "motion", "illustrator", "concept"]):
+        links.append("artstation")
+        links.append("behance")
+        links.append("instagram")
+        
+    # 5. Design (UI/UX)
+    elif any(k in role for k in ["ui", "ux", "product design", "interface", "interaction"]):
+        links.append("dribbble")
+        links.append("behance")
+        
+    # 6. Marketing / Content
+    elif any(k in role for k in ["marketing", "social media", "content", "writer", "seo", "brand"]):
+        links.append("twitter")
+        links.append("instagram")
+        
+    # 7. Creative / Media
+    elif any(k in role for k in ["video", "photographer", "film", "youtube", "creator", "editor"]):
+        links.append("youtube")
+        links.append("instagram")
+        links.append("vimeo")
+        
+    # 8. Crypto / Web3
+    elif any(k in role for k in ["blockchain", "crypto", "web3", "solidity", "rust"]):
+        links.append("github")
+        links.append("twitter")
+        
+    return links
 
 # Enhanced system prompt for detailed CVs
 # Simplified System Prompt - Details are now in the external template
@@ -379,6 +435,10 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
         display_gender = profile_data.get("gender", gender)
         # We can pass more profile data into the template if needed
 
+    # Get dynamic social keys based on role
+    social_keys = get_social_links_for_role(display_role)
+    print(f"DEBUG: Selected social keys for role '{display_role}': {social_keys}")
+
     # 2. Load from external template - CRITICAL: FAIL FAST IF MISSING
     template_path = BACKEND_DIR / "prompts" / "cv_prompt_template.txt"
     
@@ -400,7 +460,8 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
         ethnicity=ethnicity,
         origin=origin,
         remote="Preferred" if remote else "Flexible",
-        name=display_name if display_name else "" 
+        name=display_name if display_name else "",
+        social_keys=social_keys  # Pass dynamic social list
     )
 
 

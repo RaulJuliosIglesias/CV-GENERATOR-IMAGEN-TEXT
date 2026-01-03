@@ -38,9 +38,9 @@ JSON STRUCTURE:
   "location": "City, Country",
   "profile_summary": "Compelling 3-4 sentence professional summary...",
   "social": {
-    "linkedin": "linkedin.com/in/name",
-    "github": "github.com/name",
-    "portfolio": "portfolio.com"
+    {% for key in social_keys %}
+    "{{ key }}": "{{ key }}.com/username"{{ "," if not loop.last else "" }}
+    {% endfor %}
   },
   "skills": {
     "technical": [
