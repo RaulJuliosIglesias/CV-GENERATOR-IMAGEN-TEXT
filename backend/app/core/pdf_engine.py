@@ -220,27 +220,33 @@ async def generate_pdf_from_existing_html(html_filename: str) -> str:
     print(f"DEBUG: Regenerating PDF for {html_filename}")
     
     try:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            
-            file_uri = html_path.absolute().as_uri()
-            await page.goto(file_uri, wait_until="domcontentloaded", timeout=60000)
-            await page.wait_for_timeout(1000)
-            
-            await page.pdf(
-                path=str(pdf_path),
-                format="A4",
-                print_background=True,
-                prefer_css_page_size=True,
-                margin={"top": "10mm", "bottom": "10mm", "left": "8mm", "right": "8mm"}
-            )
-            
-            await browser.close()
-            
-        print(f"SUCCESS: PDF regenerated: {pdf_path.name}")
-        return str(pdf_path)
+        # Use subprocess to run standalone script
+        # This prevents asyncio loop conflicts with Uvicorn/FastAPI
+        import subprocess
+        
+        script_path = BACKEND_DIR / "generate_pdf_script.py"
+        
+        # Run the script consistently
+        process = subprocess.run(
+            [sys.executable, str(script_path), "--html", str(html_path), "--out", str(pdf_path)],
+            capture_output=True,
+            text=True,
+            check=False # We handle return code manually
+        )
+        
+        if process.returncode == 0 and "PDF Generation Complete" in process.stdout:
+            print(f"SUCCESS: PDF regenerated: {pdf_path.name}")
+            return str(pdf_path)
+        else:
+            raise RuntimeError(f"Subprocess failed. Stderr: {process.stderr}\nStdout: {process.stdout}")
         
     except Exception as e:
         print(f"ERROR: PDF regeneration failed: {e}")
+        # Log error to file
+        try:
+            with open("error.log", "a") as f:
+                f.write(f"\n--- {datetime.datetime.now()} [REGEN] ---\n")
+                f.write(f"ERROR: PDF regeneration failed: {e}\n")
+        except:
+            pass
         raise
