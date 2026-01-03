@@ -1,170 +1,161 @@
-# AI CV Suite
+# AI CV Generator & Portfolio Suite
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://github.com/RaulJuliosIglesias)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-18-cyan.svg)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg)](https://fastapi.tiangolo.com/)
 
-A full-stack web application for generating batches of realistic PDF résumés with AI-powered content and image generation.
+> **A state-of-the-art, AI-powered system for generating hyper-realistic professional profiles, CVs, and avatars.**  
+> Engineered with parametric collision logic, bias-removal engines, and multi-model AI orchestration.
 
-## 🔒 Security Notice
+---
 
-**API keys are NEVER committed to git!**
-- `.env` files are excluded via `.gitignore`
-- Only `.env.example` (with placeholder values) is committed
-- Copy `.env.example` to `.env` and add your real API keys
+## 👤 Author & Copyright
 
-## Features
+**Created by Raúl Iglesias Julio**
 
-- 🤖 **AI Content Generation** - Uses OpenRouter with 10+ LLM models (Gemini, Claude, GPT-4, Llama, etc.)
-- 🖼️ **AI Avatar Generation** - Uses Krea API with 15+ image models (Flux, Imagen 4, Seedream, etc.)
-- 📄 **PDF Rendering** - Professional CVs using WeasyPrint + Jinja2 templates
-- ⚡ **Batch Processing** - Generate multiple CVs simultaneously
-- 📊 **Live Progress** - Real-time status tracking with visual indicators
-- 🎛️ **Model Selection** - Choose your preferred AI models with cost/speed info
-- 📁 **File Management** - Browse, open, and manage generated PDFs
+- 🐙 **GitHub**: [RaulJuliosIglesias](https://github.com/RaulJuliosIglesias)
+- 💼 **LinkedIn**: [Raúl Iglesias Julio](https://www.linkedin.com/in/raul-iglesias-julio)
+- 🌐 **Portfolio**: [Coming Soon](#)
 
-## Tech Stack
+---
 
-### Backend
-- **FastAPI** - Modern Python web framework
-- **WeasyPrint** - HTML/CSS to PDF conversion
-- **Jinja2** - Template engine
-- **OpenRouter** - Multi-provider LLM API
-- **Krea AI** - Image generation API
-- **Pillow** - Image processing (fallback)
+## ⛔ License & Usage Rights
 
-### Frontend
-- **React 18** - UI framework
-- **Vite** - Build tool
-- **TailwindCSS** - Styling
-- **Radix UI** - Accessible components
-- **Zustand** - State management
-- **Axios** - HTTP client
+**STRICTLY PROPRIETARY. ALL RIGHTS RESERVED.**
 
-## Quick Start
+This software is published for **portfolio and demonstration purposes only**.
 
-### Prerequisites
+- ❌ **NO Redistribution**: You may not mirror, distribute, or share this code.
+- ❌ **NO Commercial Use**: You may not use this code for any commercial products.
+- ❌ **NO Modification**: You may not modify or create derivative works.
+- ✅ **View Only**: You are permitted to view this code to evaluate the technical skills of the author.
 
-- Python 3.10+
-- Node.js 18+
-- (Windows) GTK3 for WeasyPrint - see [WeasyPrint Windows installation](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows)
+*Any unauthorized use, reproduction, or distribution of this software is strictly prohibited.*
 
-### Backend Setup
+---
 
-```bash
-cd ai-cv-suite/backend
+## 🏗️ System Architecture
 
-# Create virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
+This project implements a robust **Event-Driven Microservices-like Architecture** (Monolithic repo) handling complex asynchronous workflows.
 
-# Install dependencies
-pip install -r requirements.txt
+```mermaid
+graph TD
+    User[User Interface] -->|HTTP/REST| API[FastAPI Backend]
+    API -->|Async Task| Manager[Task Orchestrator]
+    
+    subgraph "AI Core Services"
+        Manager -->|Phase 1 & 2| LLM[LLM Service]
+        Manager -->|Phase 3| IMG[Krea AI Service]
+        
+        LLM -->|Routing| OpenRouter{OpenRouter Swarm}
+        OpenRouter -->|Fallback| Gemini[Google Gemini 2.0]
+        OpenRouter -->|Primary| Nemotron[Nvidia Nemotron]
+        
+        IMG -->|Generation| Krea{Krea AI Cloud}
+        Krea -->|Flux/Imagen| Models[Generative Models]
+    end
+    
+    subgraph "Processing Logic"
+        LLM -- Parametric Sanitation --> Progression[Career Logic Engine]
+        IMG -- Bias Removal --> Prompts[Prompt Engineering]
+        Progression --> Normalizer[Data Normalizer]
+    end
 
-# Configure environment (IMPORTANT!)
-copy .env.example .env
-# Edit .env and add your REAL API keys
-
-# Run server
-uvicorn app.main:app --reload
+    subgraph "Output Engine"
+        Manager -->|Phase 4| HTML[Jinja2 Renderer]
+        Manager -->|Phase 5| PDF[Playwright Engine]
+        PDF -->|Result| File[(PDF Artifacts)]
+    end
 ```
 
-### Frontend Setup
+### Key Technical Components
 
+#### 1. Backend (Python/FastAPI)
+The core logic resides in a high-performance **FastAPI** application ensuring non-blocking operations via `asyncio`.
+*   **Orchestration**: A custom `TaskManager` handles multi-stage generation jobs (Profiles -> CVs -> Images -> PDFs).
+*   **Resilience**: Implements **Exponential Backoff** and **Circuit Breakers** for AI APIs. If a model like OpenRouter fails (404/429), the system automatically hot-swaps to a fallback model (Google Gemini) without user interruption.
+*   **Data Validation**: Pydantic models ensure type safety across all Service layers.
+
+#### 2. AI Services Layer
+*   **LLM Service**: Agnostic integration with OpenRouter. Features a **Parametric Career Engine** that mathematically validates career history (e.g., ensuring a "VP" has a realistic past trajectory like "Director" -> "Manager", removing "Senior" prefixes from junior roles).
+*   **Krea Service**: Advanced image generation wrapper supporting **Flux-1-Dev**, **Seedream-3**, and **Imagen-4**. Includes a custom **Anti-Bias Engine** that aggressively strips corporal/age biases ("office jackets", "senior" terms) to ensure modern, fresh avatars.
+
+#### 3. Frontend (React/Vite)
+A modern, reactive UI built with **React 18** and **Vite**.
+*   **State Management**: **Zustand** for global efficient state (no Redux boilerplate).
+*   **Real-time Feedback**: Polling mechanisms to track backend batch processing (0-100% progress).
+*   **UI/UX**: Styled with **TailwindCSS** and **Radix UI** for a premium, accessible component library.
+
+---
+
+## 🛠️ Technology Stack
+
+| Domain | Technology | Purpose |
+|--------|------------|---------|
+| **Core** | **Python 3.10+** | Logic & Orchestration |
+| **API** | **FastAPI** | High-performance Async Web Server |
+| **Frontend** | **React 18 + Vite** | Reactive Web Interface |
+| **Styling** | **TailwindCSS** | Utility-first Design System |
+| **AI (Text)** | **OpenRouter / Gemini** | LLM Profile & Content Generation |
+| **AI (Image)** | **Krea AI API** | Photorealistic Profile Pictures |
+| **Rendering** | **Playwright** | Headless Browser PDF Generation |
+| **Templating** | **Jinja2** | Dynamic HTML Construction |
+| **State** | **Zustand** | Frontend State Management |
+
+---
+
+## 🚀 Deep Dive: The Logic
+
+### 1. Parametric Career Progression
+Unlike basic generators that hallucinate random roles, this system enforces **Code-Based Career Logic**:
+*   **Downgrade Algorithm**: If a profile is generated as an "Executive", the algorithm iterates backwards through history.
+*   **Sanitization**: It actively strips titles. A "Senior Developer" in 2024 cannot have been a "Senior Developer" in 2018. The system strips "Senior" from past roles programmatically.
+
+### 2. Bias-Free Image Generation
+The `KreaService` implements a **Dynamic Context Injector**:
+*   Detects roles (e.g., "Developer" vs "Creative").
+*   **Forbidden Token Removal**: Strips "Senior", "Office", "Suit" from prompts.
+*   **Style Injection**: Forces "Modern casual", "Tech aesthetic" contexts based on the persona, ensuring avatars look like real 2024 professionals, not stock photos.
+
+---
+
+## 📦 Installation & Setup
+
+### Prerequisites
+*   **Node.js** v18+
+*   **Python** v3.10+
+*   **API Keys** (OpenRouter, Krea AI)
+
+### 1. Backend Setup
 ```bash
-cd ai-cv-suite/frontend
+cd backend
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
 
-# Install dependencies
+pip install -r requirements.txt
+playwright install chromium
+
+# Configuration
+copy .env.example .env
+# -> Edit .env with your KREA_API_KEY and OPENROUTER_API_KEY
+```
+
+### 2. Frontend Setup
+```bash
+cd frontend
 npm install
-
-# Run dev server
 npm run dev
 ```
 
-### Access the Application
+### 3. Running
+*   Frontend: `http://localhost:5173`
+*   Backend Docs: `http://localhost:8000/docs`
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
+---
 
-## Configuration
+## 🌟 Acknowledgements
 
-Edit `backend/.env` (create from `.env.example`):
-
-```env
-# OpenRouter - Get key from https://openrouter.ai/keys
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
-
-# Krea AI - Get key from https://krea.ai
-KREA_API_KEY=your-krea-key-here
-
-# Default models (can be changed in UI)
-DEFAULT_LLM_MODEL=google/gemini-2.0-flash-exp:free
-DEFAULT_IMAGE_MODEL=flux
-```
-
-## Available Models
-
-### LLM Models (via OpenRouter)
-| Model | Provider | Cost |
-|-------|----------|------|
-| Gemini 2.0 Flash | Google | Free |
-| Claude 3.5 Sonnet | Anthropic | $3/1M |
-| GPT-4 Turbo | OpenAI | $10/1M |
-| Llama 3.1 70B | Meta | $0.40/1M |
-| And more... | | |
-
-### Image Models (via Krea)
-| Model | Speed | Compute |
-|-------|-------|---------|
-| Flux | 5s | 3 units |
-| Z Image | 5s | 2 units |
-| Krea 1 | 8s | 6 units |
-| Imagen 4 Fast | 17s | 16 units |
-| And more... | | |
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/models` | List available LLM & image models |
-| POST | `/api/generate` | Start batch generation |
-| GET | `/api/status` | Get current batch status |
-| GET | `/api/files` | List generated PDFs |
-| POST | `/api/open-folder` | Open output folder in OS |
-| DELETE | `/api/clear` | Clear all generated files |
-
-## Project Structure
-
-```
-ai-cv-suite/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI entry point
-│   │   ├── core/
-│   │   │   ├── pdf_engine.py    # Jinja2 + WeasyPrint
-│   │   │   └── task_manager.py
-│   │   ├── services/
-│   │   │   ├── llm_service.py   # OpenRouter integration
-│   │   │   └── krea_service.py  # Krea API integration
-│   │   └── routers/
-│   │       └── generation.py
-│   ├── templates/
-│   │   ├── cv_template.html
-│   │   └── style.css
-│   ├── .env.example             # Template (safe to commit)
-│   ├── .env                     # Real keys (NEVER commit!)
-│   └── output/                  # Generated PDFs
-│
-└── frontend/
-    └── src/
-        ├── components/
-        │   ├── ConfigPanel.jsx  # With model selection
-        │   ├── ProgressTracker.jsx
-        │   └── FileExplorer.jsx
-        ├── stores/
-        │   └── useGenerationStore.js
-        └── lib/
-            └── api.js
-```
-
-## License
-
-MIT
+Designed and developed by **Raúl Iglesias Julio** as a demonstration of advanced AI engineering capabilities.
