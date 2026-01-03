@@ -177,13 +177,33 @@ function TaskCard({ task }) {
 }
 
 export default function ProgressTracker() {
-    const { allTasks, isGenerating, activeBatchIds } = useGenerationStore();
+    const { allTasks, isGenerating, activeBatchIds, completedBatchIds } = useGenerationStore();
 
     // Use allTasks for aggregated view
     const tasks = allTasks;
     const completedCount = tasks.filter((t) => t.status === 'complete').length;
     const totalCount = tasks.length;
-    const overallProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    // Calculate REAL progress based on subtasks
+    // Each task has 5 subtasks (Profile, CV Content, Image, HTML, PDF)
+    // We calculate the sum of all subtask progress / total possible
+    let subtaskProgressSum = 0;
+    let subtaskTotal = 0;
+
+    tasks.forEach(task => {
+        if (task.subtasks && task.subtasks.length > 0) {
+            task.subtasks.forEach(subtask => {
+                subtaskTotal += 100; // Each subtask can be 0-100
+                subtaskProgressSum += (subtask.progress || 0);
+            });
+        } else {
+            // Fallback: use task.progress directly
+            subtaskTotal += 100;
+            subtaskProgressSum += (task.progress || 0);
+        }
+    });
+
+    const overallProgress = subtaskTotal > 0 ? Math.round((subtaskProgressSum / subtaskTotal) * 100) : 0;
 
     if (tasks.length === 0) {
         return (

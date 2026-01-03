@@ -811,8 +811,8 @@
         </div>
     </main>
 
-    <!-- HTML2PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- HTML2PDF v0.9.3 (most stable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
     <script>
         /* --- MAIN LOGIC --- */
@@ -861,7 +861,7 @@
                 const body = document.body
                 const wasDark = body.classList.contains(darkTheme)
 
-                // 1. Force Light Mode for printing
+                // 1. Force Light Mode for PDF
                 if (wasDark) {
                     body.classList.remove(darkTheme)
                     themeButton.classList.remove(iconTheme)
@@ -871,12 +871,11 @@
                 // 2. Add scale class for PDF sizing
                 addScaleCV()
 
-                // 3. Use native print dialog instead of html2pdf for SELECTABLE TEXT
-                // This preserves text as vectors, not images
+                // 3. Generate PDF using html2pdf.js
                 setTimeout(() => {
-                    window.print() // Opens Print dialog, user can save as PDF
+                    generateResume()
 
-                    // 4. Revert classes after print dialog
+                    // 4. Revert classes after PDF generation
                     setTimeout(() => {
                         removeScaleCV()
                         if (wasDark) {
@@ -884,8 +883,8 @@
                             themeButton.classList.add(iconTheme)
                             themeButton.classList.remove('fa-moon')
                         }
-                    }, 500)
-                }, 100) // Short delay to apply scale-cv class
+                    }, 2000)
+                }, 100)
             })
         }
     </script>

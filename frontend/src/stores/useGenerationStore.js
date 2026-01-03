@@ -8,16 +8,16 @@ const useGenerationStore = create((set, get) => ({
         genders: ['any'],
         ethnicities: ['any'],
         origins: ['any'],
-        roles: ['any'],  // Changed to 'any' for quick testing
+        roles: ['any'],
         age_min: 25,
         age_max: 35,
-        expertise_levels: ['any'],  // Changed to 'any' for quick testing
+        expertise_levels: ['any'],
         remote: false,
-        profile_model: null, // New: Phase 1
-        cv_model: null,      // New: Phase 2
-        llm_model: null,     // Legacy/Fallback
+        profile_model: null,
+        cv_model: null,
+        llm_model: null,
         image_model: null,
-        llmSort: 'default',   // default, price_asc, price_desc
+        llmSort: 'default',
     },
 
     // Available models
@@ -25,11 +25,12 @@ const useGenerationStore = create((set, get) => ({
     imageModels: [],
     modelsLoaded: false,
 
-    // Generation state - AGGREGATE QUEUE
+    // Generation state - AGGREGATE QUEUE (FIXED)
     isGenerating: false,
-    activeBatchIds: [],     // Array of active batch IDs
-    allTasks: [],           // Aggregated tasks from ALL active batches
-    currentBatch: null,     // Most recent batch (for display)
+    activeBatchIds: [],     // Array of active (incomplete) batch IDs
+    completedBatchIds: [],  // Array of completed batch IDs (to keep their tasks visible)
+    allTasks: [],           // Aggregated tasks from ALL batches (active + completed)
+    currentBatch: null,
     pollInterval: null,
 
     // Files state
@@ -49,7 +50,6 @@ const useGenerationStore = create((set, get) => ({
                 modelsLoaded: true,
             });
 
-            // Set default models if not already set
             const { config } = get();
             if (response.llm_models?.length > 0) {
                 const defaultModel = response.llm_models[0].id;
@@ -72,7 +72,6 @@ const useGenerationStore = create((set, get) => ({
         }
     },
 
-    // Actions
     setConfig: (key, value) => {
         set((state) => ({
             config: { ...state.config, [key]: value },
@@ -98,16 +97,14 @@ const useGenerationStore = create((set, get) => ({
     },
 
     startGeneration: async () => {
-        const { config, activeBatchIds, pollInterval } = get();
+        const { config, activeBatchIds, completedBatchIds, pollInterval } = get();
 
-        // Convert age_min/age_max to age range format
         const ageRange = `${config.age_min}-${config.age_max}`;
 
-        // Build request
         const request = {
             ...config,
-            ages: [ageRange],  // Convert to array for backend
-            roles: config.roles.length > 0 ? config.roles : ['Software Developer'] // Default if empty
+            ages: [ageRange],
+            roles: config.roles.length > 0 ? config.roles : ['Software Developer']
         };
 
         set({ isGenerating: true, error: null });
@@ -116,10 +113,10 @@ const useGenerationStore = create((set, get) => ({
             const response = await generateBatch(request);
             const newBatchId = response.batch_id;
 
-            // Add new batch ID to the queue
-            const newBatchIds = [...activeBatchIds, newBatchId];
+            // Add new batch ID to active list
+            const newActiveBatchIds = [...activeBatchIds, newBatchId];
             set({
-                activeBatchIds: newBatchIds,
+                activeBatchIds: newActiveBatchIds,
                 currentBatch: newBatchId
             });
 
@@ -127,51 +124,62 @@ const useGenerationStore = create((set, get) => ({
             if (!pollInterval) {
                 const interval = setInterval(async () => {
                     try {
-                        const { activeBatchIds: currentBatchIds } = get();
+                        const { activeBatchIds: currentActive, completedBatchIds: currentCompleted } = get();
 
-                        if (currentBatchIds.length === 0) {
-                            // No active batches, stop polling
+                        // All batch IDs we need to track
+                        const allBatchIds = [...currentActive, ...currentCompleted];
+
+                        if (allBatchIds.length === 0) {
                             clearInterval(get().pollInterval);
-                            set({ isGenerating: false, pollInterval: null, allTasks: [] });
+                            set({ isGenerating: false, pollInterval: null });
                             get().loadFiles();
                             return;
                         }
 
-                        // Fetch status for ALL active batches in parallel
-                        const statusPromises = currentBatchIds.map(batchId =>
+                        // Fetch status for ALL batches (active + completed for display)
+                        const statusPromises = allBatchIds.map(batchId =>
                             getBatchStatus(batchId).catch(() => null)
                         );
                         const results = await Promise.all(statusPromises);
 
-                        // Aggregate tasks and filter out completed batches
+                        // Aggregate all tasks
                         let aggregatedTasks = [];
                         const stillActiveBatchIds = [];
+                        const newlyCompletedBatchIds = [...currentCompleted];
 
                         for (let i = 0; i < results.length; i++) {
                             const batchStatus = results[i];
                             if (!batchStatus) continue;
 
-                            // Add tasks from this batch
+                            // Add all tasks from this batch
                             aggregatedTasks = aggregatedTasks.concat(batchStatus.tasks || []);
 
-                            // Keep batch if not complete
-                            if (!batchStatus.is_complete) {
-                                stillActiveBatchIds.push(currentBatchIds[i]);
+                            const batchId = allBatchIds[i];
+                            const wasActive = currentActive.includes(batchId);
+
+                            if (wasActive) {
+                                if (!batchStatus.is_complete) {
+                                    stillActiveBatchIds.push(batchId);
+                                } else {
+                                    // Move to completed list
+                                    if (!newlyCompletedBatchIds.includes(batchId)) {
+                                        newlyCompletedBatchIds.push(batchId);
+                                    }
+                                }
                             }
                         }
 
-                        set({ allTasks: aggregatedTasks });
+                        set({
+                            allTasks: aggregatedTasks,
+                            activeBatchIds: stillActiveBatchIds,
+                            completedBatchIds: newlyCompletedBatchIds
+                        });
 
-                        // If some batches completed, update the active list
-                        if (stillActiveBatchIds.length !== currentBatchIds.length) {
-                            set({ activeBatchIds: stillActiveBatchIds });
-
-                            // If all done, stop
-                            if (stillActiveBatchIds.length === 0) {
-                                clearInterval(get().pollInterval);
-                                set({ isGenerating: false, pollInterval: null });
-                                get().loadFiles();
-                            }
+                        // If no more active batches, stop polling but keep tasks visible
+                        if (stillActiveBatchIds.length === 0) {
+                            clearInterval(get().pollInterval);
+                            set({ isGenerating: false, pollInterval: null });
+                            get().loadFiles();
                         }
 
                     } catch (error) {
@@ -194,7 +202,13 @@ const useGenerationStore = create((set, get) => ({
         if (pollInterval) {
             clearInterval(pollInterval);
         }
-        set({ isGenerating: false, pollInterval: null, activeBatchIds: [], allTasks: [] });
+        set({ isGenerating: false, pollInterval: null, activeBatchIds: [] });
+        // Keep allTasks and completedBatchIds for display
+    },
+
+    clearQueue: () => {
+        // New action to clear all tasks when user wants fresh start
+        set({ activeBatchIds: [], completedBatchIds: [], allTasks: [] });
     },
 
     loadFiles: async () => {
