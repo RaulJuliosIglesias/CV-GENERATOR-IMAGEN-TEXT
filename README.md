@@ -1,6 +1,6 @@
 # 🤖 AI CV Generator & Portfolio Suite
 
-[![License: All Rights Reserved](https://img.shields.io/badge/License-All_Rights_Reserved-red.svg?style=for-the-badge)](https://github.com/RaulJuliosIglesias)
+[![License: All Rights Reserved](https://img.shields.io/badge/License-Proprietary-red.svg?style=for-the-badge)](https://github.com/RaulJuliosIglesias)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-18-cyan.svg?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -23,12 +23,14 @@
 
 ### ⚖️ License & Legal
 
-**Copyright © 2024 Raúl Iglesias Julio. All Rights Reserved.**
+**Copyright © 2026 Raúl Iglesias Julio. All Rights Reserved.**
 
 This software is published exclusively for **portfolio demonstration** and **technical evaluation**.
 
-- ✅ **Permitted**: Code review, local testing for evaluation.
-- ❌ **Prohibited**: Copying, redistribution, commercial use, modification.
+The compiled source code and related assets are the intellectual property of Raúl Iglesias Julio.
+
+- ✅ **Permitted Use**: You may view, run, and evaluate this code for hiring, educational, or technical assessment purposes.
+- ❌ **Prohibited Use**: Unauthorized copying, redistribution, modification, sublicensing, or commercial use of this software is strictly prohibited without express written permission from the copyright holder.
 
 ---
 
