@@ -1,16 +1,1 @@
-Photorealistic front-facing LinkedIn-style headshot of a {{gender_term}}, exactly {{age}} years old, {{ethnicity}} ethnicity.
-
-CRITICAL REQUIREMENTS:
-- Age must be EXACTLY {{age}} years old - not older, not younger
-- Ethnicity must clearly match {{ethnicity}} heritage
-- Subject must look DIRECTLY at the camera with natural eye contact
-- This is a PROFESSIONAL HEADSHOT, not a candid photo
-
-ENVIRONMENT AND STYLE:
-{{role_context}}
-
-FACE AND BODY:
-Generate a unique individual every time: vary hairstyle, hair color, facial structure (jaw, cheekbones, nose shape), skin tone appropriate for {{ethnicity}} heritage. Include natural skin details (pores, light texture). Age-appropriate features for someone exactly {{age}} years old.
-
-PHOTOGRAPHY SPECS:
-Front-facing head-and-shoulders composition. Subject centered, looking directly into the camera lens. Friendly, approachable expression with slight natural smile. Professional studio or environmental lighting. 85mm portrait lens look, f/2.8 bokeh, sharp focus on eyes. {{style_modifiers}}
+{{gender_term}}, exactly {{age}} years old, {{ethnicity}} ethnicity. Must look EXACTLY {{age}} years - NOT older, NOT younger. {{role_context}}. Natural headshot, looking directly at camera, subtle smile, head-and-shoulders, clean background. {{style_modifiers}}

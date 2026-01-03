@@ -14,7 +14,8 @@ PROFILE PARAMETERS:
 INSTRUCTIONS:
 1. **JSON ONLY**: Output strictly valid JSON. No markdown block markers (```json), no preamble.
 2. **Coherence**: Ensure gender, name, and pronouns are consistent. "Alexandra" must be Female. "David" must be Male.
-3. **Depth**: 
+3. **EXPERIENCE ORDER**: List experiences in DESCENDING order (NEWEST FIRST, oldest last). The most recent job must appear first in the array.
+4. **Depth**: 
     {% if expertise == 'senior' or expertise == 'expert' %}
    - CREATE AN EXTENSIVE, 3-PAGE EQUIVALENT CV.
    - 5-7 bullet points per job.
@@ -24,7 +25,7 @@ INSTRUCTIONS:
    - Create a strong 1-2 page CV.
    - Focus on skills and execution.
     {% endif %}
-4. **Dates**: Ensure chronological consistency based on age {{age}}.
+5. **Dates**: Ensure chronological consistency based on age {{age}}.
 
 JSON STRUCTURE:
 {
@@ -63,8 +64,8 @@ JSON STRUCTURE:
     {
       "title": "Senior Developer",
       "company": "Tech Corp",
-      "date_range": "2019 - Present",
-      "description": "Led migration of legacy monolith to microservices reducing deployment time by 60%. Managed team of 8 engineers.",
+      "date_range": "2022 - Present",
+      "description": "Current role - most recent, listed FIRST.",
       "achievements": [
         "Scaled revenue by 200% to $5M through infrastructure optimization.",
         "Reduced cloud costs by 30% by implementing spot instances.",
@@ -74,8 +75,8 @@ JSON STRUCTURE:
     {
        "title": "Developer",
        "company": "StartUp Inc",
-       "date_range": "2016 - 2019",
-       "description": "Developed full stack web applications using React and Node.js.",
+       "date_range": "2019 - 2022",
+       "description": "Previous role - older, listed SECOND.",
        "achievements": [
          "Built MVP in 3 months leading to Series A funding.",
          "Implemented real-time chat feature using WebSockets."

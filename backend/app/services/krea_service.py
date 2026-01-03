@@ -27,7 +27,7 @@ ASSETS_DIR = AVATARS_DIR # Backward compatibility wrapper
 KREA_API_BASE = "https://api.krea.ai"
 KREA_JOBS_URL = "https://api.krea.ai/jobs"
 
-# Available models with their properties - Using correct API path format
+# Available models with their properties - VERIFIED in Krea OpenAPI spec
 KREA_MODELS = {
     "bfl/flux-1-dev": {
         "name": "Flux",
@@ -37,33 +37,9 @@ KREA_MODELS = {
         "compute_units": 3,
         "model_id": "bfl/flux-1-dev"
     },
-    "krea-1": {
-        "name": "Krea 1",
-        "description": "Fast creative model, best for aesthetic images and photorealism",
-        "images": 4,
-        "time": "8s",
-        "compute_units": 6,
-        "model_id": "krea-1"
-    },
-    "flux-1-krea": {
-        "name": "Flux.1 Krea",
-        "description": "Distilled and open sourced version of Krea 1",
-        "images": 4,
-        "time": "8s",
-        "compute_units": 5,
-        "model_id": "flux-1-krea"
-    },
-    "z-image": {
-        "name": "Z Image",
-        "description": "Fast high quality image model from Alibaba",
-        "images": 2,
-        "time": "5s",
-        "compute_units": 2,
-        "model_id": "z-image"
-    },
     "seedream-3": {
         "name": "Seedream 3",
-        "description": "New fast, high-quality model from ByteDance",
+        "description": "Fast, high-quality model from ByteDance (~5s)",
         "images": 2,
         "time": "5s",
         "compute_units": 24,
@@ -71,23 +47,15 @@ KREA_MODELS = {
     },
     "seedream-4": {
         "name": "Seedream 4",
-        "description": "High quality model for photorealism and text rendering",
+        "description": "High quality for photorealism (~20s)",
         "images": 2,
         "time": "20s",
         "compute_units": 24,
         "model_id": "seedream-4"
     },
-    "seedream-4.5": {
-        "name": "Seedream 4.5",
-        "description": "Latest high quality model for photorealism and text rendering",
-        "images": 2,
-        "time": "20s",
-        "compute_units": 32,
-        "model_id": "seedream-4.5"
-    },
     "imagen-4-fast": {
         "name": "Imagen 4 Fast",
-        "description": "Google's fastest image model",
+        "description": "Google's fastest image model (~17s)",
         "images": 2,
         "time": "17s",
         "compute_units": 16,
@@ -95,7 +63,7 @@ KREA_MODELS = {
     },
     "imagen-4": {
         "name": "Imagen 4",
-        "description": "Google's current generation image model",
+        "description": "Google's current generation model (~32s)",
         "images": 2,
         "time": "32s",
         "compute_units": 32,
@@ -103,71 +71,15 @@ KREA_MODELS = {
     },
     "imagen-4-ultra": {
         "name": "Imagen 4 Ultra",
-        "description": "Google's best image model",
+        "description": "Google's best image model (~30s)",
         "images": 2,
         "time": "30s",
         "compute_units": 47,
         "model_id": "imagen-4-ultra"
     },
-    "flux-2": {
-        "name": "Flux 2",
-        "description": "FLUX.2 [dev] with enhanced realism and native editing",
-        "images": 2,
-        "time": "10s",
-        "compute_units": 20,
-        "model_id": "flux-2"
-    },
-    "flux-2-pro": {
-        "name": "Flux 2 Pro",
-        "description": "BFL's next generation model with improved quality",
-        "images": 2,
-        "time": "15s",
-        "compute_units": 60,
-        "model_id": "flux-2-pro"
-    },
-    "qwen": {
-        "name": "Qwen",
-        "description": "Great text rendering and prompt adherence",
-        "images": 2,
-        "time": "15s",
-        "compute_units": 9,
-        "model_id": "qwen"
-    },
-    "qwen-image-2512": {
-        "name": "Qwen Image 2512",
-        "description": "Enhanced realism, finer natural detail, and improved text rendering",
-        "images": 2,
-        "time": "15s",
-        "compute_units": 9,
-        "model_id": "qwen-image-2512"
-    },
-    "ideogram-3": {
-        "name": "Ideogram 3.0",
-        "description": "Highly aesthetic, general-purpose model",
-        "images": 2,
-        "time": "18s",
-        "compute_units": 54,
-        "model_id": "ideogram-3"
-    },
-    "kling-01": {
-        "name": "Kling O1",
-        "description": "High quality image model with reference support",
-        "images": 2,
-        "time": "30s",
-        "compute_units": 22,
-        "model_id": "kling-01"
-    },
-    "runway-gen-4": {
-        "name": "Runway Gen-4",
-        "description": "Cinematic image model with references",
-        "images": 2,
-        "time": "60s",
-        "compute_units": 40,
-        "model_id": "runway-gen-4"
-    },
     "flux-1.1-pro": {
         "name": "Flux 1.1 Pro",
-        "description": "Advanced yet efficient model from BFL",
+        "description": "Advanced efficient model from BFL (~11s)",
         "images": 2,
         "time": "11s",
         "compute_units": 31,
@@ -175,7 +87,7 @@ KREA_MODELS = {
     },
     "flux-1.1-pro-ultra": {
         "name": "Flux 1.1 Pro Ultra",
-        "description": "BFL's highest quality text to image model",
+        "description": "BFL's highest quality model (~18s)",
         "images": 2,
         "time": "18s",
         "compute_units": 47,
@@ -183,47 +95,23 @@ KREA_MODELS = {
     },
     "flux-kontext": {
         "name": "Flux Kontext",
-        "description": "Frontier model designed for image editing, optimized for Krea",
+        "description": "Image editing optimized (~5s)",
         "images": 2,
         "time": "5s",
         "compute_units": 6,
         "model_id": "flux-kontext"
     },
-    "flux-kontext-pro": {
-        "name": "Flux Kontext Pro",
-        "description": "Frontier model designed for image editing",
+    "ideogram-3": {
+        "name": "Ideogram 3.0",
+        "description": "Highly aesthetic, general-purpose (~18s)",
         "images": 2,
-        "time": "16s",
-        "compute_units": 32,
-        "model_id": "flux-kontext-pro"
-    },
-    "wan-2.2": {
-        "name": "Wan 2.2",
-        "description": "Slow model with great ultra-realistic textures for aesthetic outputs",
-        "images": 2,
-        "time": "20s",
-        "compute_units": 30,
-        "model_id": "wan-2.2"
-    },
-    "chatgpt-image": {
-        "name": "ChatGPT Image",
-        "description": "Highest quality with best prompt adherence, ideal for logos, icons, and text",
-        "images": 2,
-        "time": "60s",
-        "compute_units": 184,
-        "model_id": "chatgpt-image"
-    },
-    "chatgpt-image-1.5": {
-        "name": "ChatGPT Image 1.5",
-        "description": "Highest quality with best prompt adherence, ideal for logos, icons, and text",
-        "images": 2,
-        "time": "60s",
-        "compute_units": 184,
-        "model_id": "chatgpt-image-1.5"
+        "time": "18s",
+        "compute_units": 54,
+        "model_id": "ideogram-3"
     },
     "nano-banana": {
         "name": "Nano Banana",
-        "description": "Smart model, best for image editing",
+        "description": "Smart model for image editing (~10s)",
         "images": 2,
         "time": "10s",
         "compute_units": 32,
@@ -231,13 +119,22 @@ KREA_MODELS = {
     },
     "nano-banana-pro": {
         "name": "Nano Banana Pro",
-        "description": "Newer model with native 4K image generation and editing capabilities",
+        "description": "4K generation and editing (~30s)",
         "images": 2,
         "time": "30s",
         "compute_units": 119,
         "model_id": "nano-banana-pro"
+    },
+    "chatgpt-image": {
+        "name": "ChatGPT Image",
+        "description": "Best prompt adherence (~60s)",
+        "images": 2,
+        "time": "60s",
+        "compute_units": 184,
+        "model_id": "chatgpt-image"
     }
 }
+
 
 
 def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "Professional") -> str:
@@ -375,48 +272,33 @@ async def generate_avatar(
     # Map simple names to correct API paths (Provider/Model-ID format)
     # Based on user feedback and Krea API standards
     MODEL_PATH_MAP = {
-        # Flux Families (BFL)
+        # Flux Families (BFL) - Verified in OpenAPI spec
         "flux": "bfl/flux-1-dev",
         "bfl/flux-1-dev": "bfl/flux-1-dev",
-        "flux-2": "bfl/flux-2-dev",
-        "flux-2-pro": "bfl/flux-2-pro",
         "flux-1.1-pro": "bfl/flux-1.1-pro",
         "flux-1.1-pro-ultra": "bfl/flux-1.1-pro-ultra",
-        "flux-kontext": "bfl/flux-1-kontext-dev", # Specific override
+        "flux-kontext": "bfl/flux-1-kontext-dev",
+        "bfl/flux-1-kontext-dev": "bfl/flux-1-kontext-dev",
         
-        # Krea Native
-        "krea-1": "krea/krea-1", # Assuming provider prefix for consistency, or fallback to simple if 404
-        "flux-1-krea": "krea/flux-1-krea",
-        
-        # Alibaba
-        "z-image": "alibaba/z-image",
-        "qwen": "alibaba/qwen-vl",
-        "qwen-image-2512": "alibaba/qwen-image-2512",
-        
-        # ByteDance
+        # ByteDance - Verified in OpenAPI spec
         "seedream-3": "bytedance/seedream-3",
         "seedream-4": "bytedance/seedream-4",
-        "seedream-4.5": "bytedance/seedream-4.5",
         
-        # Google
+        # Google - Verified in OpenAPI spec
+        "imagen-3": "google/imagen-3",
         "imagen-4-fast": "google/imagen-4-fast",
         "imagen-4": "google/imagen-4",
         "imagen-4-ultra": "google/imagen-4-ultra",
         "nano-banana-pro": "google/nano-banana-pro",
         "nano-banana": "google/nano-banana",
         
-        # Ideogram
+        # Ideogram - Verified in OpenAPI spec
         "ideogram-3": "ideogram/ideogram-3",
+        "ideogram-2-turbo": "ideogram/ideogram-2-turbo",
         
-        # Kuaishou
-        "kling-01": "kuaishou/kling-01",
-        
-        # Runway
-        "runway-gen-4": "runway/gen-4",
-        
-        # OpenAI
-        "chatgpt-image": "openai/dall-e-3", # Guessing standard, or maybe chatgpt-image is correct? Keeping map just in case
-        "chatgpt-image-1.5": "openai/dall-e-3"
+        # OpenAI - Verified in OpenAPI spec
+        "chatgpt-image": "openai/gpt-image",
+        "gpt-image": "openai/gpt-image",
     }
     
     # Clean fallback: If exact match exists in map, use it. Else try to construct provider prefix if missing?

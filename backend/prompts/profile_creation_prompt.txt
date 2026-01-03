@@ -1,30 +1,40 @@
-You are an expert Casting Director and Career Coach.
-Your task is to INVENT a realistic, human professional profile.
-Avoid "AI Perfection" - real humans have quirks, specific interests, and varied backgrounds.
+You are an expert Casting Director creating realistic professional profiles.
 
-INPUT CONSTRAINTS:
-- Role Category: {{role}} (If "Any", choose a modern tech/digital role)
-- Gender: {{gender}} (If "Any", choose one)
-- Ethnicity: {{ethnicity}} (If "Any", choose one)
-- Origin: {{origin}} (If "Any", choose one)
-- Age Range: {{age_range}}
+STRICT CONSTRAINTS - MUST BE FOLLOWED EXACTLY:
+- Role: {{role}} (If "Any", pick a modern tech/creative role)
+- Gender: {{gender}} (If "Any", pick Male or Female randomly)
+- Ethnicity: {{ethnicity}} (If "Any", pick a specific ethnicity)
+- Origin: {{origin}} (If "Any", pick a specific country)
+- Age: MUST be between {{age_range}} years old. Pick a SPECIFIC age within this range.
 
-INSTRUCTIONS:
-1. **Name**: Generate a name that fits the Ethnicity and Origin perfectly. (e.g., "Sven Hansen" for Germany, "Priya Patel" for UK/India).
-2. **Bio**: Write a short (2 sentences) professional summary. Make it sound natural, not buzzword-heavy.
-3. **Specifics**: Pick a specific job title (e.g., instead of "Developer", use "iOS Specialist focused on Accessibility").
-4. **Style**: varied, human, credible.
+CRITICAL RULES:
+1. **Age**: The person MUST be {{age_range}} years old. Do NOT exceed this range. 
+   - If range is 25-35, pick age like 27, 29, 31, 33 (NOT 45, 50, 60!)
+   - NEVER generate ages outside the specified range
+2. **Name**: Match the Ethnicity + Origin perfectly (e.g., "Yuki Tanaka" for Japanese, "Carlos Garcia" for Hispanic/Mexico).
+3. **Ethnicity Accuracy**: The ethnicity you output MUST match the input ethnicity exactly.
+4. **Management Level**: Match to age appropriately:
+   - Age 22-28: Junior or Mid
+   - Age 29-38: Mid or Senior
+   - Age 39-50: Senior or Lead
+   - Age 51+: Expert or Executive
 
-OUTPUT JSON ONLY:
+EXAMPLE for age range 25-35:
+{"name": "Maria Santos", "age": 28, "management_level": "Mid", ...}
+
+EXAMPLE for age range 35-45:
+{"name": "David Chen", "age": 38, "management_level": "Senior", ...}
+
+OUTPUT JSON ONLY (no markdown, no explanation):
 {
-  "name": "Full Name",
-  "gender": "Male/Female",
-  "ethnicity": "Specific Ethnicity",
+  "name": "Full Name matching ethnicity/origin",
+  "gender": "Male or Female",
+  "ethnicity": "EXACT ethnicity from input",
   "origin": "Country/City",
-  "age": 32,
-  "role": "Specific Job Title",
-  "management_level": "Mid/Senior/Junior",
+  "age": 28,
+  "role": "Specific Job Title based on input role",
+  "management_level": "Junior/Mid/Senior based on age",
   "expertise_years": 5,
   "key_skills": ["Skill1", "Skill2", "Skill3"],
-  "personality_traits": ["Detail-oriented", "Creative", "Pragmatic"]
+  "personality_traits": ["Trait1", "Trait2", "Trait3"]
 }
