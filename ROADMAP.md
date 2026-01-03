@@ -20,25 +20,25 @@
     - [ ] Implement robust logging (ELK Stack or Datadog).
     - [ ] Achieve 90% Code Coverage on logic services (`llm_service`, `krea_service`).
 
-## 🔐 Phase 2: User Identity & Persistence (Q3 2026)
-**Goal**: Enable users to save, manage, and evolve their career profiles over time.
-> **💡 Technical Rationale**: Offloading Identity Management (Auth0) ensures GDPR compliance and security standards without reinventing the wheel. PostgreSQL provides necessary relational integrity (ACID) for user data that simple JSON storage cannot offers. Object Storage (S3) decouples state from compute, allowing the backend to remain stateless and horizontally scalable.
+## ☁️ Phase 2: The Cloud Transition & User Ecosystem (Q3 2026)
+**Goal**: Transform the tool into a multi-tenant Cloud SaaS using **Supabase**.
+> **💡 Technical Rationale**: We are adopting **Supabase** as our Backend-as-a-Service (BaaS). This decision solves three critical problems at once: **Identity** (Auth), **Persistence** (Postgres), and **Artifact Hosting** (Storage), drastically reducing time-to-market for SaaS features compared to managing separate services.
 
-- [ ] **Authentication System**
-    - [ ] Integrate **Auth0** or **Clerk** for secure Email/Social Signup & Login.
-    - [ ] Implement JWT-based session management in FastAPI.
-- [ ] **Database Persistence (PostgreSQL)**
-    - [ ] Design schema for `Users`, `Profiles`, `CVs`, and `JobApplications`.
-    - [ ] "My Library": Dashboard to view and edit previously generated documents.
-- [ ] **Storage Layer (S3/R2)**
-    - [ ] Secure cloud storage for generated avatars and PDF artifacts.
+- [ ] **Supabase Integration (BaaS)**
+    - [ ] **Auth**: Replace local storage with Supabase Auth (Email + Google/LinkedIn Login).
+    - [ ] **Database**: Migrate JSON roles to Supabase PostgreSQL.
+    - [ ] **Storage**: Configure Buckets for efficient serving of generated Avatars and PDFs.
+- [ ] **User Dashboard**
+    - [ ] "My Career Hub": A new UI view where logged-in users can browse their history.
+    - [ ] **Profile State**: Users can save a "Master Profile" so they don't have to re-enter data for every generation.
 
 ## 🎨 Phase 3: Advanced Customization & Personalization (Q4 2026)
 **Goal**: Provide deep value through hyper-personalization tools.
+> **💡 Technical Rationale**: Leveraging the cloud storage established in Phase 2, we can now process user-uploaded assets securely.
 
 - [ ] **"Digital Twin" Avatar Engine (Img2Img)**
-    - [ ] **Feature**: Users upload a real selfie.
-    - [ ] **Logic**: Use Krea's Image-to-Image capabilities to preserve facial identity while upgrading styling (e.g., "Put me in a suit", "Make me look more executive").
+    - [ ] **Feature**: Users upload a real selfie to their Cloud Profile.
+    - [ ] **Logic**: The backend pipelines this image to Krea's `img2img` API, preserving facial identity while applying professional styling (e.g., "Put me in a suit").
 - [ ] **Resume Parsing & Remixing**
     - [ ] **Feature**: Upload existing PDF/Word CV.
     - [ ] **Logic**: Extract text -> Structure usage -> Re-generate with AI optimization.
