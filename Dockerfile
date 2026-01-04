@@ -1,7 +1,18 @@
-# Use Python 3.11 slim image
+# Stage 1: Build Frontend
+FROM node:20-slim AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy frontend files
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Python Backend with Playwright
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
 # Install system dependencies for Playwright
@@ -38,9 +49,11 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 # Install Playwright and browsers
 RUN pip install playwright && playwright install chromium
 
-# Copy the rest of the application
+# Copy backend
 COPY backend/ ./backend/
-COPY frontend/dist/ ./frontend/dist/
+
+# Copy built frontend from Stage 1
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Create output directories
 RUN mkdir -p backend/output/pdf backend/output/html backend/output/avatars backend/output/temp backend/output/prompts
@@ -54,4 +67,5 @@ ENV PORT=8000
 EXPOSE 8000
 
 # Start the application
+WORKDIR /app/backend
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
