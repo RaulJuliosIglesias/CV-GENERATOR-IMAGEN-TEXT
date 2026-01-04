@@ -61,11 +61,13 @@ RUN mkdir -p backend/output/pdf backend/output/html backend/output/avatars backe
 # Set environment variables
 ENV PYTHONPATH=/app/backend
 ENV HOST=0.0.0.0
-ENV PORT=8000
 
-# Expose port
+# Create startup script that uses Railway's PORT
+RUN echo '#!/bin/bash\npython -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}' > /app/start.sh && chmod +x /app/start.sh
+
+# Expose port (Railway will override this)
 EXPOSE 8000
 
 # Start the application
 WORKDIR /app/backend
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/bin/bash", "/app/start.sh"]
