@@ -10,6 +10,9 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
+# Debug: List built files
+RUN echo "=== Frontend build output ===" && ls -la dist/ && ls -la dist/assets/ || echo "No assets folder"
+
 # Stage 2: Python Backend with Playwright
 FROM python:3.11-slim
 
@@ -55,15 +58,18 @@ COPY backend/ ./backend/
 # Copy built frontend from Stage 1
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
+# Debug: Verify frontend files in final image
+RUN echo "=== Verifying frontend in final image ===" && ls -la /app/frontend/dist/ && ls -la /app/frontend/dist/assets/ || echo "Frontend assets not found!"
+
 # Create output directories
-RUN mkdir -p backend/output/pdf backend/output/html backend/output/avatars backend/output/temp backend/output/prompts
+RUN mkdir -p backend/output/pdf backend/output/html backend/output/avatars backend/output/temp backend/output/prompts backend/assets
 
 # Set environment variables
 ENV PYTHONPATH=/app/backend
 ENV HOST=0.0.0.0
 
 # Create startup script that uses Railway's PORT
-RUN echo '#!/bin/bash\npython -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}' > /app/start.sh && chmod +x /app/start.sh
+RUN echo '#!/bin/bash\necho "Starting server..."\necho "Checking frontend:"\nls -la /app/frontend/dist/assets/ 2>/dev/null || echo "No frontend assets!"\npython -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose port (Railway will override this)
 EXPOSE 8000
