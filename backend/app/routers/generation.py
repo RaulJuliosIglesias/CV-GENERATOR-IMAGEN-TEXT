@@ -440,22 +440,50 @@ async def get_html_file(filename: str):
 async def get_pdf_file(filename: str):
     """Download/view a specific PDF file."""
     filepath = PDFS_DIR / filename
-    if not filepath.exists():
-        # Fallback: Check if it exists in HTML_DIR (legacy behavior) or if PDF hasn't been moved yet
-        filepath = HTML_DIR / filename
-        if not filepath.exists():
-             raise HTTPException(status_code=404, detail="PDF File not found")
+    
+    # 1. Check root PDF dir (Legacy/Normal)
+    if filepath.exists():
+        return FileResponse(path=str(filepath), media_type="application/pdf")
+        
+    # 2. Smart Category Support: Search in subdirectories
+    # We use rglob to find the file in any category subfolder
+    found_files = list(PDFS_DIR.rglob(filename))
+    if found_files:
+        return FileResponse(path=str(found_files[0]), media_type="application/pdf")
 
-    return FileResponse(path=str(filepath), media_type="application/pdf")  # No filename = opens inline
+    raise HTTPException(status_code=404, detail="PDF File not found")
 
 
 @router.delete("/files/{filename}")
 async def delete_file(filename: str):
-    """Delete a file."""
-    filepath = HTML_DIR / filename
-    if filepath.exists():
-        filepath.unlink()
-    return {"message": f"Deleted {filename}"}
+    """Delete a file (HTML and its corresponding PDF)."""
+    deleted = []
+    
+    # 1. Delete HTML
+    html_path = HTML_DIR / filename
+    if html_path.exists():
+        html_path.unlink()
+        deleted.append("HTML")
+        
+    # 2. Delete PDF (Check root and subfolders)
+    pdf_filename = filename.replace('.html', '.pdf')
+    pdf_path = PDFS_DIR / pdf_filename
+    
+    if pdf_path.exists():
+        pdf_path.unlink()
+        deleted.append("PDF")
+    else:
+        # Search in subfolders
+        found_pdfs = list(PDFS_DIR.rglob(pdf_filename))
+        for p in found_pdfs:
+            p.unlink()
+            deleted.append(f"PDF({p.parent.name})")
+            
+    if not deleted:
+         # If nothing found, still return success to keep frontend in sync
+         return {"message": "File not found but cleared"}
+         
+    return {"message": f"Deleted {' + '.join(deleted)}"}
 
 
 @router.post("/open-folder")
