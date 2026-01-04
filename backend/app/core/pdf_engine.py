@@ -19,10 +19,14 @@ BACKEND_DIR = Path(__file__).parent.parent.parent
 OUTPUT_DIR = BACKEND_DIR / "output"
 TEMPLATES_DIR = BACKEND_DIR / "templates"
 
-# Ensure output directory exists
-OUTPUT_DIR.mkdir(exist_ok=True)
-(OUTPUT_DIR / "pdf").mkdir(exist_ok=True)
-(OUTPUT_DIR / "html").mkdir(exist_ok=True)
+# Detect Vercel environment
+IS_VERCEL = os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV') is not None
+
+# Ensure output directory exists (skip on Vercel)
+if not IS_VERCEL:
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    (OUTPUT_DIR / "pdf").mkdir(exist_ok=True)
+    (OUTPUT_DIR / "html").mkdir(exist_ok=True)
 
 
 def compress_image_base64(image_path: str, max_size: int = 200, quality: int = 60) -> str:

@@ -20,7 +20,12 @@ print(f"DEBUG KREA: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})"
 # Output directory for avatars
 OUTPUT_DIR = BACKEND_DIR / "output"
 AVATARS_DIR = OUTPUT_DIR / "avatars"
-AVATARS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Detect Vercel environment
+IS_VERCEL = os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV') is not None
+
+if not IS_VERCEL:
+    AVATARS_DIR.mkdir(parents=True, exist_ok=True)
 ASSETS_DIR = AVATARS_DIR # Backward compatibility wrapper
 
 # Krea API Configuration - Per official docs (Jan 2026)

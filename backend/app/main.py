@@ -57,10 +57,14 @@ OUTPUT_DIR = BACKEND_DIR / "output"
 ASSETS_DIR = BACKEND_DIR / "assets"
 TEMPLATES_DIR = BACKEND_DIR / "templates"
 
-# Ensure directories exist
-OUTPUT_DIR.mkdir(exist_ok=True)
-ASSETS_DIR.mkdir(exist_ok=True)
-TEMPLATES_DIR.mkdir(exist_ok=True)
+# Detect Vercel environment
+IS_VERCEL = os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV') is not None
+
+# Ensure directories exist (skip on Vercel - read-only filesystem)
+if not IS_VERCEL:
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    ASSETS_DIR.mkdir(exist_ok=True)
+    TEMPLATES_DIR.mkdir(exist_ok=True)
 
 
 @asynccontextmanager
@@ -101,13 +105,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static directories - main and subdirectories
-app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
-app.mount("/html", StaticFiles(directory=str(OUTPUT_DIR / "html")), name="html")
-app.mount("/pdf", StaticFiles(directory=str(OUTPUT_DIR / "pdf")), name="pdf") # New mount
-app.mount("/prompts", StaticFiles(directory=str(OUTPUT_DIR / "prompts")), name="prompts")
-app.mount("/avatars", StaticFiles(directory=str(OUTPUT_DIR / "avatars")), name="avatars")
-app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+# Mount static directories - skip on Vercel (no persistent filesystem)
+if not IS_VERCEL:
+    app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
+    if (OUTPUT_DIR / "html").exists():
+        app.mount("/html", StaticFiles(directory=str(OUTPUT_DIR / "html")), name="html")
+    if (OUTPUT_DIR / "pdf").exists():
+        app.mount("/pdf", StaticFiles(directory=str(OUTPUT_DIR / "pdf")), name="pdf")
+    if (OUTPUT_DIR / "prompts").exists():
+        app.mount("/prompts", StaticFiles(directory=str(OUTPUT_DIR / "prompts")), name="prompts")
+    if (OUTPUT_DIR / "avatars").exists():
+        app.mount("/avatars", StaticFiles(directory=str(OUTPUT_DIR / "avatars")), name="avatars")
+    if ASSETS_DIR.exists():
+        app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
 # Import config service
 from .services.roles_service import get_all_config

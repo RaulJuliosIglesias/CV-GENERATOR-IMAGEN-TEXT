@@ -30,13 +30,17 @@ HTML_DIR = OUTPUT_DIR / "html"
 PDFS_DIR = OUTPUT_DIR / "pdf"  # Must match pdf_engine.py
 AVATARS_DIR = OUTPUT_DIR / "avatars"
 
-# Ensure all directories exist
-OUTPUT_DIR.mkdir(exist_ok=True)
-ASSETS_DIR.mkdir(exist_ok=True)
-PROMPTS_DIR.mkdir(exist_ok=True)
-HTML_DIR.mkdir(exist_ok=True)
-PDFS_DIR.mkdir(exist_ok=True)
-AVATARS_DIR.mkdir(exist_ok=True)
+# Detect Vercel environment
+IS_VERCEL = os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV') is not None
+
+# Ensure all directories exist (skip on Vercel - read-only filesystem)
+if not IS_VERCEL:
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    ASSETS_DIR.mkdir(exist_ok=True)
+    PROMPTS_DIR.mkdir(exist_ok=True)
+    HTML_DIR.mkdir(exist_ok=True)
+    PDFS_DIR.mkdir(exist_ok=True)
+    AVATARS_DIR.mkdir(exist_ok=True)
 
 router = APIRouter(prefix="/api", tags=["generation"])
 
