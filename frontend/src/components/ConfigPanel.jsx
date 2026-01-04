@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key } from 'lucide-react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
@@ -132,6 +132,19 @@ export default function ConfigPanel() {
         : GENDER_OPTIONS;
 
     const handleGenerate = () => {
+        // Check if API keys are configured
+        const hasOpenRouter = config.apiKeys?.openRouter && config.apiKeys.openRouter.length > 0;
+        const hasKrea = config.apiKeys?.krea && config.apiKeys.krea.length > 0;
+
+        if (!hasOpenRouter || !hasKrea) {
+            // Open Settings modal if keys are missing
+            setShowSettings(true);
+            toast.warning('API Keys Required', {
+                description: 'Please enter your API keys to start generation.'
+            });
+            return;
+        }
+
         startGeneration();
         if (isGenerating) {
             setIsAdded(true);
@@ -265,6 +278,15 @@ export default function ConfigPanel() {
                                         }}
                                         className="bg-secondary/50"
                                     />
+                                    <a
+                                        href="https://openrouter.ai/keys"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
+                                    >
+                                        <ExternalLink className="w-3 h-3" />
+                                        Get OpenRouter API Key
+                                    </a>
                                 </div>
 
                                 <div className="space-y-2">
@@ -286,6 +308,15 @@ export default function ConfigPanel() {
                                         }}
                                         className="bg-secondary/50"
                                     />
+                                    <a
+                                        href="https://krea.ai/account/api"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 mt-1"
+                                    >
+                                        <ExternalLink className="w-3 h-3" />
+                                        Get Krea API Key
+                                    </a>
                                 </div>
                             </div>
                         </div>
