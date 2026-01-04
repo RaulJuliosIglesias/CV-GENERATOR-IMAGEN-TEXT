@@ -135,6 +135,11 @@ async def get_config():
     print(f"DEBUG API: Serving config with {len(config.get('roles', []))} roles")
     return JSONResponse(content=config)
 
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for Railway/Docker deployments."""
+    return {"status": "ok", "service": "ai-cv-suite"}
+
 @app.get("/ping")
 async def ping():
     return {"message": "pong"}
