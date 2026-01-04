@@ -358,6 +358,20 @@ export default function ConfigPanel() {
                     </Label>
                 </div>
 
+                {/* Smart Category */}
+                <div className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        id="smartCategory"
+                        checked={config.smart_category || false}
+                        onChange={(e) => setConfig('smart_category', e.target.checked)}
+                        className="w-4 h-4 rounded border-input bg-background accent-blue-500"
+                    />
+                    <Label htmlFor="smartCategory" className="text-sm cursor-pointer">
+                        📁 Smart Category (organize PDFs by role)
+                    </Label>
+                </div>
+
                 {/* Divider */}
                 <div className="border-t border-border/50 pt-4">
                     <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">AI Models</p>

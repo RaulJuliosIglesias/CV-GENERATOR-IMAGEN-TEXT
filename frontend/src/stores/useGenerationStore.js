@@ -13,6 +13,7 @@ const useGenerationStore = create((set, get) => ({
         age_max: 70,
         expertise_levels: ['any'],
         remote: false,
+        smart_category: false,  // Organize PDFs into category subfolders
         profile_model: null,
         cv_model: null,
         image_model: null,

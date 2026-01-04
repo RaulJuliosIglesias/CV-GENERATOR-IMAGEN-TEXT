@@ -152,9 +152,16 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         raise e
 
 
-async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str) -> tuple[str, str]:
+async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, smart_category: bool = False, role: str = None) -> tuple[str, str]:
     """
     Phase 4+5: Generate HTML and PDF from CV data.
+    
+    Args:
+        data_dict: CV data dictionary
+        image_path: Path to avatar image
+        filename: Base filename for output
+        smart_category: If True, save PDF in category subfolder based on role
+        role: Job role/title for category determination
     
     Returns:
         Tuple of (html_path, pdf_path)
@@ -167,8 +174,15 @@ async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str) 
     html_path = await render_cv_html(data_dict, image_path, filename, html_output_dir, compress_images=False)
     
     # Phase 5: Generate PDF with compressed images
-    pdf_output_dir = OUTPUT_DIR / "pdf"
-    pdf_output_dir.mkdir(exist_ok=True)
+    # Determine output directory based on smart_category setting
+    if smart_category and role:
+        from .role_categories import get_category_for_role, ensure_category_folder
+        category = get_category_for_role(role)
+        pdf_output_dir = ensure_category_folder(OUTPUT_DIR / "pdf", category)
+        print(f"DEBUG: Smart Category ON - Role '{role}' -> Category '{category}'")
+    else:
+        pdf_output_dir = OUTPUT_DIR / "pdf"
+        pdf_output_dir.mkdir(exist_ok=True)
     
     pdf_filename = filename.replace('.html', '.pdf')
     if not pdf_filename.endswith('.pdf'):

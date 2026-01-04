@@ -52,6 +52,7 @@ class GenerationRequest(BaseModel):
     age_max: int = Field(ge=18, le=70, default=35, description="Maximum age")
     expertise_levels: list[str] = Field(default=["mid"], description="junior, mid, senior, expert")
     remote: bool = Field(default=False, description="Include remote work preference")
+    smart_category: bool = Field(default=False, description="Organize PDFs into category subfolders based on role")
     # New separate models
     profile_model: Optional[str] = Field(default=None, description="LLM for Profile Generation")
     cv_model: Optional[str] = Field(default=None, description="LLM for CV Content")
@@ -92,7 +93,7 @@ class FilesResponse(BaseModel):
 batch_models = {}
 
 
-async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str]):
+async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str], smart_category: bool = False):
     """
     Execute the PIPELINED Generation Pipeline.
     
@@ -101,6 +102,9 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
     WITHOUT waiting for Task B's profile.
     
     This maximizes throughput and minimizes idle time.
+    
+    Args:
+        smart_category: If True, organize PDFs into category subfolders based on role
     """
     batch = task_manager.get_batch(batch_id)
     if not batch: return
@@ -266,7 +270,13 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             task.subtasks[3].message = "Rendering HTML template..."
             await task_manager._save_batches()
             
-            result = await render_cv_pdf(task.cv_data, task.image_path, filename)
+            result = await render_cv_pdf(
+                task.cv_data, 
+                task.image_path, 
+                filename,
+                smart_category=smart_category,
+                role=p.get("role", task.role)
+            )
             
             if result is None:
                 raise RuntimeError("render_cv_pdf returned None - critical failure")
@@ -354,7 +364,8 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
         batch.id, 
         request.profile_model or request.llm_model, # Phase 1
         request.cv_model or request.llm_model,      # Phase 2
-        request.image_model
+        request.image_model,
+        request.smart_category  # Smart Category mode
     )
     
     return GenerationResponse(
