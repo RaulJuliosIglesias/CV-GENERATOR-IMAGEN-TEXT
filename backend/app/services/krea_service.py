@@ -138,7 +138,8 @@ KREA_MODELS = {
 
 
 def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "Professional") -> str:
-    """Generate the prompt for the avatar using external template."""
+    """Generate the prompt for the avatar using external template with DYNAMIC VARIETY."""
+    import random
     
     # Map variables for template
     if gender.lower() == "female":
@@ -161,8 +162,6 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
         age_val = age_range
         
     # --- CLEAN ROLE LOGIC ---
-    # AGGRESSIVELY remove ALL age-biasing words from role
-    # This is CRITICAL to prevent "Senior Software Engineer" from making the image look old
     import re
     forbidden_patterns = [
         r'\bsenior\b', r'\blead\b', r'\bprincipal\b', r'\bchief\b', 
@@ -174,40 +173,74 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     for pattern in forbidden_patterns:
         cleaned_role = re.sub(pattern, '', cleaned_role, flags=re.IGNORECASE)
     
-    # Clean up extra spaces and capitalize
     cleaned_role = ' '.join(cleaned_role.split()).strip()
     
-    # If role becomes empty/too short after cleaning, use generic
     if len(cleaned_role) < 3:
         cleaned_role = "Professional"
     else:
         cleaned_role = cleaned_role.title()
         
-    # --- DYNAMIC STYLE LOGIC ---
-    # Use CLEANED role for context matching (not raw role!)
-    # STRICTLY AVOID "OFFICE", "CORPORATE", "EXECUTIVE"
+    # --- DYNAMIC STYLE LOGIC WITH RANDOMNESS ---
     role_lower = cleaned_role.lower()
     
-    # Default context - neutral and modern
-    context = "modern casual-professional style"
-    style = "high quality, 8k, photorealistic"
-    
+    # Base context based on role category
     if any(k in role_lower for k in ["designer", "creative", "artist", "ux", "ui", "art", "architect"]):
         context = "creative professional, stylish modern attire"
-        style = "artistic lighting, 8k, sharp focus, modern vibe"
-        
+        base_style = "artistic lighting, 8k, sharp focus, modern vibe"
     elif any(k in role_lower for k in ["developer", "engineer", "software", "tech", "data", "programmer"]):
         context = "tech professional, smart-casual attire"
-        style = "clean lighting, 8k, modern aesthetic"
-        
+        base_style = "clean lighting, 8k, modern aesthetic"
     elif any(k in role_lower for k in ["teacher", "educator", "professor", "trainer"]):
         context = "educator, smart professional attire"
-            
+        base_style = "warm lighting, 8k, approachable"
     elif any(k in role_lower for k in ["medical", "doctor", "nurse", "health", "clinical"]):
         context = "healthcare professional, medical attire"
+        base_style = "clean clinical lighting, 8k"
+    else:
+        context = "modern casual-professional style"
+        base_style = "high quality, 8k, photorealistic"
     
-    # NO FALLBACK that adds role name - keep it pure
-    # The role is already in the CV, the image just needs age/ethnicity/gender
+    # ========== DYNAMIC RANDOMIZATION ==========
+    # These inject variety so batch images don't look identical
+    
+    BACKGROUNDS = [
+        "plain neutral wall background",
+        "minimalist home office setting",
+        "modern coworking space background",
+        "bright cafe interior background",
+        "outdoor urban setting with soft bokeh",
+        "clean studio backdrop",
+        "natural daylight window background",
+        "contemporary gallery space",
+        "green plant-filled interior",
+        "softly blurred city street background"
+    ]
+    
+    LIGHTING_STYLES = [
+        "soft natural window light",
+        "warm golden hour lighting",
+        "clean studio lighting",
+        "dramatic side lighting with soft shadows",
+        "overcast daylight, diffused",
+        "ring light portrait style",
+        "cinematic lighting with depth"
+    ]
+    
+    CAMERA_FRAMINGS = [
+        "close headshot, face fills 70% of frame",
+        "head-and-shoulders portrait",
+        "upper torso business portrait",
+        "slightly angled 3/4 view portrait",
+        "centered symmetrical headshot"
+    ]
+    
+    # Randomly select one from each category
+    chosen_background = random.choice(BACKGROUNDS)
+    chosen_lighting = random.choice(LIGHTING_STYLES)
+    chosen_framing = random.choice(CAMERA_FRAMINGS)
+    
+    # Combine into style modifiers
+    style = f"{base_style}, {chosen_lighting}, {chosen_background}"
 
     # Load from template file
     template_path = BACKEND_DIR / "prompts" / "image_prompt_template.txt"
@@ -224,9 +257,11 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     prompt = template.replace("{{gender_term}}", gender_term)
     prompt = prompt.replace("{{age}}", str(age_val))
     prompt = prompt.replace("{{ethnicity}}", ethnicity_term)
-    # Use context + cleaned_role implied context
     prompt = prompt.replace("{{role_context}}", context)
     prompt = prompt.replace("{{style_modifiers}}", style)
+    
+    # Add the dynamic elements at the end for variety
+    prompt += f" {chosen_framing}."
     
     # DEBUG: Log what we're sending
     print("="*60)
@@ -237,7 +272,9 @@ def get_avatar_prompt(gender: str, ethnicity: str, age_range: str, role: str = "
     print(f"  Role (Raw): {role}")
     print(f"  Role (Cleaned): {cleaned_role}")
     print(f"  Context: {context}")
-    print(f"  Style: {style}")
+    print(f"  Background: {chosen_background}")
+    print(f"  Lighting: {chosen_lighting}")
+    print(f"  Framing: {chosen_framing}")
     print(f"  Prompt Length: {len(prompt)} chars")
     print("="*60)
     

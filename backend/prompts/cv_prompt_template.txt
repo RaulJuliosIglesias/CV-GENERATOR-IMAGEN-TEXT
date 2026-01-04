@@ -10,8 +10,10 @@ PROFILE PARAMETERS:
 - Origin/Location: {{origin}}
 - Experience Level: {{expertise}}
 - Remote Preference: {{remote}}
+{% if personality_traits %}- Personality Traits: {{personality_traits}} (Reflect these in the profile summary and achievement descriptions){% endif %}
+{% if professional_vibe %}- Professional Vibe: {{professional_vibe}} (Use this to shape the tone: Strategic = data-driven, Creative = innovative solutions, Hands-on = implementation focus){% endif %}
+{% if communication_style %}- Communication Style: {{communication_style}} (Technical = jargon-heavy, Storyteller = narrative achievements, Concise = bullet-focused){% endif %}
 
-INSTRUCTIONS:
 1. **JSON ONLY**: Output strictly valid JSON. No markdown block markers (```json), no preamble.
 2. **Coherence**: Ensure gender, name, and pronouns are consistent. "Alexandra" must be Female. "David" must be Male.
 3. **EXPERIENCE ORDER**: List experiences in DESCENDING order (NEWEST FIRST, oldest last). The most recent job must appear first in the array.

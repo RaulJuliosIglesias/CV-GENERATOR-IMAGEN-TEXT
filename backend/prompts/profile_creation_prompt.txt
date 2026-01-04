@@ -34,5 +34,8 @@ OUTPUT JSON ONLY (no markdown, no explanation):
   "role": "Job Title WITHOUT seniority prefix",
   "expertise_years": 5,
   "key_skills": ["Skill1", "Skill2", "Skill3"],
-  "personality_traits": ["Trait1", "Trait2", "Trait3"]
+  "personality_traits": ["Trait1", "Trait2", "Trait3"],
+  "professional_vibe": "One of: Strategic, Hands-on, Analytical, Creative, Collaborative, Innovative, Pragmatic, Visionary",
+  "communication_style": "One of: Direct, Diplomatic, Technical, Storyteller, Concise"
 }
+

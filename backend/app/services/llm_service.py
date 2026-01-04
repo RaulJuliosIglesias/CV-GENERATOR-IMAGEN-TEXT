@@ -751,11 +751,25 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
     display_role = role
     display_gender = gender
     
+    # NEW: Extract personality fields from profile for richer CV generation
+    personality_traits = None
+    professional_vibe = None
+    communication_style = None
+    
     if profile_data:
         display_name = profile_data.get("name", name)
         display_role = profile_data.get("role", role)
         display_gender = profile_data.get("gender", gender)
-        # We can pass more profile data into the template if needed
+        
+        # Extract personality data for template injection
+        traits = profile_data.get("personality_traits", [])
+        if traits:
+            personality_traits = ", ".join(traits) if isinstance(traits, list) else str(traits)
+        
+        professional_vibe = profile_data.get("professional_vibe")
+        communication_style = profile_data.get("communication_style")
+        
+        print(f"DEBUG: Using profile personality - Traits: {personality_traits}, Vibe: {professional_vibe}, Style: {communication_style}")
 
     # Get dynamic social keys based on role from database
     social_keys = get_social_links_from_db(display_role)
@@ -773,7 +787,7 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
     with open(template_path, "r", encoding="utf-8") as f:
         template_str = f.read()
     
-    # Render Jinja2 template
+    # Render Jinja2 template with all profile data
     return Template(template_str).render(
         role=display_role,
         expertise=expertise,
@@ -783,7 +797,11 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
         origin=origin,
         remote="Preferred" if remote else "Flexible",
         name=display_name if display_name else "",
-        social_keys=social_keys  # Pass dynamic social list
+        social_keys=social_keys,
+        # NEW: Pass personality data for richer content
+        personality_traits=personality_traits,
+        professional_vibe=professional_vibe,
+        communication_style=communication_style
     )
 
 def get_available_models() -> list[dict]:
