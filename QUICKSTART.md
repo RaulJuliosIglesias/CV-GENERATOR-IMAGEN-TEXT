@@ -15,7 +15,7 @@ This powers the generation of realistic professional profiles, work history, and
 
 ### 2. Krea AI (Avatar / Image)
 This powers the generation of photorealistic, bias-free professional headshots.
-- 🔗 **Get Key**: [https://krea.ai](https://krea.ai)
+- 🔗 **Get Key**: [https://www.krea.ai/settings/api-tokens](https://www.krea.ai/settings/api-tokens)
 - *Supported Models*: Flux-1-Dev (Best Quality), Imagen-4, Seedream.
 
 ---
