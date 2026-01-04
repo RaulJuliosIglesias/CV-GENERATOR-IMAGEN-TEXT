@@ -66,7 +66,7 @@ def compress_image_base64(image_path: str, max_size: int = 200, quality: int = 6
             return ""
 
 
-async def render_cv_html(data_dict: dict, image_path: str | None, filename: str, output_dir: Path = None, compress_images: bool = False) -> str:
+async def render_cv_html(data_dict: dict, image_path: str | None, filename: str, output_dir: Path = None, compress_images: bool = False, image_size: int = 100) -> str:
     """
     Render CV as HTML using Jinja2 template.
     Returns path to the generated HTML file.
@@ -132,6 +132,15 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         ]
         context['sidebar_color'] = random.choice(sidebar_colors)
 
+        # Calculate dynamic image styles based on image_size percentage
+        # Base size: 260px (Web), 200px (PDF/Scaled)
+        scale_factor = image_size / 100.0
+        web_size = int(260 * scale_factor)
+        pdf_size = int(200 * scale_factor)
+        
+        context['profile_img_size_web'] = web_size
+        context['profile_img_size_pdf'] = pdf_size
+
         # Render HTML
         html_content = template.render(**context)
         
@@ -152,7 +161,7 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         raise e
 
 
-async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, smart_category: bool = False, role: str = None) -> tuple[str, str]:
+async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, smart_category: bool = False, role: str = None, image_size: int = 100) -> tuple[str, str]:
     """
     Phase 4+5: Generate HTML and PDF from CV data.
     
@@ -166,28 +175,45 @@ async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, 
     Returns:
         Tuple of (html_path, pdf_path)
     """
-    from playwright.async_api import async_playwright
     
     # Phase 4: Generate HTML (full quality for viewing)
+    # ------------------------------------------------------------------
     html_output_dir = OUTPUT_DIR / "html"
     html_output_dir.mkdir(exist_ok=True)
-    html_path = await render_cv_html(data_dict, image_path, filename, html_output_dir, compress_images=False)
     
-    # Phase 5: Generate PDF with compressed images
-    # Determine output directory based on smart_category setting
+    # We pass image_size to modify CSS in the template
+    html_path = await render_cv_html(data_dict, image_path, filename, output_dir=html_output_dir, compress_images=False, image_size=image_size)
+
+    # Phase 5: Generate PDF (from that HTML)
+    # ------------------------------------------------------------------
+    # We RE-RENDER HTML for PDF specifically if we want different compression/settings
+    # But currently we use the existing HTML file with Playwright.
+    # Wait, pdf_script uses the HTML file on disk. 
+    
+    # NOTE: If we wanted different image quality for PDF vs HTML view, we would generate a temporary HTML
+    # for PDF generation. But here we share the HTML. 
+    # The 'compress_images' param in render_cv_html was intended for specific PDF-only HTMLs.
+    # Given we share HTML, let's keep high quality (compress_images=False).
+    
+    # However, we must ensure the HTML on disk matches the 'smart_category' path logic? 
+    # No, smart_category only affects where the FINAL PDF is saved. HTML saved in /output/html is fine.
+    
+    # Determine PDF Output Path
+    pdf_filename = filename.replace('.html', '.pdf')
+    if not pdf_filename.endswith('.pdf'):
+        pdf_filename += '.pdf'
+
     if smart_category and role:
         from .role_categories import get_category_for_role, ensure_category_folder
         category = get_category_for_role(role)
-        pdf_output_dir = ensure_category_folder(OUTPUT_DIR / "pdf", category)
+        # Create category subfolder if not exists
+        pdf_parent_dir = ensure_category_folder(OUTPUT_DIR / "pdf", category)
+        pdf_path = pdf_parent_dir / pdf_filename
         print(f"DEBUG: Smart Category ON - Role '{role}' -> Category '{category}'")
     else:
         pdf_output_dir = OUTPUT_DIR / "pdf"
         pdf_output_dir.mkdir(exist_ok=True)
-    
-    pdf_filename = filename.replace('.html', '.pdf')
-    if not pdf_filename.endswith('.pdf'):
-        pdf_filename += '.pdf'
-    pdf_path = pdf_output_dir / pdf_filename
+        pdf_path = pdf_output_dir / pdf_filename
     
     print(f"DEBUG: Phase 5 - Generating PDF with Playwright at {pdf_path}")
     

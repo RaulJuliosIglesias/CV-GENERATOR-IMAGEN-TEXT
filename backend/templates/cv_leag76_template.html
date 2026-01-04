@@ -35,6 +35,23 @@
             --margin-3: 1.5rem;
             --z-tooltip: 10;
             --z-fixed: 100;
+
+            /* Dynamic Profile Image Size */
+            --img-size-web: {
+                    {
+                    profile_img_size_web|default(260)
+                }
+            }
+
+            px;
+
+            --img-size-pdf: {
+                    {
+                    profile_img_size_pdf|default(200)
+                }
+            }
+
+            px;
         }
 
         *,
@@ -203,8 +220,8 @@
         }
 
         .home_img {
-            width: 260px;
-            height: 260px;
+            width: var(--img-size-web);
+            height: var(--img-size-web);
             border-radius: 50%;
             justify-self: center;
             margin-bottom: var(--margin-2);
@@ -557,8 +574,8 @@
         }
 
         .scale-cv .home_img {
-            width: 200px;
-            height: 200px;
+            width: var(--img-size-pdf);
+            height: var(--img-size-pdf);
             margin-bottom: 1.5rem;
             border: 3px solid var(--container-color-alt);
         }

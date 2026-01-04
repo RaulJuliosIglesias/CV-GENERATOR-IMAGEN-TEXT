@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2 } from 'lucide-react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
@@ -358,19 +358,7 @@ export default function ConfigPanel() {
                     </Label>
                 </div>
 
-                {/* Smart Category */}
-                <div className="flex items-center space-x-2">
-                    <input
-                        type="checkbox"
-                        id="smartCategory"
-                        checked={config.smart_category || false}
-                        onChange={(e) => setConfig('smart_category', e.target.checked)}
-                        className="w-4 h-4 rounded border-input bg-background accent-blue-500"
-                    />
-                    <Label htmlFor="smartCategory" className="text-sm cursor-pointer">
-                        📁 Smart Category (organize PDFs by role)
-                    </Label>
-                </div>
+                {/* Smart Category - Moved to bottom area */}
 
                 {/* Divider */}
                 <div className="border-t border-border/50 pt-4">
@@ -498,11 +486,44 @@ export default function ConfigPanel() {
                             <span>{selectedImageModel.description}</span>
                         </div>
                     )}
+
+                    {/* Image Size Slider */}
+                    <div className="pt-2 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-2 text-xs">
+                                <Maximize className="w-3 h-3 text-cyan-400" />
+                                Profile Size
+                            </Label>
+                            <span className="text-xs text-muted-foreground">{config.image_size || 100}%</span>
+                        </div>
+                        <Slider
+                            value={[config.image_size || 100]}
+                            onValueChange={([value]) => setConfig('image_size', value)}
+                            min={50}
+                            max={200}
+                            step={10}
+                            className="py-1"
+                        />
+                    </div>
                 </div>
             </div>
 
             {/* Generate Button - Fixed at bottom */}
-            <div className="p-6 border-t border-border/50 flex-shrink-0">
+            <div className="p-6 border-t border-border/50 flex-shrink-0 space-y-4">
+                {/* Smart Category Toggle */}
+                <div className="flex items-center justify-between bg-secondary/30 p-2 rounded-lg border border-border/50">
+                    <Label htmlFor="smartCategory" className="text-sm cursor-pointer flex items-center gap-2 font-medium">
+                        <FolderOpen className="w-4 h-4 text-blue-400" />
+                        Smart Category Save
+                    </Label>
+                    <input
+                        type="checkbox"
+                        id="smartCategory"
+                        checked={config.smart_category !== false} // Default true
+                        onChange={(e) => setConfig('smart_category', e.target.checked)}
+                        className="w-4 h-4 rounded border-input bg-background accent-blue-500 cursor-pointer"
+                    />
+                </div>
                 <Button
                     onClick={handleGenerate}
                     disabled={false}
@@ -511,8 +532,8 @@ export default function ConfigPanel() {
                     size="lg"
                     // Add distinct hover and active states
                     className={`w-full relative overflow-hidden transition-all duration-200 ${isGenerating
-                            ? "hover:bg-primary/10 active:scale-95 border-2 border-primary/20"
-                            : "hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-primary/25"
+                        ? "hover:bg-primary/10 active:scale-95 border-2 border-primary/20"
+                        : "hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-primary/25"
                         }`}
                 >
                     {isGenerating ? (

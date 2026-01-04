@@ -59,6 +59,7 @@ class GenerationRequest(BaseModel):
     # Legacy fallback
     llm_model: Optional[str] = Field(default=None, description="Fallback LLM model")
     image_model: Optional[str] = Field(default=None, description="Krea model ID")
+    image_size: int = Field(default=100, ge=50, le=200, description="Profile image scale percentage")
 
 
 class GenerationResponse(BaseModel):
@@ -93,7 +94,7 @@ class FilesResponse(BaseModel):
 batch_models = {}
 
 
-async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str], smart_category: bool = False):
+async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str], smart_category: bool = False, image_size: int = 100):
     """
     Execute the PIPELINED Generation Pipeline.
     
@@ -275,7 +276,8 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 task.image_path, 
                 filename,
                 smart_category=smart_category,
-                role=p.get("role", task.role)
+                role=p.get("role", task.role),
+                image_size=image_size # Pass image_size here
             )
             
             if result is None:
@@ -365,7 +367,8 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
         request.profile_model or request.llm_model, # Phase 1
         request.cv_model or request.llm_model,      # Phase 2
         request.image_model,
-        request.smart_category  # Smart Category mode
+        request.smart_category,  # Smart Category mode
+        request.image_size       # Pass image_size here
     )
     
     return GenerationResponse(
