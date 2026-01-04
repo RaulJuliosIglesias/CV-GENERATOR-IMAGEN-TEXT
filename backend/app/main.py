@@ -147,13 +147,19 @@ async def ping():
 # Include routers - Load generation router AFTER config just in case
 print("DEBUG MAIN: Loading generation router...")
 app.include_router(generation.router)
-
-
-
+# Serve frontend in production (Railway/Docker)
+FRONTEND_DIR = BACKEND_DIR.parent / "frontend" / "dist"
 
 @app.get("/")
 async def root():
-    """Root endpoint with API info."""
+    """Serve frontend or API info."""
+    # Check if frontend build exists (production deployment)
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        from fastapi.responses import FileResponse
+        return FileResponse(index_file)
+    
+    # Fallback to API info for development
     return JSONResponse(content={
         "name": "AI CV Suite API",
         "version": "1.0.0",
@@ -167,6 +173,14 @@ async def root():
             "health": "GET /api/health"
         }
     })
+
+# Mount frontend static files if they exist
+if FRONTEND_DIR.exists():
+    # Serve assets
+    if (FRONTEND_DIR / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="frontend_assets")
+    # Serve other static files (favicon, etc)
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="frontend_static")
 
 
 @app.get("/api")
