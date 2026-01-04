@@ -60,6 +60,8 @@ class GenerationRequest(BaseModel):
     llm_model: Optional[str] = Field(default=None, description="Fallback LLM model")
     image_model: Optional[str] = Field(default=None, description="Krea model ID")
     image_size: int = Field(default=100, ge=50, le=200, description="Profile image scale percentage")
+    # API Keys are passed via Headers, but we could also accept them here if needed.
+    # For now, we prefer Headers for security/standard practice.
 
 
 class GenerationResponse(BaseModel):
@@ -94,7 +96,7 @@ class FilesResponse(BaseModel):
 batch_models = {}
 
 
-async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str], smart_category: bool = False, image_size: int = 100):
+async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str], smart_category: bool = False, image_size: int = 100, api_keys: dict = None):
     """
     Execute the PIPELINED Generation Pipeline.
     
@@ -133,7 +135,8 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                     ethnicity=task.ethnicity,
                     origin=task.origin,
                     age_range=task.age_range,
-                    model=profile_model
+                    model=profile_model,
+                    api_key=api_keys.get('openrouter') if api_keys else None
                 )
                 
                 task.profile_data = profile_data
@@ -171,7 +174,8 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                     remote=task.remote,
                     model=cv_model,
                     name=p.get('name'),
-                    profile_data=p
+                    profile_data=p,
+                    api_key=api_keys.get('openrouter') if api_keys else None
                 )
                 
                 task.cv_data = cv_data
@@ -211,7 +215,8 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                     origin=p.get('origin', task.origin),
                     role=p.get('role', task.role),
                     model=image_model,
-                    filename=f"{task.id}_avatar.jpg"
+                    filename=f"{task.id}_avatar.jpg",
+                    api_key=api_keys.get('krea') if api_keys else None
                 )
                 
                 task.image_path = image_path
@@ -337,9 +342,22 @@ async def get_available_models():
     )
 
 
+from fastapi import Header
+
 @router.post("/generate", response_model=GenerationResponse)
-async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks):
+async def start_generation(
+    request: GenerationRequest, 
+    background_tasks: BackgroundTasks,
+    x_openrouter_key: Optional[str] = Header(None, alias="X-OpenRouter-Key"),
+    x_krea_key: Optional[str] = Header(None, alias="X-Krea-Key")
+):
     """Start a batch CV generation."""
+    
+    # Collect API Keys
+    api_keys = {
+        "openrouter": x_openrouter_key,
+        "krea": x_krea_key
+    }
     # Create batch
     batch = await task_manager.create_batch(
         qty=request.qty,
@@ -368,7 +386,8 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
         request.cv_model or request.llm_model,      # Phase 2
         request.image_model,
         request.smart_category,  # Smart Category mode
-        request.image_size       # Pass image_size here
+        request.image_size,      # Pass image_size here
+        api_keys                 # Pass API keys
     )
     
     return GenerationResponse(

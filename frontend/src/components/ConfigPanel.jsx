@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen } from 'lucide-react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
@@ -9,7 +9,9 @@ import { ModelSelector } from './ui/ModelSelector';
 import { Label } from './ui/Label';
 import { MultiSelect } from './ui/MultiSelect';
 import { TagInput } from './ui/TagInput';
+
 import useGenerationStore from '../stores/useGenerationStore';
+import { Input } from './ui/Input';
 
 const GENDER_OPTIONS = [
     { value: 'any', label: 'Any Gender' },
@@ -92,6 +94,7 @@ export default function ConfigPanel() {
     const [localQty, setLocalQty] = useState(config.qty);
     const [localAgeRange, setLocalAgeRange] = useState([config.age_min, config.age_max]);
     const [isAdded, setIsAdded] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     // Sync local state when config changes externally (e.g. loaded from DB or reset)
     useEffect(() => {
@@ -200,8 +203,8 @@ export default function ConfigPanel() {
     return (
         <aside className="w-96 h-screen bg-card/50 backdrop-blur-xl border-r border-border/50 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-border/50 flex-shrink-0">
-                <div className="flex items-center gap-3 mb-2">
+            <div className="p-6 border-b border-border/50 flex-shrink-0 flex items-center justify-between">
+                <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                         <Sparkles className="w-5 h-5 text-white" />
                     </div>
@@ -210,7 +213,91 @@ export default function ConfigPanel() {
                         <p className="text-xs text-muted-foreground">Resume Generator</p>
                     </div>
                 </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="hover:bg-primary/10">
+                    <Settings className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+                </Button>
             </div>
+
+            {/* Settings Modal */}
+            {showSettings && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-4 top-4"
+                            onClick={() => setShowSettings(false)}
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
+
+                        <div className="flex items-center gap-2 mb-6">
+                            <Settings className="w-5 h-5 text-primary" />
+                            <h2 className="text-xl font-bold">Settings</h2>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="space-y-4">
+                                <Label className="flex items-center gap-2 text-base">
+                                    <Key className="w-4 h-4 text-orange-400" />
+                                    API Keys (BYOK)
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Enter your own API keys to override default system keys. Keys are stored locally in your browser.
+                                </p>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="openrouter-key" className="text-xs">OpenRouter API Key (LLM)</Label>
+                                    <Input
+                                        id="openrouter-key"
+                                        type="password"
+                                        placeholder="sk-or-..."
+                                        value={config.apiKeys?.openRouter || ''}
+                                        onChange={(e) => {
+                                            const newKeys = { ...config.apiKeys, openRouter: e.target.value };
+                                            setConfig('apiKeys', newKeys);
+                                            // Persist immediately
+                                            try {
+                                                const stored = JSON.parse(localStorage.getItem('generation-storage') || '{}');
+                                                stored.state = { ...stored.state, config: { ...config, apiKeys: newKeys } };
+                                                localStorage.setItem('generation-storage', JSON.stringify(stored));
+                                            } catch (e) { }
+                                        }}
+                                        className="bg-secondary/50"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="krea-key" className="text-xs">Krea API Key (Images)</Label>
+                                    <Input
+                                        id="krea-key"
+                                        type="password"
+                                        placeholder="Krea Key..."
+                                        value={config.apiKeys?.krea || ''}
+                                        onChange={(e) => {
+                                            const newKeys = { ...config.apiKeys, krea: e.target.value };
+                                            setConfig('apiKeys', newKeys);
+                                            // Persist
+                                            try {
+                                                const stored = JSON.parse(localStorage.getItem('generation-storage') || '{}');
+                                                stored.state = { ...stored.state, config: { ...config, apiKeys: newKeys } };
+                                                localStorage.setItem('generation-storage', JSON.stringify(stored));
+                                            } catch (e) { }
+                                        }}
+                                        className="bg-secondary/50"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end">
+                            <Button onClick={() => setShowSettings(false)}>
+                                Done
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Configuration Form - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">

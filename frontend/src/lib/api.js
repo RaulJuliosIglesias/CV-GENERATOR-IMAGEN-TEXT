@@ -20,7 +20,14 @@ export const getConfig = async () => {
 };
 
 export const generateBatch = async (params) => {
-    const response = await api.post('/api/generate', params);
+    // Extract keys to prevent sending them in body (optional, but cleaner)
+    const { apiKeys, ...body } = params;
+
+    const headers = {};
+    if (apiKeys?.openRouter) headers['X-OpenRouter-Key'] = apiKeys.openRouter;
+    if (apiKeys?.krea) headers['X-Krea-Key'] = apiKeys.krea;
+
+    const response = await api.post('/api/generate', body, { headers });
     return response.data;
 };
 

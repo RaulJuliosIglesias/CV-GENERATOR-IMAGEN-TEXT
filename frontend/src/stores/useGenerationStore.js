@@ -23,6 +23,10 @@ const useGenerationStore = create((set, get) => ({
         llmSearch: '',
         llmProvider: 'all',
         llmFreeOnly: false,
+        apiKeys: {
+            openRouter: '',
+            krea: '',
+        },
     },
 
     // Available options from centralized database

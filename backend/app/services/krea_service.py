@@ -299,7 +299,8 @@ async def generate_avatar(
     origin: str = "United States",
     role: str = "Professional",
     model: Optional[str] = None,
-    filename: Optional[str] = None
+    filename: Optional[str] = None,
+    api_key: Optional[str] = None
 ) -> Tuple[str, str]:
     """Generate profile avatar using Krea API.
     
@@ -311,7 +312,7 @@ async def generate_avatar(
         role: Job role for context styling
         model: Krea model ID
     """
-    api_key = os.getenv("KREA_API_KEY", "")
+    api_key = api_key or os.getenv("KREA_API_KEY", "")
     
     # Debug logging
     print(f"DEBUG KREA: API Key loaded: {'YES (' + api_key[:8] + '...)' if api_key and len(api_key) > 8 else 'NO/EMPTY'}")

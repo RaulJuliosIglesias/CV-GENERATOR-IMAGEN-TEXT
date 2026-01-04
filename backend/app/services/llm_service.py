@@ -630,14 +630,16 @@ async def generate_profile_data(
     ethnicity: str,
     origin: str,
     age_range: str,
-    model: Optional[str] = None
+    model: Optional[str] = None,
+    api_key: Optional[str] = None
 ) -> Tuple[dict, str]:
     """
     Generate a unique profile (Phase 1)
     Returns: (profile_data, used_prompt)
     """
-    api_key = os.getenv("OPENROUTER_API_KEY", "")
-    if not api_key:
+    # Use passed API key or fallback to env var
+    _api_key = api_key or os.getenv("OPENROUTER_API_KEY", "")
+    if not _api_key:
         raise ValueError("OPENROUTER_API_KEY not configured")
         
     model_id = model or os.getenv("DEFAULT_LLM_MODEL", "google/gemini-2.0-flash-exp:free")
@@ -825,7 +827,8 @@ async def generate_cv_content_v2(
     remote: bool = False,
     model: Optional[str] = None,
     name: Optional[str] = None,
-    profile_data: Optional[dict] = None
+    profile_data: Optional[dict] = None,
+    api_key: Optional[str] = None
 ) -> Tuple[dict, str]:
     """
     Generate detailed CV content using OpenRouter with enhanced prompts.
@@ -834,14 +837,15 @@ async def generate_cv_content_v2(
     # CRITICAL: Resolve "any" to a real role FIRST
     role = resolve_role(role)
     
-    api_key = os.getenv("OPENROUTER_API_KEY", "")
+    # Use passed API key or fallback to env var
+    _api_key = api_key or os.getenv("OPENROUTER_API_KEY", "")
     
     # Debug logging
-    print(f"DEBUG: API Key loaded: {'YES (' + api_key[:8] + '...)' if api_key and len(api_key) > 8 else 'NO/EMPTY'}")
+    print(f"DEBUG: API Key loaded: {'YES (' + _api_key[:8] + '...)' if _api_key and len(_api_key) > 8 else 'NO/EMPTY'}")
     print(f"DEBUG: Role for generation: {role}")
     print(f"DEBUG: Using Profile Data: {bool(profile_data)} (Name: {name})")
     
-    if not api_key or api_key == "your-openrouter-api-key-here":
+    if not _api_key or _api_key == "your-openrouter-api-key-here":
         error_msg = "ERROR: OPENROUTER_API_KEY not configured in backend/.env - Cannot generate CV without real API key"
         print(error_msg)
         raise ValueError(error_msg)
@@ -893,7 +897,7 @@ async def generate_cv_content_v2(
             }
             
             request_headers = {
-                "Authorization": f"Bearer {api_key}",
+                "Authorization": f"Bearer {_api_key}",
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://ai-cv-suite.local",
                 "X-Title": "AI CV Suite"
