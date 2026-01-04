@@ -7,11 +7,5 @@
             "source": "/api/:path*",
             "destination": "/api/index.py"
         }
-    ],
-    "functions": {
-        "api/index.py": {
-            "runtime": "@vercel/python@4.0.0",
-            "maxDuration": 60
-        }
-    }
+    ]
 }
