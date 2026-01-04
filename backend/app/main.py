@@ -116,8 +116,9 @@ if not IS_VERCEL:
         app.mount("/prompts", StaticFiles(directory=str(OUTPUT_DIR / "prompts")), name="prompts")
     if (OUTPUT_DIR / "avatars").exists():
         app.mount("/avatars", StaticFiles(directory=str(OUTPUT_DIR / "avatars")), name="avatars")
+    # Note: /assets is reserved for frontend static files, backend assets use /backend-assets
     if ASSETS_DIR.exists():
-        app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+        app.mount("/backend-assets", StaticFiles(directory=str(ASSETS_DIR)), name="backend_assets")
 
 # Import config service
 from .services.roles_service import get_all_config
