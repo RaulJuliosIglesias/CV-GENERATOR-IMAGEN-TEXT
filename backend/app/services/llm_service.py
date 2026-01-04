@@ -87,8 +87,39 @@ def fetch_openrouter_models() -> dict:
         print(f"WARNING: Failed to fetch OpenRouter models: {e}")
         return FALLBACK_LLM_MODELS
 
-# Fetch live models from OpenRouter (runs once at module load)
-LLM_MODELS = fetch_openrouter_models()
+# LAZY LOADING: Models are fetched on first request, not at startup
+# This prevents the server from hanging if OpenRouter is slow/down
+_cached_llm_models: dict | None = None
+
+def get_llm_models_cached() -> dict:
+    """Get models with lazy loading and caching."""
+    global _cached_llm_models
+    if _cached_llm_models is None:
+        _cached_llm_models = fetch_openrouter_models()
+    return _cached_llm_models
+
+# Keep LLM_MODELS as a property-like accessor for backward compatibility
+# But now it's LAZY - only fetched when first accessed
+class _LazyModelDict:
+    """Lazy dictionary that fetches models on first access."""
+    def __getattr__(self, name):
+        return getattr(get_llm_models_cached(), name)
+    def __getitem__(self, key):
+        return get_llm_models_cached()[key]
+    def __iter__(self):
+        return iter(get_llm_models_cached())
+    def items(self):
+        return get_llm_models_cached().items()
+    def keys(self):
+        return get_llm_models_cached().keys()
+    def values(self):
+        return get_llm_models_cached().values()
+    def get(self, key, default=None):
+        return get_llm_models_cached().get(key, default)
+    def __len__(self):
+        return len(get_llm_models_cached())
+
+LLM_MODELS = _LazyModelDict()
 
 # Import roles from the database service
 from .roles_service import get_all_roles as get_roles_from_db, get_social_links_for_role as get_social_links_from_db

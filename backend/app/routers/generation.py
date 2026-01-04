@@ -93,20 +93,28 @@ batch_models = {}
 
 
 async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str]):
-    """Execute the sequential 4-Phase Generation Pipeline."""
+    """
+    Execute the PIPELINED Generation Pipeline.
+    
+    IMPROVEMENT: Each task now runs through its entire pipeline independently.
+    As soon as Task A finishes Profile generation, it immediately starts CV content,
+    WITHOUT waiting for Task B's profile.
+    
+    This maximizes throughput and minimizes idle time.
+    """
     batch = task_manager.get_batch(batch_id)
     if not batch: return
     
     tasks = batch.tasks
     
-    # --- PHASE 1: GENERATE UNIQUE PROFILES ---
-    # Concurrency: 5 (Fast, text only)
-    print(f"=== STARTING PHASE 1: PROFILES ({len(tasks)} tasks) ===")
+    # Global semaphore to limit total concurrent API calls (prevents rate limiting)
+    global_semaphore = asyncio.Semaphore(5)
     
-    sem_phase1 = asyncio.Semaphore(5)
-    
-    async def run_phase1(task: Task):
-        async with sem_phase1:
+    async def process_single_task(task: Task):
+        """Process a single task through all 5 phases."""
+        
+        # ========== PHASE 1: PROFILE ==========
+        async with global_semaphore:
             try:
                 task.status = TaskStatus.RUNNING
                 task.current_subtask_index = 0
@@ -123,10 +131,7 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                     model=profile_model
                 )
                 
-                # Save Profile Data to Task
                 task.profile_data = profile_data
-                
-                # Update status
                 task.subtasks[0].status = TaskStatus.COMPLETE
                 task.subtasks[0].progress = 100
                 task.progress = 20
@@ -138,22 +143,10 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 task.status = TaskStatus.ERROR
                 task.subtasks[0].status = TaskStatus.ERROR
                 print(f"Phase 1 Error Task {task.id}: {e}")
-
-    await asyncio.gather(*[run_phase1(t) for t in tasks])
-    
-    # Check if we should proceed (at least one success)
-    active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
-    if not active_tasks:
-        print("Batch failed at Phase 1")
-        return
-
-    # --- PHASE 2: GENERATE CV CONTENT ---
-    # Concurrency: 5 (Increased from 3)
-    print(f"=== STARTING PHASE 2: CV CONTENT ({len(active_tasks)} tasks) ===")
-    sem_phase2 = asyncio.Semaphore(5)
-    
-    async def run_phase2(task: Task):
-        async with sem_phase2:
+                return  # Stop this task, but don't affect others
+        
+        # ========== PHASE 2: CV CONTENT ==========
+        async with global_semaphore:
             try:
                 task.current_subtask_index = 1
                 task.subtasks[1].status = TaskStatus.RUNNING
@@ -161,25 +154,23 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 task.status = TaskStatus.GENERATING_CONTENT
                 await task_manager._save_batches()
                 
-                # Use Profile Data from Phase 1
                 p = task.profile_data or {}
                 
                 cv_data, used_prompt = await generate_cv_content_v2(
                     role=p.get('role', task.role),
-                    expertise=task.expertise, # Keep expertise from request
+                    expertise=task.expertise,
                     age=p.get('age', 30),
                     gender=p.get('gender', task.gender),
                     ethnicity=p.get('ethnicity', task.ethnicity),
                     origin=p.get('origin', task.origin),
                     remote=task.remote,
                     model=cv_model,
-                    name=p.get('name'), # Pass name explicitly
-                    profile_data=p # Pass full profile mainly for consistency 
+                    name=p.get('name'),
+                    profile_data=p
                 )
                 
                 task.cv_data = cv_data
                 
-                # Save Prompt
                 try:
                     path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
                     with open(path, "w", encoding="utf-8") as f: f.write(used_prompt)
@@ -195,19 +186,10 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 task.status = TaskStatus.ERROR
                 task.subtasks[1].status = TaskStatus.ERROR
                 print(f"Phase 2 Error Task {task.id}: {e}")
-
-    await asyncio.gather(*[run_phase2(t) for t in active_tasks])
-    
-    # Filter again
-    active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
-    
-    # --- PHASE 3: GENERATE IMAGES ---
-    # Concurrency: 5 (Increased from 2)
-    print(f"=== STARTING PHASE 3: IMAGES ({len(active_tasks)} tasks) ===")
-    sem_phase3 = asyncio.Semaphore(5)
-    
-    async def run_phase3(task: Task):
-        async with sem_phase3:
+                return
+        
+        # ========== PHASE 3: IMAGE ==========
+        async with global_semaphore:
             try:
                 task.current_subtask_index = 2
                 task.subtasks[2].status = TaskStatus.RUNNING
@@ -220,9 +202,9 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 image_path, used_prompt = await generate_avatar(
                     gender=p.get('gender', task.gender),
                     ethnicity=p.get('ethnicity', task.ethnicity),
-                    age_range=str(p.get('age', task.age_range)), # Use specific age if available
+                    age_range=str(p.get('age', task.age_range)),
                     origin=p.get('origin', task.origin),
-                    role=p.get('role', task.role), # Pass specific role for context
+                    role=p.get('role', task.role),
                     model=image_model,
                     filename=f"{task.id}_avatar.jpg"
                 )
@@ -240,49 +222,32 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 await task_manager._save_batches()
                 
             except Exception as e:
-                # KREA FALLBACK: If API fails, use mock avatar so we don't block the whole CV
+                # KREA FALLBACK
                 print(f"WARNING: Phase 3 (Krea) failed for Task {task.id}: {e}")
-                print("FALLBACK: generating mock avatar instead...")
-                
                 try:
-                    # Import internal mock function dynamically or assume it's available
                     from ..services.krea_service import _generate_mock_avatar
-                    
+                    p = task.profile_data or {}
                     mock_path = await _generate_mock_avatar(
                         gender=p.get('gender', task.gender),
                         ethnicity=p.get('ethnicity', task.ethnicity)
                     )
-                    
                     task.image_path = mock_path
                     task.subtasks[2].status = TaskStatus.COMPLETE
                     task.subtasks[2].progress = 100
-                    # Show the original error in the message so user knows why fallback happened
                     short_error = str(e)[:100] + "..." if len(str(e)) > 100 else str(e)
                     task.subtasks[2].message = f"Fallback Mode. Error: {short_error}"
-                    # Also set the error field but keep status generally valid (or maybe Warning?)
-                    task.error = f"Krea Error (Handled): {e}" 
-                    
+                    task.error = f"Krea Error (Handled): {e}"
                     task.progress = 80
                     await task_manager._save_batches()
-                    
                 except Exception as fallback_e:
-                    # If even fallback fails, then fail the task
                     task.error = f"Image Gen Failed: {e} | Fallback Failed: {fallback_e}"
                     task.status = TaskStatus.ERROR
                     task.subtasks[2].status = TaskStatus.ERROR
                     print(f"CRITICAL: Phase 3 completely failed Task {task.id}: {fallback_e}")
-
-    await asyncio.gather(*[run_phase3(t) for t in active_tasks])
-    
-    # Filter again
-    active_tasks = [t for t in tasks if t.status != TaskStatus.ERROR]
-
-    # --- PHASE 4: HTML ASSEMBLY ---
-    print(f"=== STARTING PHASE 4: HTML ASSEMBLY ({len(active_tasks)} tasks) ===")
-    
-    for task in active_tasks:
+                    return
+        
+        # ========== PHASE 4 & 5: HTML + PDF ==========
         try:
-            # --- Phase 4: HTML Assembly ---
             task.current_subtask_index = 3
             task.subtasks[3].status = TaskStatus.RUNNING
             task.subtasks[3].message = "Assembling HTML..."
@@ -290,7 +255,6 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             
             p = task.profile_data or {}
             
-            # Format Filename
             safe_name = p.get("name", "CV").replace(" ", "_")
             safe_name = "".join([c for c in safe_name if c.isalnum() or c in ('_','-')])
             safe_role = p.get("role", "Role").replace(" ", "_").replace("/", "-")
@@ -298,51 +262,41 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             
             filename = f"{task.id[:8]}__{safe_name}__{safe_role}.html"
             
-            # Phase 4: Generate HTML (handled inside render_cv_pdf)
-            # Phase 5: Generate PDF (also handled inside render_cv_pdf, but with image compression)
-            
-            # Mark Phase 4 as running
             task.subtasks[3].progress = 50
             task.subtasks[3].message = "Rendering HTML template..."
             await task_manager._save_batches()
             
-            # Generate HTML and PDF (returns tuple or may raise)
             result = await render_cv_pdf(task.cv_data, task.image_path, filename)
             
-            # Handle case where render_cv_pdf returns None (critical failure)
             if result is None:
                 raise RuntimeError("render_cv_pdf returned None - critical failure")
             
             html_path, pdf_path = result
             task.html_path = html_path
             
-            # Mark Phase 4 (HTML) complete
             task.subtasks[3].status = TaskStatus.COMPLETE
             task.subtasks[3].progress = 100
             task.subtasks[3].message = "HTML generated"
             
-            # --- Phase 5: PDF Generation ---
+            # Phase 5: PDF
             task.current_subtask_index = 4
             task.subtasks[4].status = TaskStatus.RUNNING
             task.subtasks[4].progress = 50
             task.subtasks[4].message = "Generating PDF with selectable text..."
             await task_manager._save_batches()
             
-            # Strict Verification: Check if PDF was actually created
             if pdf_path and pdf_path.endswith('.pdf') and Path(pdf_path).exists() and Path(pdf_path).stat().st_size > 0:
                 task.pdf_path = pdf_path
                 task.subtasks[4].status = TaskStatus.COMPLETE
                 task.subtasks[4].progress = 100
                 task.subtasks[4].message = "PDF Ready"
             else:
-                # PDF Generation Failed
-                task.pdf_path = None # Do not link missing file
+                task.pdf_path = None
                 task.subtasks[4].status = TaskStatus.ERROR
                 error_msg = f"PDF Generation Failed: File not created at {pdf_path}"
                 task.subtasks[4].message = error_msg
-                task.error = error_msg  # Set main task error so it shows in UI
+                task.error = error_msg
                 print(f"ERROR: {error_msg}")
-                # We do NOT fail the whole task, just Phase 5 runs in ERROR state
             
             task.status = TaskStatus.COMPLETE
             task.progress = 100
@@ -355,6 +309,11 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             print(f"Phase 4/5 Error Task {task.id}: {e}")
             import traceback
             traceback.print_exc()
+    
+    # Launch ALL tasks concurrently - each runs through its full pipeline
+    print(f"=== STARTING PIPELINED GENERATION ({len(tasks)} tasks) ===")
+    await asyncio.gather(*[process_single_task(t) for t in tasks])
+    print(f"=== BATCH COMPLETE ===")
 
 
 @router.get("/models", response_model=ModelsResponse)

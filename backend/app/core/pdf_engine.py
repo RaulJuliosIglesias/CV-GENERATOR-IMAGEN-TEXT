@@ -183,19 +183,32 @@ async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str) 
     temp_html_path = await render_cv_html(data_dict, image_path, f"temp_{filename}", temp_html_dir, compress_images=True)
     
     try:
-        # Use subprocess to run standalone script
-        # This prevents asyncio loop conflicts with Uvicorn/FastAPI
+        # Use run_in_executor with blocking subprocess - more reliable on Windows
+        import asyncio
         import subprocess
         
         script_path = BACKEND_DIR / "generate_pdf_script.py"
         
-        # Run the script consistently
-        process = subprocess.run(
-            [sys.executable, str(script_path), "--html", str(temp_html_path), "--out", str(pdf_path)],
-            capture_output=True,
-            text=True,
-            check=False # We handle return code manually
-        )
+        print(f"DEBUG PDF: Calling script {script_path}")
+        print(f"DEBUG PDF: Input HTML: {temp_html_path}")
+        print(f"DEBUG PDF: Output PDF: {pdf_path}")
+        
+        # Run blocking subprocess in thread pool to avoid blocking event loop
+        loop = asyncio.get_event_loop()
+        
+        def run_pdf_subprocess():
+            return subprocess.run(
+                [sys.executable, str(script_path), "--html", str(temp_html_path), "--out", str(pdf_path)],
+                capture_output=True,
+                text=True,
+                timeout=120  # 2 minute timeout
+            )
+        
+        process = await loop.run_in_executor(None, run_pdf_subprocess)
+        
+        print(f"DEBUG PDF: Return code: {process.returncode}")
+        print(f"DEBUG PDF: Stdout: {process.stdout[:500] if process.stdout else 'EMPTY'}")
+        print(f"DEBUG PDF: Stderr: {process.stderr[:500] if process.stderr else 'EMPTY'}")
         
         if process.returncode == 0 and "PDF Generation Complete" in process.stdout:
             print(f"SUCCESS: Phase 5 - PDF generated: {pdf_path.name}")
@@ -208,7 +221,7 @@ async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str) 
                 
             return str(html_path), str(pdf_path)
         else:
-            raise RuntimeError(f"Subprocess failed. Stderr: {process.stderr}\nStdout: {process.stdout}")
+            raise RuntimeError(f"Subprocess failed. Return code: {process.returncode}. Stderr: {process.stderr}\nStdout: {process.stdout}")
         
     except Exception as e:
         error_msg = f"ERROR: Phase 5 PDF generation failed: {e}"
@@ -254,19 +267,23 @@ async def generate_pdf_from_existing_html(html_filename: str) -> str:
     print(f"DEBUG: Regenerating PDF for {html_filename}")
     
     try:
-        # Use subprocess to run standalone script
-        # This prevents asyncio loop conflicts with Uvicorn/FastAPI
+        # Use run_in_executor with blocking subprocess - more reliable on Windows
+        import asyncio
         import subprocess
         
         script_path = BACKEND_DIR / "generate_pdf_script.py"
         
-        # Run the script consistently
-        process = subprocess.run(
-            [sys.executable, str(script_path), "--html", str(html_path), "--out", str(pdf_path)],
-            capture_output=True,
-            text=True,
-            check=False # We handle return code manually
-        )
+        loop = asyncio.get_event_loop()
+        
+        def run_pdf_subprocess():
+            return subprocess.run(
+                [sys.executable, str(script_path), "--html", str(html_path), "--out", str(pdf_path)],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+        
+        process = await loop.run_in_executor(None, run_pdf_subprocess)
         
         if process.returncode == 0 and "PDF Generation Complete" in process.stdout:
             print(f"SUCCESS: PDF regenerated: {pdf_path.name}")
