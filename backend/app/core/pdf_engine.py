@@ -89,8 +89,8 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         # Convert image to base64
         if image_path and os.path.exists(image_path):
             if compress_images:
-                # Compress for PDF - much smaller file
-                context['profile_image'] = compress_image_base64(image_path, max_size=200, quality=60)
+                # Compress for PDF - much smaller file BUT increased size for visibility
+                context['profile_image'] = compress_image_base64(image_path, max_size=600, quality=75)
             else:
                 # Full quality for HTML viewing
                 with open(image_path, 'rb') as img:
