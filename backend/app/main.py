@@ -147,17 +147,31 @@ async def ping():
 # Include routers - Load generation router AFTER config just in case
 print("DEBUG MAIN: Loading generation router...")
 app.include_router(generation.router)
+
 # Serve frontend in production (Railway/Docker)
 FRONTEND_DIR = BACKEND_DIR.parent / "frontend" / "dist"
+print(f"DEBUG MAIN: Frontend dir: {FRONTEND_DIR} (exists: {FRONTEND_DIR.exists()})")
+
+# Mount frontend static files FIRST if they exist (before route definitions)
+if FRONTEND_DIR.exists():
+    print(f"DEBUG MAIN: Mounting frontend assets from {FRONTEND_DIR}")
+    # Serve assets subdirectory
+    assets_dir = FRONTEND_DIR / "assets"
+    if assets_dir.exists():
+        print(f"DEBUG MAIN: Mounting /assets from {assets_dir}")
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="frontend_assets")
 
 @app.get("/")
 async def root():
     """Serve frontend or API info."""
+    from fastapi.responses import FileResponse, HTMLResponse
+    
     # Check if frontend build exists (production deployment)
     index_file = FRONTEND_DIR / "index.html"
+    print(f"DEBUG MAIN: Checking for index.html at {index_file} (exists: {index_file.exists()})")
+    
     if index_file.exists():
-        from fastapi.responses import FileResponse
-        return FileResponse(index_file)
+        return FileResponse(index_file, media_type="text/html")
     
     # Fallback to API info for development
     return JSONResponse(content={
@@ -173,14 +187,6 @@ async def root():
             "health": "GET /api/health"
         }
     })
-
-# Mount frontend static files if they exist
-if FRONTEND_DIR.exists():
-    # Serve assets
-    if (FRONTEND_DIR / "assets").exists():
-        app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="frontend_assets")
-    # Serve other static files (favicon, etc)
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="frontend_static")
 
 
 @app.get("/api")
