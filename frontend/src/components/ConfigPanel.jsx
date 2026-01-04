@@ -12,6 +12,8 @@ import { TagInput } from './ui/TagInput';
 
 import useGenerationStore from '../stores/useGenerationStore';
 import { Input } from './ui/Input';
+import { User } from 'lucide-react';
+import { AboutModal } from './AboutModal';
 
 const GENDER_OPTIONS = [
     { value: 'any', label: 'Any Gender' },
@@ -95,6 +97,7 @@ export default function ConfigPanel() {
     const [localAgeRange, setLocalAgeRange] = useState([config.age_min, config.age_max]);
     const [isAdded, setIsAdded] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [showAbout, setShowAbout] = useState(false);
 
     // Sync local state when config changes externally (e.g. loaded from DB or reset)
     useEffect(() => {
@@ -226,12 +229,18 @@ export default function ConfigPanel() {
                         <p className="text-xs text-muted-foreground">Resume Generator</p>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="hover:bg-primary/10">
-                    <Settings className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
-                </Button>
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => setShowAbout(true)} className="hover:bg-primary/10">
+                        <User className="w-5 h-5 text-muted-foreground hover:text-blue-400 transition-colors" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="hover:bg-primary/10">
+                        <Settings className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+                    </Button>
+                </div>
             </div>
 
             {/* Settings Modal */}
+            {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
             {showSettings && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
