@@ -506,23 +506,28 @@ export default function ConfigPanel() {
                 <Button
                     onClick={handleGenerate}
                     disabled={false}
-                    variant={isGenerating ? "outline" : "gradient"}
+                    // When generating, keep it solid (secondary) instead of outline to feel clickable
+                    variant={isGenerating ? "secondary" : "gradient"}
                     size="lg"
-                    className="w-full relative overflow-hidden transition-all duration-300"
+                    // Add distinct hover and active states
+                    className={`w-full relative overflow-hidden transition-all duration-200 ${isGenerating
+                            ? "hover:bg-primary/10 active:scale-95 border-2 border-primary/20"
+                            : "hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-primary/25"
+                        }`}
                 >
                     {isGenerating ? (
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-2 w-full">
                             {isAdded ? (
-                                <>
-                                    <div className="bg-white/20 text-white rounded-full p-0.5">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <div className="animate-in fade-in zoom-in duration-200 flex items-center gap-2 text-green-500 font-bold">
+                                    <div className="bg-green-500/20 rounded-full p-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                     </div>
-                                    <span className="font-bold">Added to Queue!</span>
-                                </>
+                                    <span>Added!</span>
+                                </div>
                             ) : (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                                    <span>Add to Queue</span>
+                                    <PlusCircle className="w-5 h-5 text-primary animate-pulse" />
+                                    <span className="font-semibold text-primary">Add Batch to Queue</span>
                                 </>
                             )}
                             {/* Subtle progress indicator background */}
