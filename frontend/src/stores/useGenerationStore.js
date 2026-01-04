@@ -29,6 +29,45 @@ const useGenerationStore = create((set, get) => ({
         },
     },
 
+    // Initialize from localStorage if available
+    ...(() => {
+        try {
+            const stored = JSON.parse(localStorage.getItem('generation-storage') || '{}');
+            if (stored.state && stored.state.config) {
+                return {
+                    config: {
+                        // Merge default config with stored config to ensure new keys exist
+                        qty: stored.state.config.qty || 1,
+                        genders: stored.state.config.genders || ['any'],
+                        ethnicities: stored.state.config.ethnicities || ['any'],
+                        origins: stored.state.config.origins || ['any'],
+                        roles: stored.state.config.roles || ['any'],
+                        age_min: stored.state.config.age_min || 18,
+                        age_max: stored.state.config.age_max || 70,
+                        expertise_levels: stored.state.config.expertise_levels || ['any'],
+                        remote: stored.state.config.remote || false,
+                        smart_category: stored.state.config.smart_category !== undefined ? stored.state.config.smart_category : true,
+                        image_size: stored.state.config.image_size || 100,
+                        profile_model: stored.state.config.profile_model || null,
+                        cv_model: stored.state.config.cv_model || null,
+                        image_model: stored.state.config.image_model || null,
+                        llmSort: stored.state.config.llmSort || 'default',
+                        llmSearch: stored.state.config.llmSearch || '',
+                        llmProvider: stored.state.config.llmProvider || 'all',
+                        llmFreeOnly: stored.state.config.llmFreeOnly || false,
+                        apiKeys: {
+                            openRouter: stored.state.config.apiKeys?.openRouter || '',
+                            krea: stored.state.config.apiKeys?.krea || ''
+                        }
+                    }
+                };
+            }
+        } catch (e) {
+            console.warn('Failed to load generation store from localStorage:', e);
+        }
+        return {};
+    })(),
+
     // Available options from centralized database
     configOptions: {
         roles: [],
