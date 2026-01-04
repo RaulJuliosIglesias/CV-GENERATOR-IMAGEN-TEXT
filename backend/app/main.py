@@ -149,29 +149,43 @@ print("DEBUG MAIN: Loading generation router...")
 app.include_router(generation.router)
 
 # Serve frontend in production (Railway/Docker)
-FRONTEND_DIR = BACKEND_DIR.parent / "frontend" / "dist"
-print(f"DEBUG MAIN: Frontend dir: {FRONTEND_DIR} (exists: {FRONTEND_DIR.exists()})")
+# Try multiple paths for frontend dist (local dev vs Docker)
+POSSIBLE_FRONTEND_PATHS = [
+    BACKEND_DIR.parent / "frontend" / "dist",  # Local dev: backend/../frontend/dist
+    Path("/app/frontend/dist"),                 # Docker: /app/frontend/dist
+    BACKEND_DIR / ".." / "frontend" / "dist",   # Alternative relative
+]
 
-# Mount frontend static files FIRST if they exist (before route definitions)
-if FRONTEND_DIR.exists():
-    print(f"DEBUG MAIN: Mounting frontend assets from {FRONTEND_DIR}")
+FRONTEND_DIR = None
+for path in POSSIBLE_FRONTEND_PATHS:
+    resolved = path.resolve() if path.exists() else path
+    print(f"DEBUG MAIN: Checking frontend path: {resolved} (exists: {path.exists()})")
+    if path.exists():
+        FRONTEND_DIR = path
+        break
+
+if FRONTEND_DIR:
+    print(f"DEBUG MAIN: Using frontend dir: {FRONTEND_DIR}")
     # Serve assets subdirectory
     assets_dir = FRONTEND_DIR / "assets"
     if assets_dir.exists():
         print(f"DEBUG MAIN: Mounting /assets from {assets_dir}")
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="frontend_assets")
+else:
+    print("DEBUG MAIN: No frontend directory found - API only mode")
 
 @app.get("/")
 async def root():
     """Serve frontend or API info."""
-    from fastapi.responses import FileResponse, HTMLResponse
+    from fastapi.responses import FileResponse
     
     # Check if frontend build exists (production deployment)
-    index_file = FRONTEND_DIR / "index.html"
-    print(f"DEBUG MAIN: Checking for index.html at {index_file} (exists: {index_file.exists()})")
-    
-    if index_file.exists():
-        return FileResponse(index_file, media_type="text/html")
+    if FRONTEND_DIR:
+        index_file = FRONTEND_DIR / "index.html"
+        print(f"DEBUG MAIN: Checking for index.html at {index_file} (exists: {index_file.exists()})")
+        
+        if index_file.exists():
+            return FileResponse(index_file, media_type="text/html")
     
     # Fallback to API info for development
     return JSONResponse(content={
