@@ -70,7 +70,7 @@ def compress_image_base64(image_path: str, max_size: int = 200, quality: int = 6
             return ""
 
 
-async def render_cv_html(data_dict: dict, image_path: str | None, filename: str, output_dir: Path = None, compress_images: bool = False, image_size: int = 100) -> str:
+async def render_cv_html(data_dict: dict, image_path: str | None, filename: str, output_dir: Path = None, compress_images: bool = False, image_size: int = 100, sidebar_color: str = None) -> str:
     """
     Render CV as HTML using Jinja2 template.
     Returns path to the generated HTML file.
@@ -106,35 +106,18 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         # Add PDF generation flag
         context['is_pdf_generation'] = True
         
-        # Inject random sidebar color for visual variety (Creative Professional Palette)
-        sidebar_colors = [
-            # Cool Blues & Teals
-            '#E3F2FD', # Light Blue
-            '#D1EAED', # Soft Teal
-            '#D4E6F1', # Pale Sky
-            '#EBF5FB', # Ice Blue
-            
-            # Fresh Greens
-            '#E8F5E9', # Mint Green
-            '#DCE6D9', # Sage
-            '#EAFAF1', # Soft Emerald
-            
-            # Warm & Earthy
-            '#FAF2D3', # Cream Gold
-            '#FDEBD0', # Champagne
-            '#E6DDCF', # Sand
-            '#F4ECF7', # Pale Lilac
-            '#E8DAEF', # Soft Lavender
-            '#FADBD8', # Blush Rose
-            
-            # Professional Neutrals
-            '#E5E7E9', # Cool Gray
-            '#EAEDED', # Platinum
-            '#F2F3F4', # Anti-Flash White
-            '#D7DBDD', # Silver
-            '#E0E0E0', # Medium Gray
-        ]
-        context['sidebar_color'] = random.choice(sidebar_colors)
+        if sidebar_color:
+             context['sidebar_color'] = sidebar_color
+        else:
+            # Fallback if no color provided
+            sidebar_colors = [
+                '#E3F2FD', '#D1EAED', '#D4E6F1', '#EBF5FB', # Blues
+                '#E8F5E9', '#DCE6D9', '#EAFAF1',            # Greens
+                '#FAF2D3', '#FDEBD0', '#E6DDCF',            # Warm
+                '#F4ECF7', '#E8DAEF', '#FADBD8',            # Rose/Purple
+                '#E5E7E9', '#EAEDED', '#F2F3F4', '#D7DBDD'  # Neutrals
+            ]
+            context['sidebar_color'] = random.choice(sidebar_colors)
 
         # Calculate dynamic image styles based on image_size percentage
         # Base size: 260px (Web), 200px (PDF/Scaled)
@@ -165,7 +148,7 @@ async def render_cv_html(data_dict: dict, image_path: str | None, filename: str,
         raise e
 
 
-async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, smart_category: bool = False, role: str = None, image_size: int = 100) -> tuple[str, str]:
+async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, smart_category: bool = False, role: str = None, image_size: int = 100, sidebar_color: str = None) -> tuple[str, str]:
     """
     Phase 4+5: Generate HTML and PDF from CV data.
     
@@ -186,7 +169,7 @@ async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, 
     html_output_dir.mkdir(exist_ok=True)
     
     # We pass image_size to modify CSS in the template
-    html_path = await render_cv_html(data_dict, image_path, filename, output_dir=html_output_dir, compress_images=False, image_size=image_size)
+    html_path = await render_cv_html(data_dict, image_path, filename, output_dir=html_output_dir, compress_images=False, image_size=image_size, sidebar_color=sidebar_color)
 
     # Phase 5: Generate PDF (from that HTML)
     # ------------------------------------------------------------------
@@ -224,7 +207,7 @@ async def render_cv_pdf(data_dict: dict, image_path: str | None, filename: str, 
     # Create a temporary HTML with compressed images for PDF generation
     temp_html_dir = OUTPUT_DIR / "temp"
     temp_html_dir.mkdir(exist_ok=True)
-    temp_html_path = await render_cv_html(data_dict, image_path, f"temp_{filename}", temp_html_dir, compress_images=True)
+    temp_html_path = await render_cv_html(data_dict, image_path, f"temp_{filename}", temp_html_dir, compress_images=True, sidebar_color=sidebar_color)
     
     try:
         # Use run_in_executor with blocking subprocess - more reliable on Windows

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key, ExternalLink } from 'lucide-react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key, ExternalLink, Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
@@ -98,6 +98,17 @@ export default function ConfigPanel() {
     const [isAdded, setIsAdded] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showAbout, setShowAbout] = useState(false);
+    const [theme, setTheme] = useState('dark');
+
+    // Theme toggle logic
+    useEffect(() => {
+        const root = window.document.documentElement;
+        root.setAttribute('data-theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    };
 
     // Sync local state when config changes externally (e.g. loaded from DB or reset)
     useEffect(() => {
@@ -233,6 +244,13 @@ export default function ConfigPanel() {
                     <Button variant="ghost" size="icon" onClick={() => setShowAbout(true)} className="hover:bg-primary/10">
                         <User className="w-5 h-5 text-muted-foreground hover:text-blue-400 transition-colors" />
                     </Button>
+                    <Button variant="ghost" size="icon" onClick={toggleTheme} className="hover:bg-primary/10">
+                        {theme === 'dark' ? (
+                            <Sun className="w-5 h-5 text-muted-foreground hover:text-yellow-400 transition-colors" />
+                        ) : (
+                            <Moon className="w-5 h-5 text-muted-foreground hover:text-purple-400 transition-colors" />
+                        )}
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="hover:bg-primary/10">
                         <Settings className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
                     </Button>
@@ -318,7 +336,7 @@ export default function ConfigPanel() {
                                         className="bg-secondary/50"
                                     />
                                     <a
-                                        href="https://krea.ai/account/api"
+                                        href="https://www.krea.ai/settings/api-tokens"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 mt-1"

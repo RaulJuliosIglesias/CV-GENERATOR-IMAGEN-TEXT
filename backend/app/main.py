@@ -106,19 +106,9 @@ app.add_middleware(
 )
 
 # Mount static directories - skip on Vercel (no persistent filesystem)
-if not IS_VERCEL:
-    app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
-    if (OUTPUT_DIR / "html").exists():
-        app.mount("/html", StaticFiles(directory=str(OUTPUT_DIR / "html")), name="html")
-    if (OUTPUT_DIR / "pdf").exists():
-        app.mount("/pdf", StaticFiles(directory=str(OUTPUT_DIR / "pdf")), name="pdf")
-    if (OUTPUT_DIR / "prompts").exists():
-        app.mount("/prompts", StaticFiles(directory=str(OUTPUT_DIR / "prompts")), name="prompts")
-    if (OUTPUT_DIR / "avatars").exists():
-        app.mount("/avatars", StaticFiles(directory=str(OUTPUT_DIR / "avatars")), name="avatars")
-    # Note: /assets is reserved for frontend static files, backend assets use /backend-assets
-    if ASSETS_DIR.exists():
-        app.mount("/backend-assets", StaticFiles(directory=str(ASSETS_DIR)), name="backend_assets")
+# SECURITY: We do NOT mount /output, /html, /pdf publicly.
+# Access is controlled via /api/files/ endpoints.
+# Only frontend assets are mounted if present.
 
 # Import config service
 from .services.roles_service import get_all_config

@@ -1,12 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FileText, Trash2, FolderOpen, ExternalLink, RefreshCw, HardDrive, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { FileText, Trash2, FolderOpen, ExternalLink, RefreshCw, HardDrive, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { Button } from './ui/Button';
 import useGenerationStore from '../stores/useGenerationStore';
 import { deleteFile, openFolder, getPdfUrl, getHtmlUrl } from '../lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PreviewModal } from './PreviewModal';
 
 export default function FileExplorer({ height }) {
     const { files, loadFiles, isLoadingFiles } = useGenerationStore();
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
+    const [previewFile, setPreviewFile] = useState(null);
 
     useEffect(() => {
         loadFiles();
@@ -17,7 +20,8 @@ export default function FileExplorer({ height }) {
     };
 
     const handleOpenHtml = (filename) => {
-        window.open(getHtmlUrl(filename), '_blank');
+        // Use Preview Modal instead of new tab
+        setPreviewFile(filename);
     };
 
     const handleDeleteFile = async (filename) => {
@@ -215,78 +219,96 @@ export default function FileExplorer({ height }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/30">
-                            {sortedFiles.map((file) => {
-                                const meta = parseFilename(file.filename);
-                                return (
-                                    <tr
-                                        key={file.filename}
-                                        className="hover:bg-accent/20 transition-colors group"
-                                    >
-                                        <td className="px-4 py-3">
-                                            <span className="font-mono text-xs text-muted-foreground bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
-                                                {meta.id}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                                                <span
-                                                    className="text-sm font-medium text-foreground truncate max-w-[200px]"
-                                                    title={meta.name}
-                                                >
-                                                    {meta.name}
+                            <AnimatePresence mode="popLayout">
+                                {sortedFiles.map((file) => {
+                                    const meta = parseFilename(file.filename);
+                                    return (
+                                        <motion.tr
+                                            key={file.filename}
+                                            layout
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="hover:bg-accent/20 transition-colors group"
+                                        >
+                                            <td className="px-4 py-3">
+                                                <span className="font-mono text-xs text-muted-foreground bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
+                                                    {meta.id}
                                                 </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-sm text-foreground/80 truncate max-w-[200px]" title={meta.role}>
-                                                {meta.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(file.created_at)}</span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <span className="text-xs text-muted-foreground font-mono">{file.size_kb} KB</span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                <Button
-                                                    onClick={() => handleOpenHtml(file.filename)}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 hover:bg-blue-500/10 hover:text-blue-400"
-                                                    title="View HTML (Web)"
-                                                >
-                                                    <ExternalLink className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
-                                                    onClick={() => handleOpenPdf(file.filename)}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 hover:bg-red-500/10 hover:text-red-400"
-                                                    title="View PDF (Document)"
-                                                >
-                                                    <FileText className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
-                                                    onClick={() => handleDeleteFile(file.filename)}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleOpenHtml(file.filename)}>
+                                                    <div className="p-1 rounded bg-emerald-500/10 text-emerald-400">
+                                                        <FileText className="w-4 h-4 shrink-0" />
+                                                    </div>
+                                                    <span
+                                                        className="text-sm font-medium text-foreground truncate max-w-[200px] hover:text-primary transition-colors hover:underline underline-offset-4"
+                                                        title={meta.name}
+                                                    >
+                                                        {meta.name}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="text-sm text-foreground/80 truncate max-w-[200px]" title={meta.role}>
+                                                    {meta.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(file.created_at)}</span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <span className="text-xs text-muted-foreground font-mono">{file.size_kb} KB</span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        onClick={() => handleOpenHtml(file.filename)}
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 hover:bg-blue-500/10 hover:text-blue-400"
+                                                        title="Preview"
+                                                    >
+                                                        <ExternalLink className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleOpenPdf(file.filename)}
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 hover:bg-green-500/10 hover:text-green-400"
+                                                        title="Download PDF"
+                                                    >
+                                                        <Download className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleDeleteFile(file.filename)}
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    );
+                                })}
+                            </AnimatePresence>
                         </tbody>
                     </table>
                 </div>
             )}
+
+            <AnimatePresence>
+                {previewFile && (
+                    <PreviewModal
+                        filename={previewFile}
+                        onClose={() => setPreviewFile(null)}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }

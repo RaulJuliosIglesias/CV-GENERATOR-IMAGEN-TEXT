@@ -1,10 +1,10 @@
 # FastAPI & Server
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
-python-multipart==0.0.6
+python-multipart==0.0.9
 
 # PDF Generation
-reportlab==4.2.5
+# reportlab removed - using Playwright (async)
 html5lib==1.1
 Pillow==10.2.0
 jinja2==3.1.2

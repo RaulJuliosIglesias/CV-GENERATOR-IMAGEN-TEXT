@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2, FileText, Image, Brain, Clock, Eye, Download, Trash2 } from 'lucide-react';
 import { Progress } from './ui/Progress';
 import { Button } from './ui/Button';
@@ -85,7 +86,13 @@ function TaskCard({ task }) {
     };
 
     return (
-        <div className={`relative rounded-xl border ${statusConfig.borderColor} ${statusConfig.bgColor} p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/5 group`}>
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            layout
+            className={`relative rounded-xl border ${statusConfig.borderColor} ${statusConfig.bgColor} p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/5 group`}
+        >
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -192,7 +199,7 @@ function TaskCard({ task }) {
                     </button>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }
 
@@ -259,11 +266,12 @@ export default function ProgressTracker() {
                 <Progress value={overallProgress} className="h-2" />
             </div>
 
-            {/* Task Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {tasks.map((task) => (
-                    <TaskCard key={task.id} task={task} />
-                ))}
+                <AnimatePresence mode="popLayout">
+                    {tasks.map((task) => (
+                        <TaskCard key={task.id} task={task} />
+                    ))}
+                </AnimatePresence>
             </div>
 
             {/* Status Summary */}
