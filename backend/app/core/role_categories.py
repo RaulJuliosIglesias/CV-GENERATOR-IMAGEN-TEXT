@@ -10,135 +10,325 @@ from typing import Optional
 
 # Category keyword mappings
 # Order matters - more specific matches should come first
+# Categories are organized by industry/function with clear separation
 CATEGORY_KEYWORDS = {
-    # Technical Art (before general Art/Creative to catch "3D Artist" etc.)
+    # ===========================================
+    # TECH INDUSTRY
+    # ===========================================
+    
+    # IT & Infrastructure (separate from Software Development)
+    "IT_Infrastructure": [
+        "it support", "it specialist", "it administrator", "it manager", "it director",
+        "system administrator", "sysadmin", "network administrator", "network engineer",
+        "helpdesk", "help desk", "desktop support", "technical support", "it technician",
+        "dba", "database administrator", "database admin", "database engineer",
+        "cloud administrator", "infrastructure", "it operations", "it ops",
+        "systems analyst", "network analyst", "it security", "it coordinator"
+    ],
+    
+    # Software Development (pure dev roles)
+    "Software_Development": [
+        "software developer", "software engineer", "programmer", "coder",
+        "frontend developer", "frontend engineer", "backend developer", "backend engineer",
+        "fullstack developer", "fullstack engineer", "full-stack", "full stack developer",
+        "web developer", "mobile developer", "mobile engineer",
+        "ios developer", "android developer", "react developer", "python developer",
+        "java developer", "javascript developer", "golang developer", ".net developer",
+        "embedded developer", "firmware engineer", "systems programmer",
+        "game developer", "game programmer", "engine programmer", "gameplay programmer"
+    ],
+    
+    # DevOps & Platform Engineering
+    "DevOps": [
+        "devops", "devsecops", "site reliability", "sre",
+        "platform engineer", "build engineer", "release engineer",
+        "cloud engineer", "cloud architect", "infrastructure engineer",
+        "kubernetes", "docker", "ci/cd", "automation engineer"
+    ],
+    
+    # QA & Testing
+    "QA_Testing": [
+        "qa engineer", "qa analyst", "quality assurance", "test engineer",
+        "tester", "automation tester", "manual tester", "sdet",
+        "test lead", "qa lead", "qa manager", "quality engineer"
+    ],
+    
+    # Data & AI/ML
+    "Data_AI": [
+        "data scientist", "data analyst", "data engineer", "machine learning",
+        "ml engineer", "ai engineer", "deep learning", "nlp engineer",
+        "bi analyst", "business intelligence", "analytics engineer",
+        "data architect", "ai researcher", "ai trainee", "ml researcher",
+        "statistician", "quantitative analyst", "data visualization"
+    ],
+    
+    # Cybersecurity
+    "Cybersecurity": [
+        "cybersecurity", "information security", "infosec", "security engineer",
+        "security analyst", "penetration tester", "ethical hacker", "soc analyst",
+        "security architect", "security consultant", "ciso", "security specialist"
+    ],
+    
+    # ===========================================
+    # CREATIVE & DESIGN
+    # ===========================================
+    
+    # Technical Art (VFX, Animation, 3D for film/games)
     "Technical_Art": [
-        "3d", "2d", "vfx", "motion graphics", "motion designer", "technical artist",
-        "rigger", "rigging", "animator", "texture", "shader", "modeler", "modeling",
-        "concept art", "environment artist", "character artist", "lighting artist"
+        "3d artist", "2d artist", "vfx artist", "vfx supervisor",
+        "motion graphics", "motion designer", "technical artist",
+        "rigger", "rigging artist", "character rigger",
+        "animator", "3d animator", "2d animator",
+        "texture artist", "shader artist", "modeler", "3d modeler",
+        "concept artist", "environment artist", "character artist",
+        "lighting artist", "compositor", "compositing",
+        "creature designer", "hard surface modeler", "prop artist",
+        "level artist", "fx artist", "effects artist"
     ],
     
-    # Development
-    "Developer": [
-        "developer", "engineer", "programmer", "coder", "software", "frontend", 
-        "backend", "fullstack", "full-stack", "full stack", "web dev", "mobile dev",
-        "ios", "android", "devops", "cloud engineer", "sre", "site reliability",
-        "embedded", "firmware", "systems engineer"
+    # Game Development (game-specific roles beyond programming)
+    "Game_Development": [
+        "game designer", "level designer", "narrative designer",
+        "game artist", "game producer", "game director",
+        "game writer", "quest designer", "systems designer",
+        "ue4", "ue5", "unreal", "unity developer", "game engine"
     ],
     
-    # Data & AI
-    "Data": [
-        "data scientist", "data analyst", "data engineer", "machine learning", 
-        "ml engineer", "ai engineer", "deep learning", "nlp", "bi analyst",
-        "business intelligence", "analytics", "statistician", "quantitative"
-    ],
-    
-    # Design (UX/UI/Product)
+    # UX/UI & Product Design
     "Design": [
-        "ux", "ui", "user experience", "user interface", "product design",
-        "graphic design", "visual design", "interaction design", "design system",
-        "brand design", "web design"
+        "ux designer", "ui designer", "ux/ui", "user experience", "user interface",
+        "product designer", "interaction designer", "design system",
+        "visual designer", "graphic designer", "web designer",
+        "brand designer", "service designer", "design lead", "design director"
     ],
     
-    # Creative & Artistic (general)
+    # Creative & Arts (non-technical)
     "Creative": [
-        "art director", "creative director", "illustrator", "photographer",
-        "videographer", "filmmaker", "director of photography", "cinematographer",
-        "music", "musician", "composer", "singer", "audio", "sound design",
-        "voice", "actor", "actress", "performer", "dancer", "choreographer"
+        "art director", "creative director", "illustrator",
+        "photographer", "videographer", "filmmaker",
+        "musician", "composer", "singer", "audio engineer", "sound designer",
+        "voice actor", "actor", "actress", "performer", "dancer", "choreographer",
+        "fine artist", "painter", "sculptor", "writer", "author"
     ],
     
-    # Management & Leadership
-    "Management": [
-        "manager", "management", "project manager", "product manager", "pm",
-        "scrum master", "agile coach", "team lead", "tech lead", "head of",
-        "supervisor", "coordinator"
+    # ===========================================
+    # FILM & PRODUCTION
+    # ===========================================
+    
+    "Film_Production": [
+        "camera operator", "camera assistant", "cinematographer", "dop",
+        "director of photography", "gaffer", "grip", "best boy", "dit",
+        "colorist", "color grader", "storyboard artist",
+        "production assistant", "pa", "line producer", "script supervisor",
+        "focus puller", "steadicam", "dolly grip", "boom operator",
+        "production coordinator", "key grip", "set decorator", "prop master",
+        "makeup artist", "hair stylist", "location scout", "film editor",
+        "casting director", "unit production manager", "assistant director",
+        "producer", "executive producer", "showrunner"
     ],
+    
+    # ===========================================
+    # BUSINESS & MANAGEMENT
+    # ===========================================
     
     # Executive / C-Suite
     "Executive": [
-        "ceo", "cto", "cfo", "coo", "cmo", "cio", "chief", "vp", "vice president",
-        "director", "president", "founder", "co-founder", "partner", "principal"
+        "ceo", "cto", "cfo", "coo", "cmo", "cio", "cpo", "cdo", "chro", "cso",
+        "chief", "vp", "vice president", "svp", "evp", "avp",
+        "president", "founder", "co-founder", "partner", "principal",
+        "board member", "trustee", "managing director"
     ],
     
-    # Communication & Marketing
-    "Communication": [
-        "marketing", "content", "copywriter", "copy writer", "social media",
-        "pr", "public relations", "communications", "brand manager", "seo",
-        "growth", "community manager", "editor", "journalist", "writer"
+    # Management & Leadership (mid-level)
+    "Management": [
+        "manager", "director", "head of", "team lead", "tech lead",
+        "supervisor", "coordinator", "project manager", "program manager",
+        "delivery manager", "general manager", "operations manager",
+        "scrum master", "agile coach", "product owner"
     ],
     
-    # Sales & Business Development
+    # Product Management
+    "Product": [
+        "product manager", "product owner", "product lead",
+        "product director", "product strategist", "product analyst",
+        "associate product manager", "apm", "group product manager"
+    ],
+    
+    # Business Development (separate from Sales)
+    "Business_Development": [
+        "business development", "bdr", "bd manager", "bd director",
+        "partnerships", "partner manager", "strategic partnerships",
+        "alliances", "channel partner", "business analyst", "strategy",
+        "management consultant", "strategy consultant", "consultant"
+    ],
+    
+    # ===========================================
+    # SALES & CUSTOMER
+    # ===========================================
+    
+    # Sales
     "Sales": [
-        "sales", "account executive", "account manager", "business development",
-        "bdr", "sdr", "customer success", "client", "partnership"
+        "sales", "account executive", "account manager", "sales representative",
+        "sales manager", "sales director", "sales engineer",
+        "sdr", "sales development", "inside sales", "outside sales",
+        "sales associate", "sales consultant", "regional sales"
     ],
     
-    # Human Resources
-    "HR": [
-        "hr", "human resources", "recruiter", "recruiting", "talent acquisition",
-        "people operations", "people ops", "compensation", "benefits"
+    # Customer Success & Support
+    "Customer_Success": [
+        "customer success", "csm", "customer success manager",
+        "account manager", "client services", "client manager",
+        "customer support", "customer service", "support specialist",
+        "help desk", "call center", "customer care", "technical support"
     ],
+    
+    # ===========================================
+    # MARKETING & COMMUNICATION
+    # ===========================================
+    
+    # Marketing (digital & traditional)
+    "Marketing": [
+        "marketing manager", "marketing director", "marketing specialist",
+        "digital marketing", "performance marketing", "growth marketing",
+        "demand generation", "marketing analyst", "marketing coordinator",
+        "seo specialist", "sem specialist", "ppc", "paid media",
+        "email marketing", "marketing automation", "cmo"
+    ],
+    
+    # Content & Communications
+    "Communications": [
+        "content writer", "copywriter", "content strategist", "content manager",
+        "social media manager", "community manager",
+        "pr specialist", "public relations", "communications manager",
+        "brand manager", "brand strategist", "editor", "journalist",
+        "technical writer", "documentation"
+    ],
+    
+    # Media & Content Creation (influencers, podcasters)
+    "Media_Content": [
+        "podcaster", "podcast host", "youtuber", "content creator",
+        "streamer", "live streamer", "influencer", "vlogger", "tiktoker",
+        "broadcaster", "radio host", "tv host", "presenter", "anchor",
+        "media personality", "dj"
+    ],
+    
+    # ===========================================
+    # PEOPLE & HR
+    # ===========================================
+    
+    # Talent Acquisition (separate from HR operations)
+    "Talent_Acquisition": [
+        "recruiter", "talent acquisition", "recruiting", "sourcer",
+        "talent partner", "recruitment", "hiring manager",
+        "technical recruiter", "executive recruiter", "headhunter",
+        "recruiting coordinator", "talent scout"
+    ],
+    
+    # HR Operations & People
+    "HR": [
+        "hr manager", "hr director", "hr generalist", "hr specialist",
+        "human resources", "people operations", "people ops", "hrbp",
+        "compensation", "benefits", "payroll", "employee relations",
+        "hris", "workforce", "hr coordinator", "chro"
+    ],
+    
+    # Learning & Development
+    "Learning_Development": [
+        "learning officer", "learning and development", "l&d",
+        "training manager", "trainer", "instructional designer",
+        "curriculum developer", "learning designer", "corporate trainer",
+        "training specialist", "enablement", "onboarding"
+    ],
+    
+    # ===========================================
+    # FINANCE & LEGAL
+    # ===========================================
     
     # Finance & Accounting
     "Finance": [
-        "finance", "financial", "accountant", "accounting", "controller",
-        "treasury", "audit", "tax", "bookkeeper", "payroll"
+        "finance manager", "financial analyst", "accountant", "accounting",
+        "controller", "cfo", "treasurer", "treasury",
+        "audit", "auditor", "tax", "bookkeeper", "payroll",
+        "investment", "portfolio manager", "credit analyst", "fp&a"
     ],
     
     # Legal
     "Legal": [
-        "lawyer", "attorney", "legal", "counsel", "paralegal", "compliance",
-        "regulatory", "contract"
+        "lawyer", "attorney", "legal counsel", "paralegal", "law clerk",
+        "compliance", "regulatory", "contracts", "legal assistant",
+        "litigation", "corporate counsel", "in-house counsel",
+        "legal secretary", "legal ops"
     ],
+    
+    # ===========================================
+    # SPECIALIZED INDUSTRIES
+    # ===========================================
     
     # Healthcare & Medical
     "Healthcare": [
-        "doctor", "physician", "nurse", "medical", "healthcare", "health care",
-        "clinical", "therapist", "dentist", "pharmacist", "surgeon", "vet"
+        "doctor", "physician", "nurse", "registered nurse", "rn",
+        "medical", "healthcare", "clinical", "therapist",
+        "dentist", "pharmacist", "surgeon", "veterinarian",
+        "pharmacy technician", "resident", "fellow", "attending",
+        "physician assistant", "pa-c", "nurse practitioner", "np",
+        "physical therapist", "occupational therapist", "radiologist",
+        "medical assistant", "emt", "paramedic"
     ],
     
-    # Education & Training
+    # Education & Academia
     "Education": [
-        "teacher", "professor", "instructor", "educator", "tutor", "trainer",
-        "teaching", "academic", "faculty", "lecturer", "coach"
+        "teacher", "professor", "instructor", "educator", "tutor",
+        "teaching", "academic", "faculty", "lecturer", "coach",
+        "curriculum", "endowed chair", "department head", "dean", "provost",
+        "assistant professor", "associate professor", "adjunct",
+        "teaching assistant", "principal", "superintendent"
+    ],
+    
+    # Research & Science
+    "Research": [
+        "researcher", "scientist", "research associate", "research assistant",
+        "postdoc", "postdoctoral", "phd", "doctoral",
+        "lab technician", "laboratory", "biologist", "chemist",
+        "physicist", "geologist", "research director"
     ],
     
     # Engineering (non-software)
     "Engineering": [
         "mechanical engineer", "electrical engineer", "civil engineer",
         "chemical engineer", "industrial engineer", "structural engineer",
-        "aerospace", "automotive engineer", "manufacturing"
+        "aerospace engineer", "automotive engineer", "manufacturing engineer",
+        "process engineer", "quality engineer", "project engineer"
     ],
     
     # Architecture & Construction
     "Architecture": [
-        "architect", "architecture", "urban planner", "interior design",
-        "construction", "builder", "site manager", "quantity surveyor"
+        "architect", "architecture", "urban planner", "interior designer",
+        "construction manager", "site manager", "quantity surveyor",
+        "landscape architect", "architectural designer", "builder"
+    ],
+    
+    # Hospitality & Culinary
+    "Hospitality": [
+        "chef", "sous chef", "head chef", "executive chef", "pastry chef",
+        "bartender", "barista", "sommelier", "server", "waiter", "waitress",
+        "hostess", "maître d", "restaurant manager", "food service",
+        "baker", "cook", "line cook", "hotel manager", "concierge",
+        "front desk", "housekeeping", "mixologist", "catering"
+    ],
+    
+    # Fashion & Apparel
+    "Fashion": [
+        "fashion designer", "fashion stylist", "wardrobe stylist",
+        "costume designer", "apparel designer", "textile designer",
+        "pattern maker", "seamstress", "tailor", "fashion buyer",
+        "accessories designer", "footwear designer", "fashion editor"
     ],
     
     # Operations & Logistics
     "Operations": [
-        "operations", "logistics", "supply chain", "warehouse", "inventory",
-        "procurement", "purchasing", "fleet", "distribution"
-    ],
-    
-    # Customer Service & Support
-    "Support": [
-        "customer service", "support", "help desk", "technical support",
-        "customer care", "call center"
-    ],
-    
-    # Research & Science
-    "Research": [
-        "researcher", "scientist", "research", "laboratory", "lab tech",
-        "biologist", "chemist", "physicist", "geologist"
-    ],
-    
-    # Security
-    "Security": [
-        "security", "cybersecurity", "information security", "infosec",
-        "penetration", "ethical hacker", "soc analyst"
+        "operations", "logistics", "supply chain", "warehouse manager",
+        "inventory", "procurement", "purchasing", "fleet manager",
+        "distribution", "fulfillment", "shipping"
     ]
 }
 
