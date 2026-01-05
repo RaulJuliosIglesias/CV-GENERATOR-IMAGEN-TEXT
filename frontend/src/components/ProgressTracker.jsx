@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2, FileText, Image, Brain, Clock, Eye, Download, Trash2 } from 'lucide-react';
 import { Progress } from './ui/Progress';
@@ -6,12 +6,14 @@ import { Button } from './ui/Button';
 import useGenerationStore from '../stores/useGenerationStore';
 import { getPdfUrl, getHtmlUrl } from '../lib/api';
 
+// Status config with color progression: gray -> yellow -> orange -> green
 const STATUS_CONFIG = {
     pending: {
         icon: Clock,
         color: 'text-gray-400',
         bgColor: 'bg-gray-500/10',
         borderColor: 'border-gray-500/30',
+        progressColor: 'bg-gray-400',
         label: 'Pending',
     },
     generating_content: {
@@ -19,6 +21,7 @@ const STATUS_CONFIG = {
         color: 'text-yellow-400',
         bgColor: 'bg-yellow-500/10',
         borderColor: 'border-yellow-500/30',
+        progressColor: 'bg-yellow-400',
         label: 'Generating Content',
         animate: true,
     },
@@ -27,6 +30,7 @@ const STATUS_CONFIG = {
         color: 'text-orange-400',
         bgColor: 'bg-orange-500/10',
         borderColor: 'border-orange-500/30',
+        progressColor: 'bg-orange-400',
         label: 'Generating Image',
         animate: true,
     },
@@ -35,6 +39,7 @@ const STATUS_CONFIG = {
         color: 'text-blue-400',
         bgColor: 'bg-blue-500/10',
         borderColor: 'border-blue-500/30',
+        progressColor: 'bg-blue-400',
         label: 'Rendering PDF',
         animate: true,
     },
@@ -43,6 +48,7 @@ const STATUS_CONFIG = {
         color: 'text-green-400',
         bgColor: 'bg-green-500/10',
         borderColor: 'border-green-500/30',
+        progressColor: 'bg-green-500',
         label: 'Complete',
     },
     error: {
@@ -50,11 +56,12 @@ const STATUS_CONFIG = {
         color: 'text-red-400',
         bgColor: 'bg-red-500/10',
         borderColor: 'border-red-500/30',
+        progressColor: 'bg-red-500',
         label: 'Error',
     },
 };
 
-// Subtask status icons configuration
+// Subtask status icons
 const SUBTASK_CONFIG = {
     pending: { icon: Clock, color: 'text-gray-500' },
     running: { icon: Loader2, color: 'text-blue-500', animate: true },
@@ -62,16 +69,37 @@ const SUBTASK_CONFIG = {
     error: { icon: AlertCircle, color: 'text-red-500' }
 };
 
-function TaskCard({ task }) {
+// Simple, subtle card animation - just fade and slide
+const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (index) => ({
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.3,
+            delay: index * 0.05,
+            ease: "easeOut"
+        }
+    }),
+    exit: {
+        opacity: 0,
+        y: -10,
+        transition: { duration: 0.2 }
+    }
+};
+
+// TaskCard with forwardRef to fix React warning
+const TaskCard = memo(forwardRef(function TaskCard({ task, index }, ref) {
     const [showFullError, setShowFullError] = useState(false);
     const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
     const Icon = statusConfig.icon;
+    const isComplete = task.status === 'complete';
+    const isError = task.status === 'error';
 
     const handleOpenCv = () => {
         const path = task.html_path || task.pdf_path;
         if (path) {
             const filename = path.split(/[\\/]/).pop();
-            // Open HTML in new tab
             window.open(getHtmlUrl(filename), '_blank');
         }
     };
@@ -80,18 +108,27 @@ function TaskCard({ task }) {
         const path = task.pdf_path || task.html_path;
         if (path) {
             const filename = path.split(/[\\/]/).pop();
-            // Open PDF directly (browser will handle download/preview)
             window.open(getPdfUrl(filename), '_blank');
         }
     };
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            ref={ref}
+            custom={index}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             layout
-            className={`relative rounded-xl border ${statusConfig.borderColor} ${statusConfig.bgColor} p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/5 group`}
+            className={`
+                relative rounded-xl border p-4 
+                transition-all duration-500 ease-out
+                ${statusConfig.borderColor} 
+                ${statusConfig.bgColor}
+                hover:scale-[1.02] hover:shadow-lg
+                group
+            `}
         >
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
@@ -99,24 +136,31 @@ function TaskCard({ task }) {
                     {statusConfig.animate ? (
                         <Loader2 className={`w-5 h-5 ${statusConfig.color} animate-spin`} />
                     ) : (
-                        <Icon className={`w-5 h-5 ${statusConfig.color}`} />
+                        <Icon className={`w-5 h-5 ${statusConfig.color} transition-colors duration-300`} />
                     )}
                     <span className="text-xs font-medium text-muted-foreground">CV #{task.id}</span>
                 </div>
-                <span className={`text-xs font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
+                <span className={`text-xs font-semibold ${statusConfig.color} px-2 py-0.5 rounded-full ${statusConfig.bgColor} transition-colors duration-300`}>
+                    {statusConfig.label}
+                </span>
             </div>
 
             {/* Role */}
-            <p className="text-sm font-bold text-foreground truncate mb-3">{task.role}</p>
+            <p className="text-sm font-bold text-foreground truncate mb-2">{task.role}</p>
 
             {/* Status Message */}
             <p className="text-xs text-muted-foreground truncate mb-3 min-h-[1.5em]">{task.message}</p>
 
-            {/* Progress Bar */}
-            <Progress value={task.progress} className="h-1.5 mb-4" />
+            {/* Simple Progress Bar - solid color that transitions with status */}
+            <div className="relative h-2 bg-secondary/50 rounded-full overflow-hidden mb-4">
+                <div
+                    className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${statusConfig.progressColor}`}
+                    style={{ width: `${task.progress}%` }}
+                />
+            </div>
 
             {/* Subtasks List */}
-            <div className="space-y-2 bg-black/5 rounded-lg p-2 mb-3">
+            <div className="space-y-1.5 bg-black/10 rounded-lg p-2.5 mb-3">
                 {task.subtasks?.map((subtask) => {
                     const config = SUBTASK_CONFIG[subtask.status] || SUBTASK_CONFIG.pending;
                     const SubIcon = config.icon;
@@ -124,12 +168,15 @@ function TaskCard({ task }) {
                     return (
                         <div key={subtask.id} className="flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
-                                <SubIcon className={`w-3.5 h-3.5 ${config.color} ${config.animate ? 'animate-spin' : ''}`} />
-                                <span className={subtask.status === 'pending' ? 'text-muted-foreground' : 'text-foreground'}>
+                                <SubIcon className={`w-3.5 h-3.5 ${config.color} ${config.animate ? 'animate-spin' : ''} transition-colors duration-300`} />
+                                <span className={`transition-colors duration-200 ${subtask.status === 'pending' ? 'text-muted-foreground' : 'text-foreground'
+                                    }`}>
                                     {subtask.name}
                                 </span>
                             </div>
-                            {subtask.status === 'running' && <span className="text-[10px] text-blue-500">Processing...</span>}
+                            {subtask.status === 'running' && (
+                                <span className="text-[10px] text-blue-400">Processing...</span>
+                            )}
                         </div>
                     );
                 })}
@@ -157,7 +204,7 @@ function TaskCard({ task }) {
             )}
 
             {/* Action Buttons */}
-            {task.status === 'complete' && (
+            {isComplete && (
                 <div className="flex gap-2 mt-3">
                     <Button
                         onClick={handleOpenCv}
@@ -174,14 +221,14 @@ function TaskCard({ task }) {
                         variant="outline"
                         className="flex-1 border-green-500/50 text-green-400 hover:bg-green-500/10"
                     >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View PDF
+                        <Download className="w-4 h-4 mr-1" />
+                        PDF
                     </Button>
                 </div>
             )}
 
             {/* Delete Button for Failed Tasks */}
-            {task.status === 'error' && (
+            {isError && (
                 <div className="flex justify-end mt-3">
                     <button
                         onClick={(e) => {
@@ -192,7 +239,7 @@ function TaskCard({ task }) {
                                 });
                             }
                         }}
-                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                        className="p-2 text-red-500 hover:bg-red-500/20 rounded-full transition-colors"
                         title="Delete failed task"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -201,30 +248,26 @@ function TaskCard({ task }) {
             )}
         </motion.div>
     );
-}
+}));
 
 export default function ProgressTracker() {
     const { allTasks, isGenerating, activeBatchIds, completedBatchIds } = useGenerationStore();
 
-    // Use allTasks for aggregated view
     const tasks = allTasks;
     const completedCount = tasks.filter((t) => t.status === 'complete').length;
     const totalCount = tasks.length;
 
-    // Calculate REAL progress based on subtasks
-    // Each task has 5 subtasks (Profile, CV Content, Image, HTML, PDF)
-    // We calculate the sum of all subtask progress / total possible
+    // Calculate progress
     let subtaskProgressSum = 0;
     let subtaskTotal = 0;
 
     tasks.forEach(task => {
         if (task.subtasks && task.subtasks.length > 0) {
             task.subtasks.forEach(subtask => {
-                subtaskTotal += 100; // Each subtask can be 0-100
+                subtaskTotal += 100;
                 subtaskProgressSum += (subtask.progress || 0);
             });
         } else {
-            // Fallback: use task.progress directly
             subtaskTotal += 100;
             subtaskProgressSum += (task.progress || 0);
         }
@@ -263,19 +306,22 @@ export default function ProgressTracker() {
                         <span className="text-3xl font-bold gradient-text">{overallProgress}%</span>
                     </div>
                 </div>
+
+                {/* Simple overall progress bar */}
                 <Progress value={overallProgress} className="h-2" />
             </div>
 
+            {/* Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <AnimatePresence mode="popLayout">
-                    {tasks.map((task) => (
-                        <TaskCard key={task.id} task={task} />
+                    {tasks.map((task, index) => (
+                        <TaskCard key={task.id} task={task} index={index} />
                     ))}
                 </AnimatePresence>
             </div>
 
-            {/* Status Summary */}
-            {!isGenerating && completedCount === totalCount && (
+            {/* Completion Summary */}
+            {!isGenerating && completedCount === totalCount && totalCount > 0 && (
                 <div className="mt-8 p-6 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
                     <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
                     <h3 className="text-lg font-bold text-green-400 mb-1">All CVs Generated!</h3>

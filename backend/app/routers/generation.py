@@ -97,6 +97,32 @@ class FilesResponse(BaseModel):
     files: list[FileInfo]
     total: int
 
+
+@router.get("/models", response_model=ModelsResponse)
+async def get_models(
+    x_openrouter_key: Optional[str] = Header(None, alias="X-OpenRouter-Key")
+):
+    """Get available LLM and image models."""
+    try:
+        # Get LLM models from OpenRouter
+        llm_models = await get_llm_models(api_key=x_openrouter_key)
+        
+        # Get image models from Krea service
+        image_models = get_image_models()
+        
+        return ModelsResponse(
+            llm_models=llm_models,
+            image_models=image_models
+        )
+    except Exception as e:
+        print(f"Error fetching models: {e}")
+        # Return empty lists on error so frontend doesn't break
+        return ModelsResponse(
+            llm_models=[],
+            image_models=get_image_models()  # Image models are static
+        )
+
+
 @router.post("/generate", response_model=GenerationResponse)
 async def start_generation(
     request: GenerationRequest, 

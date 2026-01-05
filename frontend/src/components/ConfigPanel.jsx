@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key, ExternalLink, Sun, Moon } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key, ExternalLink, Sun, Moon, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/Button';
 import { Slider } from './ui/Slider';
@@ -99,6 +100,30 @@ export default function ConfigPanel() {
     const [showSettings, setShowSettings] = useState(false);
     const [showAbout, setShowAbout] = useState(false);
     const [theme, setTheme] = useState('dark');
+
+    // Debounced search state for LLM models
+    const [localSearch, setLocalSearch] = useState(config.llmSearch || '');
+    const searchTimeoutRef = useRef(null);
+
+    // Debounce search input
+    const handleSearchChange = useCallback((value) => {
+        setLocalSearch(value);
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+        searchTimeoutRef.current = setTimeout(() => {
+            setConfig('llmSearch', value);
+        }, 300);
+    }, [setConfig]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Theme toggle logic
     useEffect(() => {
@@ -520,16 +545,24 @@ export default function ConfigPanel() {
                             Text Models (LLM)
                         </Label>
 
-                        {/* Search Input */}
+                        {/* Search Input with Debounce */}
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Search models (e.g. gpt, claude)..."
-                                value={config.llmSearch || ''}
-                                onChange={(e) => setConfig('llmSearch', e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={localSearch}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
                             />
+                            {localSearch && (
+                                <button
+                                    onClick={() => { setLocalSearch(''); setConfig('llmSearch', ''); }}
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-accent transition-colors"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            )}
                         </div>
 
                         {/* Filter Row: Provider | Sort | Free */}
@@ -656,7 +689,11 @@ export default function ConfigPanel() {
             {/* Generate Button - Fixed at bottom */}
             <div className="p-6 border-t border-border/50 flex-shrink-0 space-y-4">
                 {/* Smart Category Toggle */}
-                <div className="flex items-center justify-between bg-secondary/30 p-2 rounded-lg border border-border/50">
+                <motion.div
+                    className="flex items-center justify-between bg-secondary/30 p-2 rounded-lg border border-border/50"
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                >
                     <Label htmlFor="smartCategory" className="text-sm cursor-pointer flex items-center gap-2 font-medium">
                         <FolderOpen className="w-4 h-4 text-blue-400" />
                         Smart Category Save
@@ -664,55 +701,125 @@ export default function ConfigPanel() {
                     <input
                         type="checkbox"
                         id="smartCategory"
-                        checked={config.smart_category !== false} // Default true
+                        checked={config.smart_category !== false}
                         onChange={(e) => setConfig('smart_category', e.target.checked)}
                         className="w-4 h-4 rounded border-input bg-background accent-blue-500 cursor-pointer"
                     />
-                </div>
-                <Button
-                    onClick={handleGenerate}
-                    disabled={false}
-                    // When generating, keep it solid (secondary) instead of outline to feel clickable
-                    variant={isGenerating ? "secondary" : "gradient"}
-                    size="lg"
-                    // Add distinct hover and active states
-                    className={`w-full relative overflow-hidden transition-all duration-200 ${isGenerating
-                        ? "hover:bg-primary/10 active:scale-95 border-2 border-primary/20"
-                        : "hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-primary/25"
-                        }`}
+                </motion.div>
+
+                {/* Enhanced Generate Button */}
+                <motion.div
+                    whileHover={{ scale: isGenerating ? 1 : 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative"
                 >
-                    {isGenerating ? (
-                        <div className="flex items-center justify-center gap-2 w-full">
-                            {isAdded ? (
-                                <div className="animate-in fade-in zoom-in duration-200 flex items-center gap-2 text-green-500 font-bold">
-                                    <div className="bg-green-500/20 rounded-full p-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    </div>
-                                    <span>Added!</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <PlusCircle className="w-5 h-5 text-primary animate-pulse" />
-                                    <span className="font-semibold text-primary">Add Batch to Queue</span>
-                                </>
-                            )}
-                            {/* Subtle progress indicator background */}
-                            <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full">
-                                <div className="h-full bg-primary/50 animate-pulse w-full"></div>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            <Sparkles className="w-5 h-5 mr-2" />
-                            Generate Batch
-                        </>
+                    {/* Animated glow ring when ready */}
+                    {!isGenerating && (
+                        <motion.div
+                            className="absolute -inset-1 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-50 blur-md"
+                            animate={{
+                                opacity: [0.3, 0.6, 0.3],
+                                scale: [0.98, 1.02, 0.98],
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
                     )}
-                </Button>
-                {isGenerating && (
-                    <p className="text-[10px] text-center text-muted-foreground mt-2">
-                        Generation in progress. Adding more will queue them.
-                    </p>
-                )}
+
+                    <Button
+                        onClick={handleGenerate}
+                        disabled={false}
+                        variant={isGenerating ? "secondary" : "gradient"}
+                        size="lg"
+                        className={`w-full relative overflow-hidden transition-all duration-200 ${isGenerating
+                            ? "hover:bg-primary/10 border-2 border-primary/20"
+                            : "shadow-xl"
+                            }`}
+                    >
+                        <AnimatePresence mode="wait">
+                            {isGenerating ? (
+                                <motion.div
+                                    key="generating"
+                                    className="flex items-center justify-center gap-2 w-full"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                >
+                                    {isAdded ? (
+                                        <motion.div
+                                            className="flex items-center gap-2 text-green-500 font-bold"
+                                            initial={{ scale: 0.5 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                                        >
+                                            <motion.div
+                                                className="bg-green-500/20 rounded-full p-1"
+                                                initial={{ rotate: -180 }}
+                                                animate={{ rotate: 0 }}
+                                            >
+                                                <CheckCircle2 className="w-4 h-4" />
+                                            </motion.div>
+                                            <span>Added to Queue!</span>
+                                        </motion.div>
+                                    ) : (
+                                        <>
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                            >
+                                                <PlusCircle className="w-5 h-5 text-primary" />
+                                            </motion.div>
+                                            <span className="font-semibold text-primary">Add Batch to Queue</span>
+                                        </>
+                                    )}
+                                    {/* Animated progress bar at bottom */}
+                                    <motion.div
+                                        className="absolute bottom-0 left-0 h-1 bg-primary/30 w-full"
+                                    >
+                                        <motion.div
+                                            className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                            animate={{ x: ['-100%', '100%'] }}
+                                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                            style={{ width: '50%' }}
+                                        />
+                                    </motion.div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="ready"
+                                    className="flex items-center justify-center"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                >
+                                    <motion.div
+                                        animate={{ rotate: [0, 15, -15, 0] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                    >
+                                        <Sparkles className="w-5 h-5 mr-2" />
+                                    </motion.div>
+                                    Generate Batch
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </Button>
+                </motion.div>
+
+                <AnimatePresence>
+                    {isGenerating && (
+                        <motion.p
+                            className="text-[10px] text-center text-muted-foreground"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                        >
+                            Generation in progress. Adding more will queue them.
+                        </motion.p>
+                    )}
+                </AnimatePresence>
             </div>
         </aside>
     );
