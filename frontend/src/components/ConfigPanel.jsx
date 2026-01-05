@@ -665,26 +665,28 @@ export default function ConfigPanel() {
                     />
                 </motion.div>
 
-                {/* Enhanced Generate Button - INSTANT RESPONSE */}
+                {/* Enhanced Generate Button - INSTANT RESPONSE (Native CSS) */}
                 <div className="relative">
                     <Button
-                        onClick={handleGenerate}
+                        onClick={() => {
+                            // Defer state updates to allow immediate UI feedback
+                            requestAnimationFrame(() => {
+                                setIsAdded(true);
+                                setTimeout(() => {
+                                    startGeneration();
+                                }, 10);
+                                setTimeout(() => setIsAdded(false), 800);
+                            });
+                        }}
                         disabled={false}
                         variant={isGenerating ? "secondary" : "gradient"}
                         size="lg"
-                        className={`w-full relative overflow-hidden transform-gpu ${isGenerating
+                        className={`w-full relative overflow-hidden transform-gpu active:scale-95 transition-none duration-0 ${isGenerating
                             ? "hover:bg-primary/10 border-2 border-primary/20"
                             : "shadow-xl hover:shadow-2xl"
                             }`}
-                        style={{
-                            transition: 'none',
-                            transform: 'scale(1)'
-                        }}
-                        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.96)'}
-                        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                        <div className="flex items-center justify-center gap-2 w-full">
+                        <div className="flex items-center justify-center gap-2 w-full pointer-events-none">
                             {isGenerating ? (
                                 <>
                                     {isAdded ? (
