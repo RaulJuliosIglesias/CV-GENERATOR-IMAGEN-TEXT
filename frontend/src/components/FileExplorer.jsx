@@ -7,38 +7,122 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PreviewModal } from './PreviewModal';
 
 export default function FileExplorer({ height }) {
-    const { files, loadFiles, isLoadingFiles, allTasks } = useGenerationStore();
+    // Atomic Selectors - CRITICAL for performance
+    const files = useGenerationStore(s => s.files);
+    const loadFiles = useGenerationStore(s => s.loadFiles);
+    const isLoadingFiles = useGenerationStore(s => s.isLoadingFiles);
+
+    // Selecting ONLY the count of completed tasks prevents re-renders on every poll update
+    const completedCount = useGenerationStore(s =>
+        s.allTasks.filter(t => t.status === 'complete').length
+    );
+
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [previewFile, setPreviewFile] = useState(null);
 
-    // Track how many tasks are complete to know when to refresh
+    // Track previous count to trigger reload only on INCREASE
     const prevCompletedCountRef = useRef(0);
 
     // Initial load
     useEffect(() => {
-        loadFiles();
-    }, []);
+        if (files.length === 0) loadFiles();
+    }, [loadFiles, files.length]);
 
-    // Auto-refresh when tasks complete (real-time updates)
+    // Optimize Auto-refresh: Only runs when COUNT changes (not every poll tick)
     useEffect(() => {
-        const completedTasks = allTasks.filter(t => t.status === 'complete');
-        const currentCompleted = completedTasks.length;
-
-        // If a new task completed, refresh the file list
-        if (currentCompleted > prevCompletedCountRef.current && prevCompletedCountRef.current > 0) {
-            console.log(`📁 Task completed! Refreshing files... (${prevCompletedCountRef.current} → ${currentCompleted})`);
+        if (completedCount > prevCompletedCountRef.current && prevCompletedCountRef.current > 0) {
+            console.log(`📁 Task completed! Refreshing files... (${prevCompletedCountRef.current} → ${completedCount})`);
             loadFiles();
         }
+        prevCompletedCountRef.current = completedCount;
+    }, [completedCount, loadFiles]);
 
-        prevCompletedCountRef.current = currentCompleted;
-    }, [allTasks, loadFiles]);
+    // Parse filename to extract metadata (ID, Name, Role)
+    // Memoized outside render loop to prevent recalculation
+    const parseFilename = (filename) => {
+        try {
+            const cleanName = filename.replace(/\.(html|pdf)$/, '');
+
+            // Try new format first (Double Underscore separator)
+            if (cleanName.includes('__')) {
+                const parts = cleanName.split('__');
+                if (parts.length >= 3) {
+                    return {
+                        id: parts[0],
+                        name: parts[1].replace(/_/g, ' '),
+                        role: parts[2].replace(/_/g, ' ')
+                    };
+                }
+            }
+
+            // Fallback for legacy files
+            const parts = cleanName.split('_');
+            if (parts.length >= 2) {
+                const potentialId = parts[0];
+                const isHashLike = /^[a-z0-9]+$/i.test(potentialId) && /\d/.test(potentialId);
+
+                if (isHashLike || potentialId.length >= 8) {
+                    const id = parts[0];
+                    const rest = cleanName.substring(id.length + 1).replace(/_/g, ' ');
+                    return { id, name: rest, role: '-' };
+                }
+                return { id: '', name: cleanName.replace(/_/g, ' '), role: '-' };
+            }
+        } catch (e) { console.error(e); }
+        return { id: '', name: filename, role: '' };
+    };
+
+    // Pre-calculate metadata once when files change
+    const filesWithMeta = useMemo(() => {
+        return files.map(file => ({
+            ...file,
+            meta: parseFilename(file.filename)
+        }));
+    }, [files]);
+
+    const sortedFiles = useMemo(() => {
+        let sortableFiles = [...filesWithMeta];
+        sortableFiles.sort((a, b) => {
+            const metaA = a.meta;
+            const metaB = b.meta;
+
+            let aValue, bValue;
+
+            switch (sortConfig.key) {
+                case 'id':
+                    aValue = metaA.id;
+                    bValue = metaB.id;
+                    break;
+                case 'name':
+                    aValue = metaA.name;
+                    bValue = metaB.name;
+                    break;
+                case 'role':
+                    aValue = metaA.role;
+                    bValue = metaB.role;
+                    break;
+                case 'size_kb':
+                    aValue = a.size_kb;
+                    bValue = b.size_kb;
+                    break;
+                default:
+                    aValue = a[sortConfig.key];
+                    bValue = b[sortConfig.key];
+            }
+
+            const direction = sortConfig.direction === 'asc' ? 1 : -1;
+            if (aValue < bValue) return -1 * direction;
+            if (aValue > bValue) return 1 * direction;
+            return 0;
+        });
+        return sortableFiles;
+    }, [filesWithMeta, sortConfig]);
 
     const handleOpenPdf = (filename) => {
         window.open(getPdfUrl(filename), '_blank');
     };
 
     const handleOpenHtml = (filename) => {
-        // Use Preview Modal instead of new tab
         setPreviewFile(filename);
     };
 
@@ -72,86 +156,6 @@ export default function FileExplorer({ height }) {
             });
         } catch (e) { return isoString; }
     };
-
-    // Parse filename to extract metadata (ID, Name, Role)
-    const parseFilename = (filename) => {
-        try {
-            const cleanName = filename.replace(/\.(html|pdf)$/, '');
-
-            // Try new format first (Double Underscore separator)
-            if (cleanName.includes('__')) {
-                const parts = cleanName.split('__');
-                if (parts.length >= 3) {
-                    return {
-                        id: parts[0],
-                        name: parts[1].replace(/_/g, ' '),
-                        role: parts[2].replace(/_/g, ' ')
-                    };
-                }
-            }
-
-            // Fallback for legacy files (Simple underscore split)
-            // Fallback for legacy files (Simple underscore split)
-            const parts = cleanName.split('_');
-            if (parts.length >= 2) {
-                const potentialId = parts[0];
-
-                // VALIDATION: Only accept as ID if it looks like a hash (hex/alphanumeric)
-                // and avoid common names which might start the filename in legacy formats.
-                // A valid ID should be relatively consistently formatted.
-                // If it's pure alphabetical and Title Case (e.g. "David"), assume it's a name, not an ID.
-                const isHashLike = /^[a-z0-9]+$/i.test(potentialId) && /\d/.test(potentialId);
-
-                if (isHashLike || potentialId.length >= 8) {
-                    const id = parts[0];
-                    const rest = cleanName.substring(id.length + 1).replace(/_/g, ' ');
-                    return { id, name: rest, role: '-' };
-                }
-
-                // If it looks like a Name (e.g. David_Smith), treat entire filename as Name with no ID
-                return { id: '', name: cleanName.replace(/_/g, ' '), role: '-' };
-            }
-        } catch (e) { console.error(e); }
-
-        return { id: '', name: filename, role: '' };
-    };
-
-    const sortedFiles = useMemo(() => {
-        let sortableFiles = [...files];
-        sortableFiles.sort((a, b) => {
-            const metaA = parseFilename(a.filename);
-            const metaB = parseFilename(b.filename);
-
-            let aValue, bValue;
-
-            switch (sortConfig.key) {
-                case 'id':
-                    aValue = metaA.id;
-                    bValue = metaB.id;
-                    break;
-                case 'name':
-                    aValue = metaA.name; // Use parsed name
-                    bValue = metaB.name;
-                    break;
-                case 'role':
-                    aValue = metaA.role; // Use parsed role
-                    bValue = metaB.role;
-                    break;
-                case 'size_kb':
-                    aValue = a.size_kb;
-                    bValue = b.size_kb;
-                    break;
-                default:
-                    aValue = a[sortConfig.key];
-                    bValue = b[sortConfig.key];
-            }
-
-            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-        return sortableFiles;
-    }, [files, sortConfig]);
 
     const requestSort = (key) => {
         let direction = 'asc';
