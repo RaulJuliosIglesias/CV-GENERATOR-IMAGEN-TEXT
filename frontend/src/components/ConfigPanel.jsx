@@ -11,6 +11,8 @@ import { AgeRangeSelector } from './AgeRangeSelector';
 import { MultiSelect } from './ui/MultiSelect';
 import { TagInput } from './ui/TagInput';
 import { Slider } from './ui/Slider';
+import { FluidButton } from './ui/FluidButton';
+import { FeedbackParticles } from './ui/FeedbackParticles';
 
 import useGenerationStore from '../stores/useGenerationStore';
 import { Input } from './ui/Input';
@@ -69,19 +71,20 @@ const EXPERTISE_OPTIONS = [
 ];
 
 export default function ConfigPanel() {
-    const {
-        config,
-        setConfig,
-        startGeneration,
-        isGenerating,
-        llmModels,
-        imageModels,
-        modelsLoaded,
-        loadModels,
-        configOptions,
-        loadConfig,
-        error
-    } = useGenerationStore();
+    // Atomic Selectors for Performance - Prevents re-renders on 'allTasks' updates!
+    const config = useGenerationStore(s => s.config);
+    const isGenerating = useGenerationStore(s => s.isGenerating);
+    const llmModels = useGenerationStore(s => s.llmModels);
+    const imageModels = useGenerationStore(s => s.imageModels);
+    const modelsLoaded = useGenerationStore(s => s.modelsLoaded);
+    const configOptions = useGenerationStore(s => s.configOptions);
+    const error = useGenerationStore(s => s.error);
+
+    // Actions (stable)
+    const setConfig = useGenerationStore(s => s.setConfig);
+    const startGeneration = useGenerationStore(s => s.startGeneration);
+    const loadModels = useGenerationStore(s => s.loadModels);
+    const loadConfig = useGenerationStore(s => s.loadConfig);
 
     // Load models and config on mount
     useEffect(() => {
@@ -96,9 +99,12 @@ export default function ConfigPanel() {
     // Local state for performant sliders
     const [localQty, setLocalQty] = useState(config.qty);
     const [localAgeRange, setLocalAgeRange] = useState([config.age_min, config.age_max]);
-    const [isAdded, setIsAdded] = useState(false);
+    // const [isAdded, setIsAdded] = useState(false); // Removed blocking state
     const [showSettings, setShowSettings] = useState(false);
     const [showAbout, setShowAbout] = useState(false);
+
+    // Non-blocking feedback ref
+    const feedbackRef = useRef(null);
     const [theme, setTheme] = useState('dark');
 
     // Debounced search state for LLM models
@@ -184,19 +190,17 @@ export default function ConfigPanel() {
             return;
         }
 
-        startGeneration();
-        setIsAdded(true);
-        setTimeout(() => setIsAdded(false), 1000);
-
-        if (isGenerating) {
-            toast.info('Added to queue', {
-                description: `${config.qty} more profiles will be generated.`
+        if (!hasOpenRouter || !hasKrea) {
+            // Open Settings modal if keys are missing
+            setShowSettings(true);
+            toast.warning('API Keys Required', {
+                description: 'Please enter your API keys to start generation.'
             });
-        } else {
-            toast.success('Generation started', {
-                description: `Creating ${config.qty} unique profiles...`
-            });
+            return;
         }
+
+        // Logic moved to button onClick for speed, but kept here for strict validation if needed
+        // startGeneration(); // Called by button directly now via timeout
     };
 
     // Get selected model info for display
@@ -254,7 +258,7 @@ export default function ConfigPanel() {
 
 
     return (
-        <aside className="w-96 h-screen bg-card/80 backdrop-blur-md border-r border-border/50 flex flex-col overflow-hidden">
+        <aside className="w-96 h-screen bg-card/95 backdrop-blur-sm border-r border-border/50 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="p-6 border-b border-border/50 flex-shrink-0 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -665,50 +669,39 @@ export default function ConfigPanel() {
                     />
                 </motion.div>
 
-                {/* Enhanced Generate Button - INSTANT RESPONSE (Native CSS) */}
-                <div className="relative">
-                    <Button
+                {/* Enhanced Generate Button - REACT BITS RAPID FIRE */}
+                <div className="relative w-full">
+                    {/* External Feedback System (No re-renders) */}
+                    <FeedbackParticles ref={feedbackRef} />
+
+                    <FluidButton
                         onClick={() => {
-                            // Defer state updates to allow immediate UI feedback
-                            requestAnimationFrame(() => {
-                                setIsAdded(true);
-                                setTimeout(() => {
-                                    startGeneration();
-                                }, 10);
-                                setTimeout(() => setIsAdded(false), 800);
-                            });
+                            // 1. Immediate Visual Feedback (External)
+                            if (feedbackRef.current) {
+                                feedbackRef.current.trigger(0, 0, `+${config.qty} Added!`);
+                            }
+
+                            // 2. Defer Heavy Logic (Store updates)
+                            // Using requestIdleCallback if available or timeout to prioritize UI
+                            setTimeout(() => {
+                                startGeneration();
+                            }, 5);
                         }}
                         disabled={false}
-                        variant={isGenerating ? "secondary" : "gradient"}
-                        size="lg"
-                        className={`w-full relative overflow-hidden transform-gpu active:scale-95 transition-none duration-0 ${isGenerating
-                            ? "hover:bg-primary/10 border-2 border-primary/20"
-                            : "shadow-xl hover:shadow-2xl"
-                            }`}
+                        className="w-full h-14 text-lg shadow-2xl"
                     >
-                        <div className="flex items-center justify-center gap-2 w-full pointer-events-none">
-                            {isGenerating ? (
-                                <>
-                                    {isAdded ? (
-                                        <div className="flex items-center gap-2 text-green-500 font-bold">
-                                            <CheckCircle2 className="w-5 h-5" />
-                                            <span>Added!</span>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <PlusCircle className="w-5 h-5 text-primary" />
-                                            <span className="font-semibold text-primary">Add Batch to Queue</span>
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-5 h-5 mr-2" />
-                                    Generate Batch
-                                </>
-                            )}
-                        </div>
-                    </Button>
+                        {isGenerating ? (
+                            <>
+                                <PlusCircle className="w-6 h-6 text-white" />
+                                <span>Add Batch to Queue</span>
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="w-5 h-5" />
+                                <span className="tracking-wide">Generate Batch</span>
+                            </>
+                        )}
+                    </FluidButton>
                 </div>
 
                 <AnimatePresence>
