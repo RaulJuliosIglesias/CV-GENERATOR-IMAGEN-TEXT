@@ -170,6 +170,9 @@ export default function ConfigPanel() {
         ? configOptions.genders
         : GENDER_OPTIONS;
 
+    // Timeout ref for button feedback
+    const feedbackTimeoutRef = useRef(null);
+
     const handleGenerate = () => {
         // Check if API keys are configured
         const hasOpenRouter = config.apiKeys?.openRouter && config.apiKeys.openRouter.length > 0;
@@ -185,9 +188,22 @@ export default function ConfigPanel() {
         }
 
         startGeneration();
+
+        // Show "Added" feedback briefly then revert to "Add Batch"
+        // Clear any existing timeout to prevent "locking" feeling
+        if (feedbackTimeoutRef.current) {
+            clearTimeout(feedbackTimeoutRef.current);
+        }
+
+        setIsAdded(true);
+
+        // Shorter timeout (1s) for snappier feel
+        feedbackTimeoutRef.current = setTimeout(() => {
+            setIsAdded(false);
+            feedbackTimeoutRef.current = null;
+        }, 1000);
+
         if (isGenerating) {
-            setIsAdded(true);
-            setTimeout(() => setIsAdded(false), 2000);
             toast.info('Added to queue', {
                 description: `${config.qty} more profiles will be generated.`
             });
@@ -717,22 +733,6 @@ export default function ConfigPanel() {
                     whileTap={{ scale: 0.98 }}
                     className="relative"
                 >
-                    {/* Animated glow ring when ready */}
-                    {!isGenerating && (
-                        <motion.div
-                            className="absolute -inset-1 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-50 blur-md"
-                            animate={{
-                                opacity: [0.3, 0.6, 0.3],
-                                scale: [0.98, 1.02, 0.98],
-                            }}
-                            transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                        />
-                    )}
-
                     <Button
                         onClick={handleGenerate}
                         disabled={false}
@@ -743,68 +743,52 @@ export default function ConfigPanel() {
                             : "shadow-xl"
                             }`}
                     >
-                        <AnimatePresence mode="wait">
+                        {/* Use popLayout or simple logic to avoid blocking */}
+                        <AnimatePresence>
                             {isGenerating ? (
                                 <motion.div
-                                    key="generating"
+                                    key={isAdded ? `added-${Date.now()}` : "generating"} // Force re-render on click for pulse effect
                                     className="flex items-center justify-center gap-2 w-full"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.2 }} // Fast transition
                                 >
                                     {isAdded ? (
-                                        <motion.div
-                                            className="flex items-center gap-2 text-green-500 font-bold"
-                                            initial={{ scale: 0.5 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                                        >
+                                        <div className="flex items-center gap-2 text-green-500 font-bold">
                                             <motion.div
-                                                className="bg-green-500/20 rounded-full p-1"
-                                                initial={{ rotate: -180 }}
-                                                animate={{ rotate: 0 }}
+                                                initial={{ scale: 0.5, rotate: -180 }}
+                                                animate={{ scale: 1, rotate: 0 }}
+                                                transition={{ type: "spring", stiffness: 500, damping: 15 }}
                                             >
-                                                <CheckCircle2 className="w-4 h-4" />
+                                                <CheckCircle2 className="w-5 h-5" />
                                             </motion.div>
-                                            <span>Added to Queue!</span>
-                                        </motion.div>
+                                            <span>Added!</span>
+                                        </div>
                                     ) : (
                                         <>
-                                            <motion.div
-                                                animate={{ rotate: 360 }}
-                                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                            >
-                                                <PlusCircle className="w-5 h-5 text-primary" />
-                                            </motion.div>
+                                            <PlusCircle className="w-5 h-5 text-primary animate-pulse" />
                                             <span className="font-semibold text-primary">Add Batch to Queue</span>
                                         </>
                                     )}
-                                    {/* Animated progress bar at bottom */}
-                                    <motion.div
-                                        className="absolute bottom-0 left-0 h-1 bg-primary/30 w-full"
-                                    >
+                                    {/* Optimized progress bar - lighter */}
+                                    <div className="absolute bottom-0 left-0 h-1 bg-primary/10 w-full overflow-hidden">
                                         <motion.div
                                             className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
                                             animate={{ x: ['-100%', '100%'] }}
                                             transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                            style={{ width: '50%' }}
+                                            style={{ width: '50%', willChange: 'transform' }} // Optimization
                                         />
-                                    </motion.div>
+                                    </div>
                                 </motion.div>
                             ) : (
                                 <motion.div
                                     key="ready"
                                     className="flex items-center justify-center"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.2 }}
                                 >
-                                    <motion.div
-                                        animate={{ rotate: [0, 15, -15, 0] }}
-                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                    >
-                                        <Sparkles className="w-5 h-5 mr-2" />
-                                    </motion.div>
+                                    <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
                                     Generate Batch
                                 </motion.div>
                             )}

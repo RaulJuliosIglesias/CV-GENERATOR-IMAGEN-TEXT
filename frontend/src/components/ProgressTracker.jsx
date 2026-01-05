@@ -146,7 +146,15 @@ const TaskCard = memo(forwardRef(function TaskCard({ task, index }, ref) {
             </div>
 
             {/* Role */}
-            <p className="text-sm font-bold text-foreground truncate mb-2">{task.role}</p>
+            <p className="text-sm font-bold text-foreground truncate mb-0.5" title={task.role}>{task.role}</p>
+
+            {/* Candidate Name */}
+            {task.profile_data?.name && (
+                <p className="text-xs text-muted-foreground truncate mb-3 font-medium">
+                    {task.profile_data.name}
+                </p>
+            )}
+            {!task.profile_data?.name && <div className="mb-3 h-4" />} {/* Spacer if no name yet */}
 
             {/* Status Message */}
             <p className="text-xs text-muted-foreground truncate mb-3 min-h-[1.5em]">{task.message}</p>

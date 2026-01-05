@@ -84,6 +84,7 @@ class Task:
             "html_path": f"/api/files/{Path(self.html_path).name}" if self.html_path else None,
             "image_path": f"/assets/{Path(self.image_path).name}" if self.image_path else None,
             "error": self.error,
+            "profile_data": self.profile_data,
             "subtasks": [
                 {
                     "id": s.id,
