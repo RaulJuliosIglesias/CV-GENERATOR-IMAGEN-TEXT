@@ -285,16 +285,20 @@ export default function ConfigPanel() {
             {/* Settings Modal */}
             {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
             {showSettings && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-4 top-4"
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                    onClick={() => setShowSettings(false)}
+                >
+                    <div
+                        className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            className="absolute right-3 top-3 w-8 h-8 flex items-center justify-center rounded-full bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                             onClick={() => setShowSettings(false)}
                         >
                             <X className="w-4 h-4" />
-                        </Button>
+                        </button>
 
                         <div className="flex items-center gap-2 mb-6">
                             <Settings className="w-5 h-5 text-primary" />

@@ -72,6 +72,18 @@ export function AboutModal({ onClose }) {
                 onClick={(e) => e.stopPropagation()}
                 style={{ perspective: 1000 }}
             >
+                {/* Close Button - Fixed position at top right of modal */}
+                <motion.button
+                    className="absolute right-3 top-3 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+                    onClick={onClose}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    <X className="w-4 h-4" />
+                </motion.button>
                 {/* Decorative Background Header */}
                 <motion.div
                     className="h-32 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden"
@@ -105,9 +117,9 @@ export function AboutModal({ onClose }) {
 
                     <div className="absolute inset-0 bg-black/10"></div>
 
-                    {/* Avatar */}
+                    {/* Avatar - Centered at bottom of header */}
                     <motion.div
-                        className="absolute -bottom-10 left-1/2 transform -translate-x-1/2"
+                        className="absolute -bottom-8 left-0 right-0 flex justify-center"
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{
@@ -118,32 +130,16 @@ export function AboutModal({ onClose }) {
                         }}
                     >
                         <motion.div
-                            className="w-24 h-24 rounded-full border-4 border-card bg-zinc-800 flex items-center justify-center shadow-lg"
+                            className="w-24 h-24 rounded-full border-4 border-card bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center shadow-xl"
                             whileHover={{ scale: 1.1, rotate: 5 }}
                             transition={{ type: "spring", stiffness: 400 }}
                         >
-                            <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">RI</span>
+                            <span className="text-3xl font-bold text-white">RI</span>
                         </motion.div>
-                    </motion.div>
-
-                    {/* Close Button */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 }}
-                    >
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-4 top-4 text-white/80 hover:text-white hover:bg-white/10"
-                            onClick={onClose}
-                        >
-                            <X className="w-5 h-5" />
-                        </Button>
                     </motion.div>
                 </motion.div>
 
-                <div className="pt-14 pb-8 px-6 text-center">
+                <div className="pt-10 pb-8 px-6 text-center">
                     <motion.h2
                         className="text-2xl font-bold"
                         custom={0}

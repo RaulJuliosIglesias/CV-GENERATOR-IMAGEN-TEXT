@@ -99,16 +99,16 @@ class FilesResponse(BaseModel):
 
 
 @router.get("/models", response_model=ModelsResponse)
-async def get_models(
-    x_openrouter_key: Optional[str] = Header(None, alias="X-OpenRouter-Key")
-):
+async def get_models():
     """Get available LLM and image models."""
     try:
-        # Get LLM models from OpenRouter
-        llm_models = await get_llm_models(api_key=x_openrouter_key)
+        # Get LLM models (sync function, uses lazy-loaded cache)
+        llm_models = get_llm_models()
         
-        # Get image models from Krea service
+        # Get image models from Krea service (also sync)
         image_models = get_image_models()
+        
+        print(f"DEBUG /api/models: Returning {len(llm_models)} LLM models, {len(image_models)} image models")
         
         return ModelsResponse(
             llm_models=llm_models,

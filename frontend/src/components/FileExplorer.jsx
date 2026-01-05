@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { FileText, Trash2, FolderOpen, ExternalLink, RefreshCw, HardDrive, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { Button } from './ui/Button';
 import useGenerationStore from '../stores/useGenerationStore';
@@ -7,13 +7,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PreviewModal } from './PreviewModal';
 
 export default function FileExplorer({ height }) {
-    const { files, loadFiles, isLoadingFiles } = useGenerationStore();
+    const { files, loadFiles, isLoadingFiles, allTasks } = useGenerationStore();
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [previewFile, setPreviewFile] = useState(null);
 
+    // Track how many tasks are complete to know when to refresh
+    const prevCompletedCountRef = useRef(0);
+
+    // Initial load
     useEffect(() => {
         loadFiles();
     }, []);
+
+    // Auto-refresh when tasks complete (real-time updates)
+    useEffect(() => {
+        const completedTasks = allTasks.filter(t => t.status === 'complete');
+        const currentCompleted = completedTasks.length;
+
+        // If a new task completed, refresh the file list
+        if (currentCompleted > prevCompletedCountRef.current && prevCompletedCountRef.current > 0) {
+            console.log(`📁 Task completed! Refreshing files... (${prevCompletedCountRef.current} → ${currentCompleted})`);
+            loadFiles();
+        }
+
+        prevCompletedCountRef.current = currentCompleted;
+    }, [allTasks, loadFiles]);
 
     const handleOpenPdf = (filename) => {
         window.open(getPdfUrl(filename), '_blank');
