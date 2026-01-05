@@ -424,10 +424,17 @@ async def generate_avatar(
             
             print(f"DEBUG KREA: Job created: {job_id}")
             
-            # Step 2: Poll for completion (max 60 seconds)
-            max_polls = 30
-            for poll_num in range(max_polls):
-                await asyncio.sleep(2)  # Wait 2 seconds between polls
+            # Step 2: OPTIMIZED Poll for completion with intelligent backoff
+            # Fast initial polls (image might be ready quickly), then slow down
+            poll_delays = [0.5, 0.5, 1.0, 1.0, 1.5, 1.5, 2.0, 2.0, 2.0, 2.0, 
+                          2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
+                          3.0, 3.0, 3.0, 3.0, 3.0]  # Total: ~45s max wait
+            
+            import time
+            poll_start = time.time()
+            
+            for poll_num, delay in enumerate(poll_delays):
+                await asyncio.sleep(delay)
                 
                 job_response = await client.get(
                     f"{KREA_JOBS_URL}/{job_id}",
@@ -440,9 +447,11 @@ async def generate_avatar(
                 
                 job_data = job_response.json()
                 status = job_data.get("status", "")
-                print(f"DEBUG KREA: Poll {poll_num+1} - status: {status}")
                 
                 if job_data.get("completed_at"):
+                    poll_time = time.time() - poll_start
+                    print(f"DEBUG KREA: Poll {poll_num+1} - COMPLETED in {poll_time:.1f}s")
+                    
                     if status == "completed":
                         # Get image URL from result
                         urls = job_data.get("result", {}).get("urls", [])
@@ -462,14 +471,16 @@ async def generate_avatar(
                                 with open(filepath, 'wb') as f:
                                     f.write(img_response.content)
                                 
-                                print(f"SUCCESS: Avatar generated with {model_id}: {filename}")
+                                total_time = time.time() - poll_start
+                                print(f"SUCCESS: Avatar generated with {model_id}: {filename} in {total_time:.1f}s")
                                 return str(filepath), prompt
                     else:
                         error_msg = f"Krea job failed: {status}"
                         print(f"ERROR: {error_msg}")
                         raise RuntimeError(error_msg)
             
-            error_msg = "Krea API timeout - job did not complete in 60 seconds"
+            poll_time = time.time() - poll_start
+            error_msg = f"Krea API timeout - job did not complete in {poll_time:.0f} seconds"
             print(f"ERROR: {error_msg}")
             raise RuntimeError(error_msg)
             

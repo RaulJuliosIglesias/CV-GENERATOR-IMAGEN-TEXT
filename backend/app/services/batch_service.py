@@ -1,19 +1,22 @@
 """
-Batch Generation Service
+Batch Generation Service - OPTIMIZED
 Handles the heavy lifting of the generation pipeline:
-- Profile Generation
-- CV Content Generation
-- Image Generation
-- HTML & PDF Rendering
+- Profile Generation (Phase 1)
+- CV Content Generation (Phase 2) ← PARALLELIZED
+- Image Generation (Phase 3) ← PARALLELIZED with Phase 2
+- HTML & PDF Rendering (Phase 4+5)
 
-Refactored from generation.py to separate concerns.
+Performance optimizations:
+- Phase 2 and 3 run in parallel (both only depend on Phase 1)
+- Increased semaphore for better concurrency
+- Timing logs for debugging
 """
 
 import asyncio
 import os
+import time
 from pathlib import Path
 from typing import Optional
-import random
 
 from ..core.task_manager import task_manager, Task, TaskStatus
 from ..core.pdf_engine import render_cv_pdf
@@ -28,9 +31,13 @@ PROMPTS_DIR = OUTPUT_DIR / "prompts"
 # Store selected models per batch (moved from router)
 batch_models = {}
 
+
 async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: Optional[str], image_model: Optional[str], smart_category: bool = False, image_size: int = 100, api_keys: dict = None):
     """
-    Execute the PIPELINED Generation Pipeline.
+    Execute the OPTIMIZED PIPELINED Generation Pipeline.
+    
+    OPTIMIZATION: Phase 2 (CV Content) and Phase 3 (Image) now run in PARALLEL
+    since they both only depend on Phase 1 data.
     
     Args:
         smart_category: If True, organize PDFs into category subfolders based on role
@@ -39,14 +46,18 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
     if not batch: return
     
     tasks = batch.tasks
+    batch_start = time.time()
     
-    # Global semaphore to limit total concurrent API calls (prevents rate limiting)
-    global_semaphore = asyncio.Semaphore(5)
+    # OPTIMIZED: Increased from 5 to 10 for better throughput
+    # OpenRouter supports ~50 req/min, Krea supports concurrent jobs
+    global_semaphore = asyncio.Semaphore(10)
     
     async def process_single_task(task: Task):
-        """Process a single task through all 5 phases."""
+        """Process a single task through all 5 phases with optimized parallelization."""
+        task_start = time.time()
         
         # ========== PHASE 1: PROFILE ==========
+        phase1_start = time.time()
         async with global_semaphore:
             try:
                 task.status = TaskStatus.RUNNING
@@ -72,6 +83,9 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 task.message = f"Profile Created: {profile_data.get('name')}"
                 await task_manager._save_batches()
                 
+                phase1_time = time.time() - phase1_start
+                print(f"⏱️ Task {task.id} Phase 1: {phase1_time:.1f}s")
+                
             except Exception as e:
                 task.error = str(e)
                 task.status = TaskStatus.ERROR
@@ -79,119 +93,170 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
                 print(f"Phase 1 Error Task {task.id}: {e}")
                 return  # Stop this task, but don't affect others
         
-        # ========== PHASE 2: CV CONTENT ==========
-        async with global_semaphore:
-            try:
-                task.current_subtask_index = 1
-                task.subtasks[1].status = TaskStatus.RUNNING
-                task.subtasks[1].message = "Writing detailed CV..."
-                task.status = TaskStatus.GENERATING_CONTENT
-                await task_manager._save_batches()
-                
-                p = task.profile_data or {}
-                
-                cv_data, used_prompt = await generate_cv_content_v2(
-                    role=p.get('role', task.role),
-                    expertise=task.expertise,
-                    age=p.get('age', 30),
-                    gender=p.get('gender', task.gender),
-                    ethnicity=p.get('ethnicity', task.ethnicity),
-                    origin=p.get('origin', task.origin),
-                    remote=task.remote,
-                    model=cv_model,
-                    name=p.get('name'),
-                    profile_data=p,
-                    api_key=api_keys.get('openrouter') if api_keys else None
-                )
-                
-                task.cv_data = cv_data
-                
-                try:
-                    if not PROMPTS_DIR.exists():
-                        PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
-                    path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
-                    with open(path, "w", encoding="utf-8") as f: f.write(used_prompt)
-                except: pass
-
-                task.subtasks[1].status = TaskStatus.COMPLETE
-                task.subtasks[1].progress = 100
-                task.progress = 50
-                await task_manager._save_batches()
-                
-            except Exception as e:
-                task.error = str(e)
-                task.status = TaskStatus.ERROR
-                task.subtasks[1].status = TaskStatus.ERROR
-                print(f"Phase 2 Error Task {task.id}: {e}")
-                return
+        # ========== PHASE 2 + PHASE 3: PARALLEL EXECUTION ==========
+        # These phases are INDEPENDENT - both only need profile_data from Phase 1
+        phase2_3_start = time.time()
         
-        # ========== PHASE 3: IMAGE ==========
-        async with global_semaphore:
-            try:
-                task.current_subtask_index = 2
-                task.subtasks[2].status = TaskStatus.RUNNING
-                task.subtasks[2].message = "Generating avatar..."
-                task.status = TaskStatus.GENERATING_IMAGE
-                await task_manager._save_batches()
-                
-                p = task.profile_data or {}
-                
-                image_path, used_prompt = await generate_avatar(
-                    gender=p.get('gender', task.gender),
-                    ethnicity=p.get('ethnicity', task.ethnicity),
-                    age_range=str(p.get('age', task.age_range)),
-                    origin=p.get('origin', task.origin),
-                    role=p.get('role', task.role),
-                    model=image_model,
-                    filename=f"{task.id}_avatar.jpg",
-                    api_key=api_keys.get('krea') if api_keys else None
-                )
-                
-                task.image_path = image_path
-                
+        p = task.profile_data or {}
+        
+        # Update UI to show both phases starting
+        task.current_subtask_index = 1
+        task.subtasks[1].status = TaskStatus.RUNNING
+        task.subtasks[1].message = "Writing CV content..."
+        task.subtasks[2].status = TaskStatus.RUNNING
+        task.subtasks[2].message = "Generating avatar..."
+        task.status = TaskStatus.GENERATING_CONTENT
+        await task_manager._save_batches()
+        
+        async def phase2_cv_content():
+            """Phase 2: Generate CV Content"""
+            async with global_semaphore:
                 try:
-                    path = PROMPTS_DIR / f"{task.id}_image_prompt.txt"
-                    with open(path, "w", encoding="utf-8") as f: f.write(used_prompt)
-                except: pass
-                
+                    cv_data, used_prompt = await generate_cv_content_v2(
+                        role=p.get('role', task.role),
+                        expertise=task.expertise,
+                        age=p.get('age', 30),
+                        gender=p.get('gender', task.gender),
+                        ethnicity=p.get('ethnicity', task.ethnicity),
+                        origin=p.get('origin', task.origin),
+                        remote=task.remote,
+                        model=cv_model,
+                        name=p.get('name'),
+                        profile_data=p,
+                        api_key=api_keys.get('openrouter') if api_keys else None
+                    )
+                    
+                    # Save prompt for debugging
+                    try:
+                        if not PROMPTS_DIR.exists():
+                            PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
+                        path = PROMPTS_DIR / f"{task.id}_cv_prompt.txt"
+                        with open(path, "w", encoding="utf-8") as f: 
+                            f.write(used_prompt)
+                    except: 
+                        pass
+                    
+                    return cv_data, None
+                    
+                except Exception as e:
+                    return None, str(e)
+        
+        async def phase3_image():
+            """Phase 3: Generate Avatar Image"""
+            async with global_semaphore:
+                try:
+                    image_path, used_prompt = await generate_avatar(
+                        gender=p.get('gender', task.gender),
+                        ethnicity=p.get('ethnicity', task.ethnicity),
+                        age_range=str(p.get('age', task.age_range)),
+                        origin=p.get('origin', task.origin),
+                        role=p.get('role', task.role),
+                        model=image_model,
+                        filename=f"{task.id}_avatar.jpg",
+                        api_key=api_keys.get('krea') if api_keys else None
+                    )
+                    
+                    # Save prompt for debugging
+                    try:
+                        path = PROMPTS_DIR / f"{task.id}_image_prompt.txt"
+                        with open(path, "w", encoding="utf-8") as f: 
+                            f.write(used_prompt)
+                    except: 
+                        pass
+                    
+                    return image_path, None
+                    
+                except Exception as e:
+                    return None, str(e)
+        
+        # RUN BOTH PHASES IN PARALLEL
+        results = await asyncio.gather(
+            phase2_cv_content(),
+            phase3_image(),
+            return_exceptions=True
+        )
+        
+        phase2_3_time = time.time() - phase2_3_start
+        print(f"⏱️ Task {task.id} Phase 2+3 (parallel): {phase2_3_time:.1f}s")
+        
+        # Process Phase 2 result
+        cv_result = results[0]
+        if isinstance(cv_result, Exception):
+            task.error = str(cv_result)
+            task.status = TaskStatus.ERROR
+            task.subtasks[1].status = TaskStatus.ERROR
+            print(f"Phase 2 Error Task {task.id}: {cv_result}")
+            return
+        
+        cv_data, cv_error = cv_result
+        if cv_error:
+            task.error = cv_error
+            task.status = TaskStatus.ERROR
+            task.subtasks[1].status = TaskStatus.ERROR
+            print(f"Phase 2 Error Task {task.id}: {cv_error}")
+            return
+        
+        task.cv_data = cv_data
+        task.subtasks[1].status = TaskStatus.COMPLETE
+        task.subtasks[1].progress = 100
+        task.progress = 50
+        
+        # Process Phase 3 result
+        image_result = results[1]
+        if isinstance(image_result, Exception):
+            # Image failed - try fallback
+            print(f"WARNING: Phase 3 (Krea) failed for Task {task.id}: {image_result}")
+            try:
+                from ..services.krea_service import _generate_mock_avatar
+                mock_path = await _generate_mock_avatar(
+                    gender=p.get('gender', task.gender),
+                    ethnicity=p.get('ethnicity', task.ethnicity)
+                )
+                task.image_path = mock_path
                 task.subtasks[2].status = TaskStatus.COMPLETE
                 task.subtasks[2].progress = 100
-                task.progress = 80
-                await task_manager._save_batches()
-                
-            except Exception as e:
-                # KREA FALLBACK
-                print(f"WARNING: Phase 3 (Krea) failed for Task {task.id}: {e}")
+                task.subtasks[2].message = "Fallback avatar used"
+            except Exception as fallback_e:
+                task.error = f"Image Gen Failed: {image_result} | Fallback Failed: {fallback_e}"
+                task.status = TaskStatus.ERROR
+                task.subtasks[2].status = TaskStatus.ERROR
+                print(f"CRITICAL: Phase 3 completely failed Task {task.id}: {fallback_e}")
+                return
+        else:
+            image_path, image_error = image_result
+            if image_error:
+                # Try fallback
+                print(f"WARNING: Phase 3 error for Task {task.id}: {image_error}")
                 try:
                     from ..services.krea_service import _generate_mock_avatar
-                    p = task.profile_data or {}
                     mock_path = await _generate_mock_avatar(
                         gender=p.get('gender', task.gender),
                         ethnicity=p.get('ethnicity', task.ethnicity)
                     )
                     task.image_path = mock_path
-                    task.subtasks[2].status = TaskStatus.COMPLETE
-                    task.subtasks[2].progress = 100
-                    short_error = str(e)[:100] + "..." if len(str(e)) > 100 else str(e)
-                    task.subtasks[2].message = f"Fallback Mode. Error: {short_error}"
-                    task.error = f"Krea Error (Handled): {e}"
-                    task.progress = 80
-                    await task_manager._save_batches()
+                    task.subtasks[2].message = f"Fallback. Error: {image_error[:50]}..."
                 except Exception as fallback_e:
-                    task.error = f"Image Gen Failed: {e} | Fallback Failed: {fallback_e}"
+                    task.error = f"Image Gen Failed: {image_error} | Fallback Failed: {fallback_e}"
                     task.status = TaskStatus.ERROR
                     task.subtasks[2].status = TaskStatus.ERROR
-                    print(f"CRITICAL: Phase 3 completely failed Task {task.id}: {fallback_e}")
                     return
+            else:
+                task.image_path = image_path
+        
+        task.subtasks[2].status = TaskStatus.COMPLETE
+        task.subtasks[2].progress = 100
+        task.progress = 80
+        await task_manager._save_batches()
         
         # ========== PHASE 4 & 5: HTML + PDF ==========
+        phase4_5_start = time.time()
         try:
             task.current_subtask_index = 3
             task.subtasks[3].status = TaskStatus.RUNNING
             task.subtasks[3].message = "Assembling HTML..."
             await task_manager._save_batches()
             
-            p = task.profile_data or {}
+            import random
             
             safe_name = p.get("name", "CV").replace(" ", "_")
             safe_name = "".join([c for c in safe_name if c.isalnum() or c in ('_','-')])
@@ -259,6 +324,10 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             task.message = "Complete"
             await task_manager._save_batches()
             
+            phase4_5_time = time.time() - phase4_5_start
+            total_time = time.time() - task_start
+            print(f"⏱️ Task {task.id} Phase 4+5: {phase4_5_time:.1f}s | TOTAL: {total_time:.1f}s")
+            
         except Exception as e:
             task.error = str(e)
             task.status = TaskStatus.ERROR
@@ -267,6 +336,8 @@ async def process_batch(batch_id: str, profile_model: Optional[str], cv_model: O
             traceback.print_exc()
     
     # Launch ALL tasks concurrently - each runs through its full pipeline
-    print(f"=== STARTING PIPELINED GENERATION ({len(tasks)} tasks) ===")
+    print(f"=== STARTING OPTIMIZED PIPELINED GENERATION ({len(tasks)} tasks, semaphore=10) ===")
     await asyncio.gather(*[process_single_task(t) for t in tasks])
-    print(f"=== BATCH COMPLETE ===")
+    
+    total_batch_time = time.time() - batch_start
+    print(f"=== BATCH COMPLETE in {total_batch_time:.1f}s ({total_batch_time/len(tasks):.1f}s per CV) ===")

@@ -1,6 +1,10 @@
 """
 LLM Service - OpenRouter Integration for CV Content Generation
 Enhanced with detailed prompts for comprehensive CVs
+
+PERFORMANCE OPTIMIZATIONS:
+- Global httpx.AsyncClient for connection pooling
+- Template caching to avoid disk reads
 """
 
 import os
@@ -22,6 +26,41 @@ print(f"DEBUG: Loading .env from: {ENV_PATH} (exists: {ENV_PATH.exists()})")
 # OpenRouter API Configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+
+# =============================================================================
+# PERFORMANCE OPTIMIZATION: Global HTTP Client Pool
+# Reuses TCP connections instead of creating new ones per request
+# =============================================================================
+_http_client: httpx.AsyncClient | None = None
+
+async def get_http_client() -> httpx.AsyncClient:
+    """Get or create global HTTP client with connection pooling."""
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(120.0, connect=10.0),
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=50)
+        )
+    return _http_client
+
+# =============================================================================
+# PERFORMANCE OPTIMIZATION: Template Caching
+# Loads templates once at startup instead of reading from disk every time
+# =============================================================================
+_cached_templates: dict[str, str] = {}
+
+def get_cached_template(template_name: str) -> str:
+    """Get template from cache or load from disk once."""
+    if template_name not in _cached_templates:
+        template_path = BACKEND_DIR / "prompts" / template_name
+        if template_path.exists():
+            with open(template_path, "r", encoding="utf-8") as f:
+                _cached_templates[template_name] = f.read()
+            print(f"DEBUG: Cached template: {template_name}")
+        else:
+            raise FileNotFoundError(f"Template not found: {template_path}")
+    return _cached_templates[template_name]
+
 
 # Fallback models in case API fetch fails
 FALLBACK_LLM_MODELS = {
@@ -566,19 +605,10 @@ Instructions:
 """
 
 def create_profile_prompt(role: str, gender: str, ethnicity: str, origin: str, age_range: str) -> str:
-    """Create a prompt for generating a unique user profile."""
+    """Create a prompt for generating a unique user profile. Uses cached template."""
     
-    # Load from external template - FAIL FAST
-    template_path = BACKEND_DIR / "prompts" / "profile_creation_prompt.txt"
-    
-    if not template_path.exists():
-        error_msg = f"CRITICAL ERROR: Profile Template file not found at {template_path}"
-        print(error_msg)
-        raise FileNotFoundError(error_msg)
-        
-    print(f"DEBUG: Loading external Profile template from {template_path}")
-    with open(template_path, "r", encoding="utf-8") as f:
-        template_str = f.read()
+    # OPTIMIZED: Use cached template instead of reading from disk every time
+    template_str = get_cached_template("profile_creation_prompt.txt")
     
     return Template(template_str).render(
         role=role,
@@ -658,78 +688,81 @@ async def generate_profile_data(
         
     # Retry loop for robustness
     max_retries = 3
+    
+    # OPTIMIZED: Use pooled HTTP client instead of creating new one per request
+    client = await get_http_client()
+    
     for attempt in range(max_retries):
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    OPENROUTER_API_URL,
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "https://ai-cv-suite.local",
-                        "X-Title": "AI CV Suite", # Required for some free models
-                    },
-                    json=request_payload
-                )
+            response = await client.post(
+                OPENROUTER_API_URL,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://ai-cv-suite.local",
+                    "X-Title": "AI CV Suite",
+                },
+                json=request_payload
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                try:
+                    content = result["choices"][0]["message"]["content"]
+                except (KeyError, IndexError):
+                    raise RuntimeError(f"Unexpected API response format: {result}")
                 
-                if response.status_code == 200:
-                    result = response.json()
-                    try:
-                        content = result["choices"][0]["message"]["content"]
-                    except (KeyError, IndexError):
-                        raise RuntimeError(f"Unexpected API response format: {result}")
+                # Cleanup and parse
+                content = clean_json_response(content)
                     
-                    # Cleanup and parse
-                    content = clean_json_response(content)
-                        
-                    # Try to parse
-                    try:
-                        profile_data = json.loads(content)
-                        # Minimal validation
-                        if not isinstance(profile_data, dict):
-                            raise ValueError("JSON parsed but result is not a dictionary")
-                        
-                        print(f"SUCCESS: Generated Profile: {profile_data.get('name')}")
-                        return profile_data, prompt
+                # Try to parse
+                try:
+                    profile_data = json.loads(content)
+                    # Minimal validation
+                    if not isinstance(profile_data, dict):
+                        raise ValueError("JSON parsed but result is not a dictionary")
+                    
+                    print(f"SUCCESS: Generated Profile: {profile_data.get('name')}")
+                    return profile_data, prompt
 
-                    except json.JSONDecodeError as e:
-                        print(f"WARNING: Malformed JSON content: {content[:100]}...")
-                        # One last desperate cleanup attempt for common issues
-                        try:
-                            # Sometimes braces are missing at the very end
-                            if content.strip().startswith("{") and not content.strip().endswith("}"):
-                                content += "}"
-                                profile_data = json.loads(content)
-                                return profile_data, prompt
-                        except: pass
-                        raise # Re-raise to be caught by outer except
+                except json.JSONDecodeError as e:
+                    print(f"WARNING: Malformed JSON content: {content[:100]}...")
+                    # One last desperate cleanup attempt for common issues
+                    try:
+                        # Sometimes braces are missing at the very end
+                        if content.strip().startswith("{") and not content.strip().endswith("}"):
+                            content += "}"
+                            profile_data = json.loads(content)
+                            return profile_data, prompt
+                    except: pass
+                    raise # Re-raise to be caught by outer except
+            
+            elif response.status_code == 404 or response.status_code == 403:
+                # Model not found or restricted - switch to guaranteed FREE model with notification
+                fallback_model = "google/gemini-2.0-flash-exp:free"
+                print(f"⚠️ WARNING: Model '{model_id}' returned {response.status_code}. Switching to FREE fallback: {fallback_model}")
+                model_id = fallback_model
+                request_payload["model"] = model_id
+                await asyncio.sleep(1)
+                continue
+
+            elif response.status_code == 429:
+                wait_time = (2 ** attempt) + 1  # Exponential backoff: 2s, 3s, 5s...
+                print(f"WARNING: Rate Limit (429) - Retrying in {wait_time}s...")
+                await asyncio.sleep(wait_time)
+                continue
                 
-                elif response.status_code == 404 or response.status_code == 403:
-                    # Model not found or restricted - switch to guaranteed FREE model with notification
+            else:
+                print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
+                if attempt == max_retries - 1:
+                    # On final failure, try FREE fallback once before giving up
                     fallback_model = "google/gemini-2.0-flash-exp:free"
-                    print(f"⚠️ WARNING: Model '{model_id}' returned {response.status_code}. Switching to FREE fallback: {fallback_model}")
-                    model_id = fallback_model
-                    request_payload["model"] = model_id
-                    await asyncio.sleep(1)
-                    continue
-
-                elif response.status_code == 429:
-                    wait_time = (2 ** attempt) + 1  # Exponential backoff: 2s, 3s, 5s...
-                    print(f"WARNING: Rate Limit (429) - Retrying in {wait_time}s...")
-                    await asyncio.sleep(wait_time)
-                    continue
-                    
-                else:
-                    print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
-                    if attempt == max_retries - 1:
-                        # On final failure, try FREE fallback once before giving up
-                        fallback_model = "google/gemini-2.0-flash-exp:free"
-                        if model_id != fallback_model:
-                            print(f"⚠️ FALLBACK: Trying FREE model {fallback_model} after failures")
-                            model_id = fallback_model
-                            request_payload["model"] = model_id
-                            continue
-                        raise RuntimeError(f"Profile Gen Failed after {max_retries} attempts: {response.text}")
+                    if model_id != fallback_model:
+                        print(f"⚠️ FALLBACK: Trying FREE model {fallback_model} after failures")
+                        model_id = fallback_model
+                        request_payload["model"] = model_id
+                        continue
+                    raise RuntimeError(f"Profile Gen Failed after {max_retries} attempts: {response.text}")
         
         except json.JSONDecodeError as e:
             print(f"WARNING: JSON Parse Error (Attempt {attempt+1}): {e}")
@@ -777,17 +810,8 @@ def create_user_prompt(role: str, expertise: str, age: int, gender: str, ethnici
     social_keys = get_social_links_from_db(display_role)
     print(f"DEBUG: Selected social keys for role '{display_role}': {social_keys}")
 
-    # 2. Load from external template - CRITICAL: FAIL FAST IF MISSING
-    template_path = BACKEND_DIR / "prompts" / "cv_prompt_template.txt"
-    
-    if not template_path.exists():
-        error_msg = f"CRITICAL ERROR: CV Template file not found at {template_path}"
-        print(error_msg)
-        raise FileNotFoundError(error_msg)
-        
-    print(f"DEBUG: Loading external CV template from {template_path}")
-    with open(template_path, "r", encoding="utf-8") as f:
-        template_str = f.read()
+    # OPTIMIZED: Use cached template instead of reading from disk every time
+    template_str = get_cached_template("cv_prompt_template.txt")
     
     # Render Jinja2 template with all profile data
     return Template(template_str).render(
@@ -914,67 +938,68 @@ async def generate_cv_content_v2(
             print(f"DEBUG REQUEST - User prompt length: {len(user_prompt)} chars")
             print("="*60)
             
-            async with httpx.AsyncClient(timeout=90.0) as client:
-                response = await client.post(
-                    OPENROUTER_API_URL,
-                    headers=request_headers,
-                    json=request_payload
-                )
+            # OPTIMIZED: Use pooled HTTP client
+            client = await get_http_client()
+            response = await client.post(
+                OPENROUTER_API_URL,
+                headers=request_headers,
+                json=request_payload
+            )
+            
+            # LOG RESPONSE
+            try:
+                print("="*60)
+                print(f"DEBUG RESPONSE - Status: {response.status_code}")
+                safe_body = response.text[:1000].encode('ascii', 'replace').decode('ascii')
+                print(f"DEBUG RESPONSE - Body: {safe_body}")
+                print("="*60)
+            except Exception:
+                print("DEBUG RESPONSE - (Content could not be printed due to encoding)")
+            
+            if response.status_code == 200:
+                result = response.json()
                 
-                # LOG RESPONSE
-                try:
-                    print("="*60)
-                    print(f"DEBUG RESPONSE - Status: {response.status_code}")
-                    safe_body = response.text[:1000].encode('ascii', 'replace').decode('ascii')
-                    print(f"DEBUG RESPONSE - Body: {safe_body}")
-                    print("="*60)
-                except Exception:
-                    print("DEBUG RESPONSE - (Content could not be printed due to encoding)")
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    
-                    if "choices" in result and len(result["choices"]) > 0:
-                        try:
-                            content = result["choices"][0]["message"]["content"]
-                            
-                            # Clean up the response using robust helper
-                            content = clean_json_response(content)
-                            
-                            # Parse JSON
-                            cv_data = json.loads(content)
-                            
-                            # Normalize Data structure for HTML template
-                            cv_data = normalize_cv_data(cv_data)
-                            
-                            print(f"SUCCESS: Generated CV Content for {role}")
-                            return cv_data, user_prompt
+                if "choices" in result and len(result["choices"]) > 0:
+                    try:
+                        content = result["choices"][0]["message"]["content"]
+                        
+                        # Clean up the response using robust helper
+                        content = clean_json_response(content)
+                        
+                        # Parse JSON
+                        cv_data = json.loads(content)
+                        
+                        # Normalize Data structure for HTML template
+                        cv_data = normalize_cv_data(cv_data)
+                        
+                        print(f"SUCCESS: Generated CV Content for {role}")
+                        return cv_data, user_prompt
 
-                        except (KeyError, IndexError):
-                             print(f"WARNING: Invalid API response structure: {result}")
-                             raise RuntimeError(f"Invalid API response: {result}")
-                             
-                        except json.JSONDecodeError as e:
-                            print(f"WARNING: JSON Parse Error (Attempt {attempt+1}): {e}")
-                            print(f"DEBUG: Failed content snippet: {content[:200]}...")
-                            
-                            if attempt == max_retries - 1:
-                                raise RuntimeError(f"CV Gen JSON Error: {e}")
-                            continue
+                    except (KeyError, IndexError):
+                         print(f"WARNING: Invalid API response structure: {result}")
+                         raise RuntimeError(f"Invalid API response: {result}")
+                         
+                    except json.JSONDecodeError as e:
+                        print(f"WARNING: JSON Parse Error (Attempt {attempt+1}): {e}")
+                        print(f"DEBUG: Failed content snippet: {content[:200]}...")
+                        
+                        if attempt == max_retries - 1:
+                            raise RuntimeError(f"CV Gen JSON Error: {e}")
+                        continue
 
-                    else:
-                        raise RuntimeError(f"API returned no choices: {result}")
-                
-                elif response.status_code == 429:
-                    wait_time = (2 ** attempt) + 1
-                    print(f"WARNING: Rate Limit (429) - Retrying in {wait_time}s...")
-                    await asyncio.sleep(wait_time)
-                    continue
-                    
                 else:
-                    print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
-                    if attempt == max_retries - 1:
-                        raise RuntimeError(f"CV Gen Failed after {max_retries} attempts. Last error: {response.text}")
+                    raise RuntimeError(f"API returned no choices: {result}")
+            
+            elif response.status_code == 429:
+                wait_time = (2 ** attempt) + 1
+                print(f"WARNING: Rate Limit (429) - Retrying in {wait_time}s...")
+                await asyncio.sleep(wait_time)
+                continue
+                
+            else:
+                print(f"WARNING: API Request Failed (Attempt {attempt+1}): {response.text}")
+                if attempt == max_retries - 1:
+                    raise RuntimeError(f"CV Gen Failed after {max_retries} attempts. Last error: {response.text}")
         
         except Exception as e:
             print(f"ERROR Generating CV (Attempt {attempt+1}): {e}")
