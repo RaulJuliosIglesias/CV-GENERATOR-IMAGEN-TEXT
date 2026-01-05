@@ -1,19 +1,19 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key, ExternalLink, Sun, Moon, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Users, Globe, Briefcase, Zap, Cpu, Image, Clock, Coins, Calendar, Award, MapPin, Search, Filter, DollarSign, ArrowUpDown, PlusCircle, Play, Loader2, Maximize, FolderOpen, Settings, X, Key, ExternalLink, Sun, Moon, CheckCircle2, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/Button';
-import { Slider } from './ui/Slider';
-import { RangeSlider } from './ui/RangeSlider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
 import { ModelSelector } from './ui/ModelSelector';
 import { Label } from './ui/Label';
+import { QuantitySelector } from './QuantitySelector';
+import { AgeRangeSelector } from './AgeRangeSelector';
 import { MultiSelect } from './ui/MultiSelect';
 import { TagInput } from './ui/TagInput';
+import { Slider } from './ui/Slider';
 
 import useGenerationStore from '../stores/useGenerationStore';
 import { Input } from './ui/Input';
-import { User } from 'lucide-react';
 import { AboutModal } from './AboutModal';
 
 const GENDER_OPTIONS = [
@@ -135,7 +135,7 @@ export default function ConfigPanel() {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
     };
 
-    // Sync local state when config changes externally (e.g. loaded from DB or reset)
+    // Sync local state when config changes externally
     useEffect(() => {
         setLocalQty(config.qty);
     }, [config.qty]);
@@ -170,9 +170,6 @@ export default function ConfigPanel() {
         ? configOptions.genders
         : GENDER_OPTIONS;
 
-    // Timeout ref for button feedback
-    const feedbackTimeoutRef = useRef(null);
-
     const handleGenerate = () => {
         // Check if API keys are configured
         const hasOpenRouter = config.apiKeys?.openRouter && config.apiKeys.openRouter.length > 0;
@@ -188,20 +185,8 @@ export default function ConfigPanel() {
         }
 
         startGeneration();
-
-        // Show "Added" feedback briefly then revert to "Add Batch"
-        // Clear any existing timeout to prevent "locking" feeling
-        if (feedbackTimeoutRef.current) {
-            clearTimeout(feedbackTimeoutRef.current);
-        }
-
         setIsAdded(true);
-
-        // Shorter timeout (1s) for snappier feel
-        feedbackTimeoutRef.current = setTimeout(() => {
-            setIsAdded(false);
-            feedbackTimeoutRef.current = null;
-        }, 1000);
+        setTimeout(() => setIsAdded(false), 1000);
 
         if (isGenerating) {
             toast.info('Added to queue', {
@@ -269,7 +254,7 @@ export default function ConfigPanel() {
 
 
     return (
-        <aside className="w-96 h-screen bg-card/50 backdrop-blur-xl border-r border-border/50 flex flex-col overflow-hidden">
+        <aside className="w-96 h-screen bg-card/80 backdrop-blur-md border-r border-border/50 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="p-6 border-b border-border/50 flex-shrink-0 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -405,27 +390,7 @@ export default function ConfigPanel() {
             {/* Configuration Form - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 {/* Quantity Slider */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <Label className="flex items-center gap-2">
-                            <Zap className="w-4 h-4 text-yellow-400" />
-                            Quantity
-                        </Label>
-                        <span className="text-2xl font-bold gradient-text">{localQty}</span>
-                    </div>
-                    <Slider
-                        value={[localQty]}
-                        onValueChange={([value]) => setLocalQty(value)}
-                        onValueCommit={([value]) => setConfig('qty', value)}
-                        min={1}
-                        max={50}
-                        step={1}
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>1</span>
-                        <span>50</span>
-                    </div>
-                </div>
+                <QuantitySelector />
 
                 {/* Divider */}
                 <div className="border-t border-border/50 pt-4">
@@ -476,32 +441,7 @@ export default function ConfigPanel() {
                 </div>
 
                 {/* Age Range Slider */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <Label className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-cyan-400" />
-                            Age Range
-                        </Label>
-                        <span className="text-sm font-semibold text-primary">
-                            {localAgeRange[0]} - {localAgeRange[1]} years
-                        </span>
-                    </div>
-                    <RangeSlider
-                        value={localAgeRange}
-                        onValueChange={(value) => setLocalAgeRange(value)}
-                        onValueCommit={([min, max]) => {
-                            setConfig('age_min', min);
-                            setConfig('age_max', max);
-                        }}
-                        min={18}
-                        max={70}
-                        step={1}
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>18</span>
-                        <span>70</span>
-                    </div>
-                </div>
+                <AgeRangeSelector />
 
                 {/* Expertise Multi-Select */}
                 <div className="space-y-2">
@@ -547,8 +487,6 @@ export default function ConfigPanel() {
                         Include remote work preference
                     </Label>
                 </div>
-
-                {/* Smart Category - Moved to bottom area */}
 
                 {/* Divider */}
                 <div className="border-t border-border/50 pt-4">
@@ -727,74 +665,49 @@ export default function ConfigPanel() {
                     />
                 </motion.div>
 
-                {/* Enhanced Generate Button */}
-                <motion.div
-                    whileHover={{ scale: isGenerating ? 1 : 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="relative"
-                >
+                {/* Enhanced Generate Button - INSTANT RESPONSE */}
+                <div className="relative">
                     <Button
                         onClick={handleGenerate}
                         disabled={false}
                         variant={isGenerating ? "secondary" : "gradient"}
                         size="lg"
-                        className={`w-full relative overflow-hidden transition-all duration-200 ${isGenerating
+                        className={`w-full relative overflow-hidden transform-gpu ${isGenerating
                             ? "hover:bg-primary/10 border-2 border-primary/20"
-                            : "shadow-xl"
+                            : "shadow-xl hover:shadow-2xl"
                             }`}
+                        style={{
+                            transition: 'none',
+                            transform: 'scale(1)'
+                        }}
+                        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.96)'}
+                        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                        {/* Use popLayout or simple logic to avoid blocking */}
-                        <AnimatePresence>
+                        <div className="flex items-center justify-center gap-2 w-full">
                             {isGenerating ? (
-                                <motion.div
-                                    key={isAdded ? `added-${Date.now()}` : "generating"} // Force re-render on click for pulse effect
-                                    className="flex items-center justify-center gap-2 w-full"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.2 }} // Fast transition
-                                >
+                                <>
                                     {isAdded ? (
                                         <div className="flex items-center gap-2 text-green-500 font-bold">
-                                            <motion.div
-                                                initial={{ scale: 0.5, rotate: -180 }}
-                                                animate={{ scale: 1, rotate: 0 }}
-                                                transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                                            >
-                                                <CheckCircle2 className="w-5 h-5" />
-                                            </motion.div>
+                                            <CheckCircle2 className="w-5 h-5" />
                                             <span>Added!</span>
                                         </div>
                                     ) : (
                                         <>
-                                            <PlusCircle className="w-5 h-5 text-primary animate-pulse" />
+                                            <PlusCircle className="w-5 h-5 text-primary" />
                                             <span className="font-semibold text-primary">Add Batch to Queue</span>
                                         </>
                                     )}
-                                    {/* Optimized progress bar - lighter */}
-                                    <div className="absolute bottom-0 left-0 h-1 bg-primary/10 w-full overflow-hidden">
-                                        <motion.div
-                                            className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-                                            animate={{ x: ['-100%', '100%'] }}
-                                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                            style={{ width: '50%', willChange: 'transform' }} // Optimization
-                                        />
-                                    </div>
-                                </motion.div>
+                                </>
                             ) : (
-                                <motion.div
-                                    key="ready"
-                                    className="flex items-center justify-center"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
+                                <>
+                                    <Sparkles className="w-5 h-5 mr-2" />
                                     Generate Batch
-                                </motion.div>
+                                </>
                             )}
-                        </AnimatePresence>
+                        </div>
                     </Button>
-                </motion.div>
+                </div>
 
                 <AnimatePresence>
                     {isGenerating && (
