@@ -15,7 +15,7 @@ export default function DownloadZipPanel() {
         s.allTasks.filter(t => t.status === 'complete')
     );
 
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(true);
     const [options, setOptions] = useState({
         includeHtml: false,
         includeAvatars: false
