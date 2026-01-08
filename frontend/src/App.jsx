@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import ConfigPanel from './components/ConfigPanel';
 import ProgressTracker from './components/ProgressTracker';
 import FileExplorer from './components/FileExplorer';
+import DownloadZipPanel from './components/DownloadZipPanel';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -55,6 +56,11 @@ function App() {
             <main className="flex-1 flex flex-col overflow-hidden">
                 {/* Progress Tracker */}
                 <ProgressTracker />
+
+                {/* Download ZIP Panel - Separate dedicated component */}
+                <div className="border-t border-border/50 bg-card/30 p-4">
+                    <DownloadZipPanel />
+                </div>
 
                 {/* File Explorer */}
                 {/* File Explorer with Resize Handle */}

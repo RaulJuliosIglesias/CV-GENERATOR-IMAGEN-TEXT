@@ -66,6 +66,39 @@ export const healthCheck = async () => {
     return response.data;
 };
 
+/**
+ * Download multiple CVs as a ZIP file
+ * @param {Object} options - Download options
+ * @param {string[]} options.filenames - Optional list of specific HTML filenames to download (takes precedence)
+ * @param {string[]} options.batchIds - Optional list of batch IDs to download (null = all files)
+ * @param {boolean} options.includeHtml - Include HTML files in ZIP
+ * @param {boolean} options.includeAvatars - Include avatar images in ZIP
+ * @returns {Promise<Blob>} ZIP file as Blob
+ */
+export const downloadZip = async (options = {}) => {
+    const { 
+        filenames = null, 
+        batchIds = null, 
+        includeHtml = false, 
+        includeAvatars = false 
+    } = options;
+    
+    const response = await api.post(
+        '/api/download-zip',
+        {
+            filenames: filenames,
+            batch_ids: batchIds,
+            include_html: includeHtml,
+            include_avatars: includeAvatars
+        },
+        {
+            responseType: 'blob', // Important: receive as blob for file download
+        }
+    );
+    
+    return response.data;
+};
+
 // Get PDF/HTML URL for viewing - files are now in /html/ subdirectory
 // Get PDF/HTML URL for viewing
 // Get PDF/HTML URL for viewing

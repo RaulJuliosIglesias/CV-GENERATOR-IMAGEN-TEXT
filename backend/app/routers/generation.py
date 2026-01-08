@@ -7,12 +7,14 @@ import os
 import asyncio
 import subprocess
 import sys
+import zipfile
+import tempfile
 from pathlib import Path
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Header
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 from ..core.task_manager import task_manager, Task, TaskStatus
 from ..core.pdf_engine import render_cv_pdf, generate_pdf_from_existing_html
@@ -389,3 +391,165 @@ async def regenerate_all_pdfs(background_tasks: BackgroundTasks):
         "message": f"Started regenerating PDFs for {len(html_files)} HTML files",
         "count": len(html_files)
     }
+
+
+class DownloadZipRequest(BaseModel):
+    batch_ids: Optional[List[str]] = Field(default=None, description="List of batch IDs to include. If None, downloads all files.")
+    filenames: Optional[List[str]] = Field(default=None, description="List of specific HTML filenames to download. Takes precedence over batch_ids.")
+    include_html: bool = Field(default=False, description="Include HTML files in ZIP")
+    include_avatars: bool = Field(default=False, description="Include avatar images in ZIP")
+
+
+@router.post("/download-zip")
+async def download_zip(request: DownloadZipRequest):
+    """
+    Download multiple CVs as a ZIP file.
+    
+    Options:
+    - batch_ids: List of specific batch IDs to download (None = all files)
+    - include_html: Include HTML files alongside PDFs
+    - include_avatars: Include avatar images
+    
+    Returns a ZIP file with all requested files.
+    """
+    from ..core.task_manager import task_manager
+    
+    # Collect PDF files to include
+    pdf_files = []
+    html_files = []
+    avatar_files = []
+    
+    # Priority 1: Specific filenames (most specific)
+    if request.filenames:
+        for filename in request.filenames:
+            # Remove .html extension if present, add .pdf
+            base_name = filename.replace('.html', '').replace('.pdf', '')
+            pdf_filename = f"{base_name}.pdf"
+            
+            # Search for PDF in root and subdirectories
+            pdf_path = PDFS_DIR / pdf_filename
+            if pdf_path.exists():
+                pdf_files.append(pdf_path)
+            else:
+                # Search in subdirectories (smart_category)
+                found_pdfs = list(PDFS_DIR.rglob(pdf_filename))
+                if found_pdfs:
+                    pdf_files.append(found_pdfs[0])
+            
+            # Include HTML if requested
+            if request.include_html:
+                html_filename = filename.replace('.pdf', '.html')
+                html_path = HTML_DIR / html_filename
+                if html_path.exists():
+                    html_files.append(html_path)
+    
+    # Priority 2: Batch IDs (if no specific filenames)
+    elif request.batch_ids:
+        # Collect files from specific batches
+        for batch_id in request.batch_ids:
+            batch = task_manager.get_batch(batch_id)
+            if not batch:
+                continue
+            
+            for task in batch.tasks:
+                if task.status == TaskStatus.COMPLETE:
+                    # Get PDF path
+                    if task.pdf_path:
+                        pdf_path = Path(task.pdf_path)
+                        if pdf_path.exists():
+                            pdf_files.append(pdf_path)
+                    
+                    # Get HTML path if requested
+                    if request.include_html and task.html_path:
+                        html_path = Path(task.html_path)
+                        if html_path.exists():
+                            html_files.append(html_path)
+                    
+                    # Get avatar path if requested
+                    if request.include_avatars and task.image_path:
+                        avatar_path = Path(task.image_path)
+                        if avatar_path.exists():
+                            avatar_files.append(avatar_path)
+    
+    # Priority 3: All files (if neither filenames nor batch_ids specified)
+    else:
+        # Download ALL files (all PDFs in output/pdf)
+        if PDFS_DIR.exists():
+            # Get all PDFs (including subdirectories for smart_category)
+            pdf_files = list(PDFS_DIR.rglob("*.pdf"))
+        
+        if request.include_html and HTML_DIR.exists():
+            html_files = list(HTML_DIR.glob("*.html"))
+        
+        if request.include_avatars and AVATARS_DIR.exists():
+            avatar_files = list(AVATARS_DIR.glob("*.jpg")) + list(AVATARS_DIR.glob("*.png"))
+    
+    if not pdf_files and not html_files and not avatar_files:
+        raise HTTPException(status_code=404, detail="No files found to download")
+    
+    # Create temporary ZIP file
+    temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+    temp_zip_path = Path(temp_zip.name)
+    
+    try:
+        with zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Add PDFs
+            for pdf_file in pdf_files:
+                # Preserve folder structure for smart_category
+                if pdf_file.parent != PDFS_DIR:
+                    # File is in a subdirectory (category folder)
+                    arcname = pdf_file.relative_to(PDFS_DIR)
+                else:
+                    # File is in root PDF directory
+                    arcname = pdf_file.name
+                zipf.write(pdf_file, arcname=f"PDFs/{arcname}")
+            
+            # Add HTMLs if requested
+            if request.include_html:
+                for html_file in html_files:
+                    zipf.write(html_file, arcname=f"HTMLs/{html_file.name}")
+            
+            # Add avatars if requested
+            if request.include_avatars:
+                for avatar_file in avatar_files:
+                    zipf.write(avatar_file, arcname=f"Avatars/{avatar_file.name}")
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_filename = f"CVs_Batch_{timestamp}.zip"
+        
+        # Return ZIP as streaming response
+        def cleanup():
+            """Clean up temporary file after download."""
+            try:
+                if temp_zip_path.exists():
+                    temp_zip_path.unlink()
+            except Exception as e:
+                print(f"Warning: Failed to cleanup temp ZIP: {e}")
+        
+        # Read ZIP file and stream it
+        def generate():
+            try:
+                with open(temp_zip_path, 'rb') as f:
+                    while True:
+                        chunk = f.read(8192)  # 8KB chunks
+                        if not chunk:
+                            break
+                        yield chunk
+            finally:
+                cleanup()
+        
+        return StreamingResponse(
+            generate(),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{zip_filename}"',
+                "Content-Type": "application/zip"
+            }
+        )
+        
+    except Exception as e:
+        # Cleanup on error
+        if temp_zip_path.exists():
+            temp_zip_path.unlink()
+        raise HTTPException(status_code=500, detail=f"Failed to create ZIP: {str(e)}")
