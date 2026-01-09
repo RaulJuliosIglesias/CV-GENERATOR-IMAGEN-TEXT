@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { generateBatch, getFiles, getModels, getBatchStatus, getConfig } from '../lib/api';
+import { saveConfig, loadConfig, trackGeneration, getStatsSummary, loadTemplates as loadTemplatesFromStorage, saveTemplate as saveTemplateToStorage, getTemplate, deleteTemplate as deleteTemplateFromStorage } from '../lib/storage';
 
 const useGenerationStore = create((set, get) => ({
     // Configuration state
@@ -29,41 +30,42 @@ const useGenerationStore = create((set, get) => ({
         },
     },
 
-    // Initialize from localStorage if available
+    // Initialize from storage service
     ...(() => {
         try {
-            const stored = JSON.parse(localStorage.getItem('generation-storage') || '{}');
-            if (stored.state && stored.state.config) {
-                return {
-                    config: {
-                        // Merge default config with stored config to ensure new keys exist
-                        qty: stored.state.config.qty || 1,
-                        genders: stored.state.config.genders || ['any'],
-                        ethnicities: stored.state.config.ethnicities || ['any'],
-                        origins: stored.state.config.origins || ['any'],
-                        roles: stored.state.config.roles || ['any'],
-                        age_min: stored.state.config.age_min || 18,
-                        age_max: stored.state.config.age_max || 70,
-                        expertise_levels: stored.state.config.expertise_levels || ['any'],
-                        remote: stored.state.config.remote || false,
-                        smart_category: stored.state.config.smart_category !== undefined ? stored.state.config.smart_category : true,
-                        image_size: stored.state.config.image_size || 100,
-                        profile_model: stored.state.config.profile_model || null,
-                        cv_model: stored.state.config.cv_model || null,
-                        image_model: stored.state.config.image_model || null,
-                        llmSort: stored.state.config.llmSort || 'default',
-                        llmSearch: stored.state.config.llmSearch || '',
-                        llmProvider: stored.state.config.llmProvider || 'all',
-                        llmFreeOnly: stored.state.config.llmFreeOnly || false,
-                        apiKeys: {
-                            openRouter: stored.state.config.apiKeys?.openRouter || '',
-                            krea: stored.state.config.apiKeys?.krea || ''
-                        }
+            const savedConfig = loadConfig();
+            if (savedConfig) {
+                // Merge with defaults to ensure all keys exist
+                const defaultConfig = {
+                    qty: 1,
+                    genders: ['any'],
+                    ethnicities: ['any'],
+                    origins: ['any'],
+                    roles: ['any'],
+                    age_min: 18,
+                    age_max: 70,
+                    expertise_levels: ['any'],
+                    remote: false,
+                    smart_category: true,
+                    image_size: 100,
+                    profile_model: null,
+                    cv_model: null,
+                    image_model: null,
+                    llmSort: 'default',
+                    llmSearch: '',
+                    llmProvider: 'all',
+                    llmFreeOnly: false,
+                    apiKeys: {
+                        openRouter: '',
+                        krea: ''
                     }
+                };
+                return {
+                    config: { ...defaultConfig, ...savedConfig }
                 };
             }
         } catch (e) {
-            console.warn('Failed to load generation store from localStorage:', e);
+            console.warn('Failed to load config from storage:', e);
         }
         return {};
     })(),
@@ -115,6 +117,18 @@ const useGenerationStore = create((set, get) => ({
             });
         } catch (error) {
             console.error('Failed to load config:', error);
+            // Set configLoaded to true even on error to prevent infinite retries
+            // Use empty arrays as fallback
+            set({
+                configOptions: {
+                    roles: [],
+                    genders: [],
+                    ethnicities: [],
+                    origins: [],
+                    expertise_levels: [],
+                    configLoaded: true
+                }
+            });
         }
     },
 
@@ -158,13 +172,81 @@ const useGenerationStore = create((set, get) => ({
             }
         } catch (error) {
             console.error('Failed to load models:', error);
+            // Set modelsLoaded to true even on error to prevent infinite retries
+            // Use empty arrays as fallback
+            set({
+                llmModels: [],
+                imageModels: [],
+                modelsLoaded: true,
+            });
         }
     },
 
     setConfig: (key, value) => {
+        set((state) => {
+            const newConfig = { ...state.config, [key]: value };
+            // Auto-save to storage
+            saveConfig(newConfig);
+            return { config: newConfig };
+        });
+    },
+    
+    // Template management
+    templates: [],
+    
+    loadTemplates: () => {
+        const templates = loadTemplatesFromStorage();
+        set({ templates });
+        return templates;
+    },
+    
+    saveTemplate: (name, description = '') => {
+        const { config } = get();
+        const template = saveTemplateToStorage(name, config, description);
         set((state) => ({
-            config: { ...state.config, [key]: value },
+            templates: [...state.templates, template]
         }));
+        return template;
+    },
+    
+    loadTemplate: (id) => {
+        const template = getTemplate(id);
+        if (template) {
+            set({ config: template.config });
+            saveConfig(template.config);
+        }
+        return template;
+    },
+    
+    deleteTemplate: (id) => {
+        const deleted = deleteTemplateFromStorage(id);
+        if (deleted) {
+            set((state) => ({
+                templates: state.templates.filter(t => t.id !== id)
+            }));
+        }
+        return deleted;
+    },
+    
+    // Stats
+    stats: null,
+    
+    loadStats: () => {
+        const stats = getStatsSummary();
+        set({ stats });
+        return stats;
+    },
+    
+    trackTaskComplete: (task, duration) => {
+        trackGeneration({
+            taskId: task.id,
+            role: task.role || 'Unknown',
+            status: task.status === 'complete' ? 'success' : 'failed',
+            duration: duration || 0,
+            timestamp: Date.now()
+        });
+        // Refresh stats
+        get().loadStats();
     },
 
     startGeneration: async () => {

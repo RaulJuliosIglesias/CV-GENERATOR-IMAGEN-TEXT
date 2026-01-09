@@ -80,7 +80,7 @@ def fetch_openrouter_models() -> dict:
     
     try:
         print("DEBUG: Fetching live models from OpenRouter API...")
-        response = requests.get(OPENROUTER_MODELS_URL, timeout=10)
+        response = requests.get(OPENROUTER_MODELS_URL, timeout=5)  # Reduced timeout
         
         if response.status_code == 200:
             data = response.json()
@@ -122,6 +122,9 @@ def fetch_openrouter_models() -> dict:
             print(f"WARNING: OpenRouter models API returned {response.status_code}")
             return FALLBACK_LLM_MODELS
             
+    except requests.exceptions.Timeout:
+        print("WARNING: OpenRouter API timeout, using fallback models")
+        return FALLBACK_LLM_MODELS
     except Exception as e:
         print(f"WARNING: Failed to fetch OpenRouter models: {e}")
         return FALLBACK_LLM_MODELS

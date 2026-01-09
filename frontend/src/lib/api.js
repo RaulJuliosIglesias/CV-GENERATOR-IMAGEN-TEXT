@@ -3,14 +3,33 @@ import axios from 'axios';
 // Create axios instance with base URL
 const api = axios.create({
     // baseURL intentionally left empty to use relative paths (proxied by Vite)
-    timeout: 30000,
+    timeout: 10000, // Reduced timeout to 10 seconds
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
+// Create separate instance for models endpoint with longer timeout
+const modelsApi = axios.create({
+    timeout: 15000, // 15 seconds for models (can be slow)
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+            console.warn('Backend server is not running. Please start the backend server.');
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const getModels = async () => {
-    const response = await api.get('/api/models');
+    const response = await modelsApi.get('/api/models');
     return response.data;
 };
 

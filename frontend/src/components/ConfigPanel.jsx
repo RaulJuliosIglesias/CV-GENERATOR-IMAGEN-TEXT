@@ -17,6 +17,9 @@ import { FeedbackParticles } from './ui/FeedbackParticles';
 import useGenerationStore from '../stores/useGenerationStore';
 import { Input } from './ui/Input';
 import { AboutModal } from './AboutModal';
+import TemplateManager from './TemplateManager';
+import ConfigEditor from './ConfigEditor';
+import { getStoredTheme, applyTheme, saveTheme, THEMES } from '../lib/theme';
 
 const GENDER_OPTIONS = [
     { value: 'any', label: 'Any Gender' },
@@ -105,7 +108,12 @@ export default function ConfigPanel() {
 
     // Non-blocking feedback ref
     const feedbackRef = useRef(null);
-    const [theme, setTheme] = useState('dark');
+    const [theme, setTheme] = useState(() => {
+        // Initialize from storage
+        const stored = getStoredTheme();
+        applyTheme(stored);
+        return stored;
+    });
 
     // Debounced search state for LLM models
     const [localSearch, setLocalSearch] = useState(config.llmSearch || '');
@@ -131,14 +139,18 @@ export default function ConfigPanel() {
         };
     }, []);
 
-    // Theme toggle logic
+    // Theme toggle logic with persistence
     useEffect(() => {
-        const root = window.document.documentElement;
-        root.setAttribute('data-theme', theme);
+        applyTheme(theme);
+        saveTheme(theme);
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+        setTheme(prev => {
+            if (prev === THEMES.DARK) return THEMES.LIGHT;
+            if (prev === THEMES.LIGHT) return THEMES.SYSTEM;
+            return THEMES.DARK;
+        });
     };
 
     // Sync local state when config changes externally
@@ -645,6 +657,14 @@ export default function ConfigPanel() {
                             className="py-1"
                         />
                     </div>
+                </div>
+            </div>
+
+            {/* Template Manager & Config Editor */}
+            <div className="pt-4 border-t border-border/50 space-y-4">
+                <TemplateManager />
+                <div className="flex justify-center">
+                    <ConfigEditor />
                 </div>
             </div>
 

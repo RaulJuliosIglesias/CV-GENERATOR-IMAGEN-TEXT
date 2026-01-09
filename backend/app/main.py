@@ -49,7 +49,7 @@ _api_key = os.getenv("OPENROUTER_API_KEY", "")
 print(f"DEBUG MAIN: .env path: {ENV_PATH} (exists: {ENV_PATH.exists()})")
 print(f"DEBUG MAIN: OPENROUTER_API_KEY loaded: {'YES (' + _api_key[:8] + '...)' if _api_key and len(_api_key) > 8 else 'NO/EMPTY'}")
 
-from .routers import generation
+from .routers import generation, webhooks, public_api
 
 # Get paths
 BACKEND_DIR = Path(__file__).parent.parent
@@ -105,6 +105,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add rate limiting middleware
+from .middleware.rate_limit import rate_limit_middleware
+app.middleware("http")(rate_limit_middleware)
+
 # Mount static directories - skip on Vercel (no persistent filesystem)
 # SECURITY: We do NOT mount /output, /html, /pdf publicly.
 # Access is controlled via /api/files/ endpoints.
@@ -138,6 +142,8 @@ async def ping():
 # Include routers - Load generation router AFTER config just in case
 print("DEBUG MAIN: Loading generation router...")
 app.include_router(generation.router)
+app.include_router(webhooks.router)
+app.include_router(public_api.router)
 
 # Serve frontend in production (Railway/Docker)
 # Try multiple paths for frontend dist (local dev vs Docker)

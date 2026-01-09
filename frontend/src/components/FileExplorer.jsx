@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { FileText, Trash2, FolderOpen, ExternalLink, RefreshCw, HardDrive, ArrowUpDown, ArrowUp, ArrowDown, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Trash2, FolderOpen, ExternalLink, RefreshCw, HardDrive, ArrowUpDown, ArrowUp, ArrowDown, Download, ChevronLeft, ChevronRight, Search, Filter, X } from 'lucide-react';
 import { Button } from './ui/Button';
+import { Input } from './ui/Input';
 import useGenerationStore from '../stores/useGenerationStore';
 import { deleteFile, openFolder, getPdfUrl, getHtmlUrl } from '../lib/api';
 import { AnimatePresence } from 'framer-motion';
@@ -23,14 +24,19 @@ export default function FileExplorer({ height }) {
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [previewFile, setPreviewFile] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    
+    // Search and filter state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterRole, setFilterRole] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
 
     // Track previous count to trigger reload only on INCREASE
     const prevCompletedCountRef = useRef(0);
 
-    // Initial load
+    // Initial load - always try to load files on mount
     useEffect(() => {
-        if (files.length === 0) loadFiles();
-    }, [loadFiles, files.length]);
+        loadFiles();
+    }, [loadFiles]);
 
     // Optimize Auto-refresh: Only runs when COUNT changes (not every poll tick)
     useEffect(() => {
@@ -81,8 +87,45 @@ export default function FileExplorer({ height }) {
         }));
     }, [files, parseFilename]);
 
+    // Extract unique roles for filter dropdown
+    const uniqueRoles = useMemo(() => {
+        const roles = new Set();
+        filesWithMeta.forEach(file => {
+            if (file.meta.role && file.meta.role !== '-') {
+                roles.add(file.meta.role);
+            }
+        });
+        return Array.from(roles).sort();
+    }, [filesWithMeta]);
+
+    // Filter and search files
+    const filteredFiles = useMemo(() => {
+        let filtered = [...filesWithMeta];
+
+        // Apply search query
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(file => {
+                const meta = file.meta;
+                return (
+                    meta.name.toLowerCase().includes(query) ||
+                    meta.role.toLowerCase().includes(query) ||
+                    meta.id.toLowerCase().includes(query) ||
+                    file.filename.toLowerCase().includes(query)
+                );
+            });
+        }
+
+        // Apply role filter
+        if (filterRole) {
+            filtered = filtered.filter(file => file.meta.role === filterRole);
+        }
+
+        return filtered;
+    }, [filesWithMeta, searchQuery, filterRole]);
+
     const sortedFiles = useMemo(() => {
-        let sortableFiles = [...filesWithMeta];
+        let sortableFiles = [...filteredFiles];
         sortableFiles.sort((a, b) => {
             const metaA = a.meta;
             const metaB = b.meta;
@@ -102,257 +145,277 @@ export default function FileExplorer({ height }) {
                     aValue = metaA.role;
                     bValue = metaB.role;
                     break;
-                case 'size_kb':
-                    aValue = a.size_kb;
-                    bValue = b.size_kb;
-                    break;
+                case 'created_at':
                 default:
-                    aValue = a[sortConfig.key];
-                    bValue = b[sortConfig.key];
+                    aValue = new Date(a.created_at || 0).getTime();
+                    bValue = new Date(b.created_at || 0).getTime();
+                    break;
             }
 
-            const direction = sortConfig.direction === 'asc' ? 1 : -1;
-            if (aValue < bValue) return -1 * direction;
-            if (aValue > bValue) return 1 * direction;
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
         });
         return sortableFiles;
-    }, [filesWithMeta, sortConfig]);
+    }, [filteredFiles, sortConfig]);
 
-    // Pagination logic
+    // Pagination
     const totalPages = Math.ceil(sortedFiles.length / PAGE_SIZE);
     const paginatedFiles = useMemo(() => {
         const start = (currentPage - 1) * PAGE_SIZE;
         return sortedFiles.slice(start, start + PAGE_SIZE);
     }, [sortedFiles, currentPage]);
 
-    // Reset to page 1 when files change
+    // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [files.length]);
+    }, [searchQuery, filterRole, sortConfig]);
 
-    const handleOpenPdf = useCallback((filename) => {
-        window.open(getPdfUrl(filename), '_blank');
-    }, []);
-
-    const handleOpenHtml = useCallback((filename) => {
-        setPreviewFile(filename);
-    }, []);
-
-    const handleDeleteFile = useCallback(async (filename) => {
-        if (confirm(`Are you sure you want to delete ${filename}?`)) {
-            try {
-                await deleteFile(filename);
-                loadFiles();
-            } catch (error) {
-                console.error('Failed to delete file:', error);
-            }
-        }
-    }, [loadFiles]);
-
-    const handleOpenFolder = useCallback(async () => {
-        try {
-            await openFolder();
-        } catch (error) {
-            console.error('Failed to open folder:', error);
-        }
-    }, []);
-
-    const formatDate = useCallback((isoString) => {
-        try {
-            const date = new Date(isoString);
-            return date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-            });
-        } catch (e) { return isoString; }
-    }, []);
-
-    const requestSort = useCallback((key) => {
+    const handleSort = (key) => {
         setSortConfig(prev => ({
             key,
             direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
         }));
-    }, []);
-
-    const SortIcon = ({ columnKey }) => {
-        if (sortConfig.key !== columnKey) return <ArrowUpDown className="w-3 h-3 ml-1 text-muted-foreground/30" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="w-3 h-3 ml-1 text-primary" />
-            : <ArrowDown className="w-3 h-3 ml-1 text-primary" />;
     };
 
+    const handleDelete = async (filename) => {
+        if (!confirm(`Delete ${filename}?`)) return;
+        try {
+            await deleteFile(filename);
+            loadFiles();
+        } catch (error) {
+            console.error('Delete failed:', error);
+        }
+    };
+
+    const SortButton = ({ sortKey, label }) => (
+        <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort(sortKey)}
+            className="h-7 px-2 text-xs flex items-center gap-1"
+        >
+            {label}
+            {sortConfig.key === sortKey && (
+                sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+            )}
+        </Button>
+    );
+
     return (
-        <div className="border-t border-border/50 bg-card/30 flex flex-col" style={{ height: height ? `${height}px` : '100%' }}>
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                        <HardDrive className="w-4 h-4 text-green-400" />
+        <div className="flex flex-col h-full bg-background border-t border-border/50 overflow-hidden">
+            {/* Header with Search and Filters */}
+            <div className="p-4 border-b border-border/50 space-y-3 flex-shrink-0">
+                {/* Search Bar */}
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Search by name, role, or ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-9 h-9"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Filter Toggle and Active Filters */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="h-7 px-2 text-xs"
+                        >
+                            <Filter className="w-3 h-3 mr-1" />
+                            Filters
+                            {(filterRole) && (
+                                <span className="ml-1 px-1.5 py-0.5 bg-primary/20 text-primary rounded text-[10px]">
+                                    {filterRole ? 1 : 0}
+                                </span>
+                            )}
+                        </Button>
+                        {(filterRole) && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setFilterRole('');
+                                }}
+                                className="h-7 px-2 text-xs"
+                            >
+                                Clear
+                            </Button>
+                        )}
                     </div>
-                    <div>
-                        <h3 className="text-sm font-semibold text-foreground">Generated Files</h3>
-                        <p className="text-xs text-muted-foreground">{files.length} PDFs in output folder</p>
+                    <div className="text-xs text-muted-foreground">
+                        {filteredFiles.length} of {files.length} files
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button onClick={loadFiles} variant="ghost" size="icon" disabled={isLoadingFiles}>
-                        <RefreshCw className={`w-4 h-4 ${isLoadingFiles ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <Button onClick={handleOpenFolder} variant="outline" size="sm">
-                        <FolderOpen className="w-4 h-4 mr-2" />
-                        Open Folder
-                    </Button>
+
+                {/* Filter Panel */}
+                {showFilters && (
+                    <div className="p-3 bg-card/50 rounded-lg border border-border/50 space-y-2">
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">Role</label>
+                            <select
+                                value={filterRole}
+                                onChange={(e) => setFilterRole(e.target.value)}
+                                className="w-full h-8 px-2 text-xs bg-background border border-border rounded"
+                            >
+                                <option value="">All Roles</option>
+                                {uniqueRoles.map(role => (
+                                    <option key={role} value={role}>{role}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
+
+                {/* Sort Controls */}
+                <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-xs text-muted-foreground mr-1">Sort:</span>
+                    <SortButton sortKey="created_at" label="Date" />
+                    <SortButton sortKey="name" label="Name" />
+                    <SortButton sortKey="role" label="Role" />
+                    <SortButton sortKey="id" label="ID" />
                 </div>
             </div>
 
-            {/* Files Table */}
-            {files.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-card/10">
-                    <FileText className="w-12 h-12 text-muted-foreground/30 mb-3" />
-                    <p className="text-sm text-muted-foreground">No files generated yet</p>
-                </div>
-            ) : (
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-secondary/50 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-                            <tr>
-                                <th
-                                    className="text-xs font-semibold text-muted-foreground px-4 py-3 cursor-pointer hover:bg-secondary/80 hover:text-foreground transition-colors select-none"
-                                    onClick={() => requestSort('id')}
-                                >
-                                    <div className="flex items-center">ID <SortIcon columnKey="id" /></div>
-                                </th>
-                                <th
-                                    className="text-xs font-semibold text-muted-foreground px-4 py-3 cursor-pointer hover:bg-secondary/80 hover:text-foreground transition-colors select-none"
-                                    onClick={() => requestSort('name')}
-                                >
-                                    <div className="flex items-center">Candidate Name <SortIcon columnKey="name" /></div>
-                                </th>
-                                <th
-                                    className="text-xs font-semibold text-muted-foreground px-4 py-3 cursor-pointer hover:bg-secondary/80 hover:text-foreground transition-colors select-none"
-                                    onClick={() => requestSort('role')}
-                                >
-                                    <div className="flex items-center">Role <SortIcon columnKey="role" /></div>
-                                </th>
-                                <th
-                                    className="text-xs font-semibold text-muted-foreground px-4 py-3 cursor-pointer hover:bg-secondary/80 hover:text-foreground transition-colors select-none"
-                                    onClick={() => requestSort('created_at')}
-                                >
-                                    <div className="flex items-center">Created <SortIcon columnKey="created_at" /></div>
-                                </th>
-                                <th
-                                    className="text-right text-xs font-semibold text-muted-foreground px-4 py-3 cursor-pointer hover:bg-secondary/80 hover:text-foreground transition-colors select-none"
-                                    onClick={() => requestSort('size_kb')}
-                                >
-                                    <div className="flex items-center justify-end">Size <SortIcon columnKey="size_kb" /></div>
-                                </th>
-                                <th className="text-right text-xs font-semibold text-muted-foreground px-4 py-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/30">
+            {/* File List */}
+            <div className="flex-1 overflow-y-auto p-4">
+                {isLoadingFiles ? (
+                    <div className="flex items-center justify-center h-full">
+                        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
+                ) : paginatedFiles.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                        <FileText className="w-12 h-12 text-muted-foreground/50 mb-4" />
+                        <p className="text-sm text-muted-foreground">
+                            {searchQuery || filterRole ? 'No files match your filters' : 'No files generated yet'}
+                        </p>
+                        {(searchQuery || filterRole) && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setFilterRole('');
+                                }}
+                                className="mt-2"
+                            >
+                                Clear filters
+                            </Button>
+                        )}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                        <AnimatePresence mode="popLayout">
                             {paginatedFiles.map((file) => {
                                 const meta = file.meta;
                                 return (
-                                    <tr
+                                    <div
                                         key={file.filename}
-                                        className="hover:bg-accent/20 transition-colors group"
+                                        className="group flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-accent/20 transition-all cursor-pointer"
+                                        onClick={() => setPreviewFile(file)}
                                     >
-                                        <td className="px-4 py-3">
-                                            <span className="font-mono text-xs text-muted-foreground bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
-                                                {meta.id.substring(0, 8)}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleOpenHtml(file.filename)}>
-                                                <div className="p-1 rounded bg-emerald-500/10 text-emerald-400">
-                                                    <FileText className="w-4 h-4 shrink-0" />
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <FileText 
+                                                className="w-5 h-5 text-blue-400 shrink-0 cursor-pointer" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setPreviewFile(file);
+                                                }}
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p 
+                                                    className="text-sm font-medium truncate cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPreviewFile(file);
+                                                    }}
+                                                >
+                                                    {meta.name || file.filename}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    {meta.role && meta.role !== '-' && (
+                                                        <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded">
+                                                            {meta.role}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-xs text-muted-foreground truncate">
+                                                        {meta.id || 'No ID'}
+                                                    </span>
                                                 </div>
-                                                <span
-                                                    className="text-sm font-medium text-foreground truncate max-w-[200px] hover:text-primary transition-colors hover:underline underline-offset-4"
-                                                    title={meta.name}
-                                                >
-                                                    {meta.name}
-                                                </span>
                                             </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-sm text-foreground/80 truncate max-w-[200px]" title={meta.role}>
-                                                {meta.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(file.created_at)}</span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <span className="text-xs text-muted-foreground font-mono">{file.size_kb} KB</span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                <Button
-                                                    onClick={() => handleOpenHtml(file.filename)}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 hover:bg-blue-500/10 hover:text-blue-400"
-                                                    title="Preview"
-                                                >
-                                                    <ExternalLink className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
-                                                    onClick={() => handleOpenPdf(file.filename)}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 hover:bg-green-500/10 hover:text-green-400"
-                                                    title="Download PDF"
-                                                >
-                                                    <Download className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
-                                                    onClick={() => handleDeleteFile(file.filename)}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setPreviewFile(file)}
+                                                className="h-8 w-8"
+                                                title="Preview"
+                                            >
+                                                <ExternalLink className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => window.open(getPdfUrl(file.filename), '_blank')}
+                                                className="h-8 w-8"
+                                                title="Download PDF"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDelete(file.filename)}
+                                                className="h-8 w-8 text-red-400 hover:text-red-500"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 );
                             })}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                        </AnimatePresence>
+                    </div>
+                )}
+            </div>
 
-            {/* Pagination Controls */}
+            {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-secondary/30 shrink-0">
-                    <span className="text-xs text-muted-foreground">
-                        Showing {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, sortedFiles.length)} of {sortedFiles.length}
-                    </span>
-                    <div className="flex items-center gap-1">
+                <div className="p-4 border-t border-border/50 flex items-center justify-between flex-shrink-0">
+                    <div className="text-xs text-muted-foreground">
+                        Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center gap-2">
                         <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className="h-7 px-2"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
-                        <span className="text-xs text-foreground px-2">
-                            Page {currentPage} of {totalPages}
-                        </span>
                         <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className="h-7 px-2"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </Button>
@@ -360,14 +423,13 @@ export default function FileExplorer({ height }) {
                 </div>
             )}
 
-            <AnimatePresence>
-                {previewFile && (
-                    <PreviewModal
-                        filename={previewFile}
-                        onClose={() => setPreviewFile(null)}
-                    />
-                )}
-            </AnimatePresence>
+            {/* Preview Modal */}
+            {previewFile && (
+                <PreviewModal
+                    file={previewFile}
+                    onClose={() => setPreviewFile(null)}
+                />
+            )}
         </div>
     );
 }

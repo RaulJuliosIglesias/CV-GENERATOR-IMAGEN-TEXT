@@ -18,9 +18,17 @@ from typing import Optional, List
 
 from ..core.task_manager import task_manager, Task, TaskStatus
 from ..core.pdf_engine import render_cv_pdf, generate_pdf_from_existing_html
-from ..services.llm_service import generate_cv_content_v2, generate_profile_data, get_available_models as get_llm_models, create_user_prompt
+from ..core.cache import cache
+from ..core.logging_config import log_info, log_error, log_request
+from ..services.llm_service import generate_cv_content_v2, generate_profile_data, get_available_models as get_llm_models, create_user_prompt, FALLBACK_LLM_MODELS
 from ..services.krea_service import generate_avatar, get_available_models as get_image_models, get_avatar_prompt
 import random
+
+# Try to import webhook trigger (may not exist yet)
+try:
+    from ..routers.webhooks import trigger_webhook
+except ImportError:
+    trigger_webhook = None
 
 # Get paths
 BACKEND_DIR = Path(__file__).parent.parent.parent
@@ -103,12 +111,32 @@ class FilesResponse(BaseModel):
 @router.get("/models", response_model=ModelsResponse)
 async def get_models():
     """Get available LLM and image models."""
+    import asyncio
+    
     try:
-        # Get LLM models (sync function, uses lazy-loaded cache)
-        llm_models = get_llm_models()
-        
-        # Get image models from Krea service (also sync)
+        # Get image models first (fast, static)
         image_models = get_image_models()
+        
+        # Get LLM models with timeout protection
+        try:
+            # Run in executor to avoid blocking, with timeout
+            loop = asyncio.get_event_loop()
+            llm_models = await asyncio.wait_for(
+                loop.run_in_executor(None, get_llm_models),
+                timeout=8.0  # 8 second timeout
+            )
+        except asyncio.TimeoutError:
+            print("WARNING: LLM models fetch timed out, using fallback")
+            llm_models = [
+                {"id": model_id, **model_info}
+                for model_id, model_info in FALLBACK_LLM_MODELS.items()
+            ]
+        except Exception as e:
+            print(f"Warning: Failed to fetch LLM models, using fallback: {e}")
+            llm_models = [
+                {"id": model_id, **model_info}
+                for model_id, model_info in FALLBACK_LLM_MODELS.items()
+            ]
         
         print(f"DEBUG /api/models: Returning {len(llm_models)} LLM models, {len(image_models)} image models")
         
@@ -118,9 +146,15 @@ async def get_models():
         )
     except Exception as e:
         print(f"Error fetching models: {e}")
-        # Return empty lists on error so frontend doesn't break
+        import traceback
+        traceback.print_exc()
+        # Return fallback models on error so frontend doesn't break
+        fallback_models = [
+            {"id": model_id, **model_info}
+            for model_id, model_info in FALLBACK_LLM_MODELS.items()
+        ]
         return ModelsResponse(
-            llm_models=[],
+            llm_models=fallback_models,
             image_models=get_image_models()  # Image models are static
         )
 
@@ -217,18 +251,33 @@ async def list_files():
     """List generated CVs - one entry per CV (HTML files only, frontend derives PDF)."""
     files = []
     
-    # Only list HTML files - each HTML represents one CV
-    # Frontend will use the filename to construct PDF URL
-    if HTML_DIR.exists():
-        for filepath in sorted(HTML_DIR.glob("*.html"), key=lambda x: x.stat().st_mtime, reverse=True):
-            stat = filepath.stat()
-            files.append(FileInfo(
-                filename=filepath.name,
-                path=str(filepath),
-                created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                size_kb=round(stat.st_size / 1024, 2)
-            ))
+    try:
+        # Only list HTML files - each HTML represents one CV
+        # Frontend will use the filename to construct PDF URL
+        if HTML_DIR.exists():
+            html_files = list(HTML_DIR.glob("*.html"))
+            print(f"DEBUG /api/files: Found {len(html_files)} HTML files")
+            
+            for filepath in sorted(html_files, key=lambda x: x.stat().st_mtime, reverse=True):
+                try:
+                    stat = filepath.stat()
+                    files.append(FileInfo(
+                        filename=filepath.name,
+                        path=str(filepath),
+                        created_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        size_kb=round(stat.st_size / 1024, 2)
+                    ))
+                except Exception as e:
+                    print(f"WARNING: Error reading file {filepath.name}: {e}")
+                    continue
+        else:
+            print(f"WARNING: HTML_DIR does not exist: {HTML_DIR}")
+    except Exception as e:
+        print(f"ERROR /api/files: {e}")
+        import traceback
+        traceback.print_exc()
     
+    print(f"DEBUG /api/files: Returning {len(files)} files")
     return FilesResponse(files=files, total=len(files))
 
 

@@ -1,18 +1,83 @@
-import React from 'react';
-import { X, ExternalLink, Download, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ExternalLink, Download, FileText, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { getHtmlUrl, getPdfUrl } from '../lib/api';
 import { motion } from 'framer-motion';
+import useGenerationStore from '../stores/useGenerationStore';
 
-export function PreviewModal({ filename, onClose }) {
-    if (!filename) return null;
+export function PreviewModal({ file, onClose }) {
+    const files = useGenerationStore(s => s.files);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [zoom, setZoom] = useState(100);
+    const [viewMode, setViewMode] = useState('html'); // 'html' or 'pdf'
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
+    // Find current file index
+    useEffect(() => {
+        if (file && files.length > 0) {
+            const index = files.findIndex(f => f.filename === file.filename || f.filename === file);
+            if (index !== -1) {
+                setCurrentIndex(index);
+            }
+        }
+    }, [file, files]);
+
+    const currentFile = files[currentIndex];
+    if (!currentFile) return null;
+
+    const filename = typeof currentFile === 'string' ? currentFile : currentFile.filename;
     const htmlUrl = getHtmlUrl(filename);
     const pdfUrl = getPdfUrl(filename);
 
     const handleDownloadPdf = () => {
         window.open(pdfUrl, '_blank');
     };
+
+    const handlePrevious = () => {
+        if (currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentIndex < files.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        }
+    };
+
+    const handleZoomIn = () => {
+        setZoom(prev => Math.min(prev + 25, 200));
+    };
+
+    const handleZoomOut = () => {
+        setZoom(prev => Math.max(prev - 25, 50));
+    };
+
+    const handleResetZoom = () => {
+        setZoom(100);
+    };
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+            } else if (e.key === 'ArrowLeft' && !e.target.tagName.match(/INPUT|TEXTAREA/)) {
+                handlePrevious();
+            } else if (e.key === 'ArrowRight' && !e.target.tagName.match(/INPUT|TEXTAREA/)) {
+                handleNext();
+            } else if (e.key === '+' || e.key === '=') {
+                handleZoomIn();
+            } else if (e.key === '-') {
+                handleZoomOut();
+            } else if (e.key === '0') {
+                handleResetZoom();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentIndex, files.length]);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-8">
@@ -67,13 +132,108 @@ export function PreviewModal({ filename, onClose }) {
                     </div>
                 </div>
 
-                {/* Content - Iframe */}
-                <div className="flex-1 bg-white/5 relative">
-                    <iframe
-                        src={htmlUrl}
-                        className="w-full h-full border-0"
-                        title="CV Preview"
-                    />
+                {/* Controls Bar */}
+                <div className="px-4 py-2 border-b border-border bg-card/30 flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handlePrevious}
+                            disabled={currentIndex === 0}
+                            className="h-7 px-2 text-xs"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                            {currentIndex + 1} / {files.length}
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleNext}
+                            disabled={currentIndex === files.length - 1}
+                            className="h-7 px-2 text-xs"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={viewMode === 'html' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('html')}
+                            className="h-7 px-2 text-xs"
+                        >
+                            HTML
+                        </Button>
+                        <Button
+                            variant={viewMode === 'pdf' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('pdf')}
+                            className="h-7 px-2 text-xs"
+                        >
+                            PDF
+                        </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleZoomOut}
+                            className="h-7 px-2 text-xs"
+                        >
+                            <ZoomOut className="w-4 h-4" />
+                        </Button>
+                        <span className="text-xs text-muted-foreground min-w-[3rem] text-center">
+                            {zoom}%
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleZoomIn}
+                            className="h-7 px-2 text-xs"
+                        >
+                            <ZoomIn className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleResetZoom}
+                            className="h-7 px-2 text-xs"
+                        >
+                            <RotateCw className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Content - Iframe or PDF */}
+                <div className="flex-1 bg-white/5 relative overflow-auto">
+                    {viewMode === 'html' ? (
+                        <div
+                            style={{
+                                transform: `scale(${zoom / 100})`,
+                                transformOrigin: 'top left',
+                                width: `${100 / (zoom / 100)}%`,
+                                height: `${100 / (zoom / 100)}%`
+                            }}
+                        >
+                            <iframe
+                                src={htmlUrl}
+                                className="w-full h-full border-0"
+                                title="CV Preview"
+                            />
+                        </div>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <iframe
+                                src={`${pdfUrl}#zoom=${zoom}`}
+                                className="w-full h-full border-0"
+                                title="PDF Preview"
+                            />
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </div>
